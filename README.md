@@ -4,6 +4,8 @@ This document explains the folder structure of the Mizban Delivery System backen
 
 Folder Structure
 
+```
+
 src/
 ├── modules/ # Feature-based modules
 │ ├── deliveries/
@@ -50,6 +52,8 @@ src/
 │
 ├── app.js # Express app setup
 └── server.js # App entry point
+
+```
 
 Explanation
 
