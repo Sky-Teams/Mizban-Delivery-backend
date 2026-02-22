@@ -3,6 +3,9 @@ import { refreshAccessToken } from '../../index.js';
 
 const router = express.Router();
 
-router.post('refresh', refreshAccessToken);
+// import { loginController } from '../../controllers/v1/auth.controller.js';
+
+router.post('/refresh', refreshAccessToken);
+router.post('/login', loginController);
 
 export default router;
