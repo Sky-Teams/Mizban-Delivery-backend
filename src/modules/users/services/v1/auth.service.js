@@ -2,10 +2,10 @@ import bcrypt from 'bcryptjs';
 import {
   generateAccessToken,
   generateRefreshToken,
+  UserModel,
   hashToken,
-} from '../../../../shared/utils/jwt.js';
-import { RefreshTokenModel } from '../../models/refreshToken.model.js';
-import { UserModel } from '../../models/user.model.js';
+  RefreshTokenModel,
+} from '../../index.js';
 
 export const loginService = async ({ email, password }) => {
   const user = await UserModel.findOne({ email });
@@ -19,6 +19,12 @@ export const loginService = async ({ email, password }) => {
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken();
 
+  await RefreshTokenModel.create({
+    user: user._id,
+    token: hashToken(refreshToken),
+    expireAt: new Date(Date.now() + 7 * 60 * 60 * 1000),
+  });
+
   return {
     id: user._id,
     email: user.email,
@@ -30,8 +36,8 @@ export const loginService = async ({ email, password }) => {
 export const refreshService = async (refreshCookie) => {
   if (!refreshCookie) throw new Error('Token not found');
 
-  const hashedToken = hashToken(refreshCookie);
-  const storedToken = await RefreshTokenModel.findOne({ token: hashedToken });
+  const hashToken = hashToken(refreshCookie);
+  const storedToken = await RefreshTokenModel.findOne({ token: hashToken });
 
   if (!storedToken) throw new Error('Token not found');
   if (storedToken.expireAt < new Date()) {
