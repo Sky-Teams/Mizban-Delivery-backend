@@ -27,7 +27,7 @@ app.get('/api/health', (req, res) => {
 
 // API Versioning Example: app.use('/api/v1/deliveries', deliveryRoutesV1);
 
-app.use('/api/vi/drivers', authMiddleware, driverRoutes);
+app.use('/api/v1/drivers', authMiddleware, driverRoutes);
 
 //#endregion
 
