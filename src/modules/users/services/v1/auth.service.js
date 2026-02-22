@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { UserModel } from '../../models/user.model.js';
 import { generateAccessToken } from '../../../../shared/utils/jwt.js';
 
-export const login = async ({ email, password }) => {
+export const loginService = async ({ email, password }) => {
   const user = await UserModel.findOne({ email });
 
   if (!user) throw new Error('User not found');
