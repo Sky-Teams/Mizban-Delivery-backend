@@ -1,7 +1,9 @@
-import { notFound } from '#shared/errors/error.js';
+import { notFound, unauthorized } from '#shared/errors/error.js';
 import { createNewDriver, doesDriverExist } from '../../index.js';
 
 export const createDriver = async (req, res) => {
+  if (!req.user) throw unauthorized();
+
   const exist = await doesDriverExist(req.user._id);
   if (!exist) throw new notFound('User');
 
