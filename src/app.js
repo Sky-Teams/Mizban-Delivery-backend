@@ -3,6 +3,7 @@ import cors from 'cors';
 import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
 import authRoutesV1 from './modules/users/routes/v1/auth.route.js';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 
@@ -11,6 +12,7 @@ const app = express();
 app.use(express.json());
 
 app.use(cors(corsOptions));
+app.use(cookieParser());
 
 //#endregion
 
