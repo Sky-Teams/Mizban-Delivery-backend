@@ -1,20 +1,18 @@
 import bcrypt from 'bcryptjs';
-import {
-  generateAccessToken,
-  generateRefreshToken,
-  UserModel,
-  hashToken,
-  RefreshTokenModel,
-} from '../../index.js';
+import { UserModel } from '../../models/user.model.js';
+import { RefreshTokenModel } from '../../models/refreshToken.model.js';
+import { generateAccessToken } from '../../../../shared/utils/jwt.js';
+import { AppError } from '../../../../shared/errors/error.js';
+import { ERROR_CODES } from '../../../../shared/errors/customCodes.js';
 
 export const loginService = async ({ email, password }) => {
   const user = await UserModel.findOne({ email });
 
-  if (!user) throw new Error('User not found');
-  if (!user.isActive) throw new Error('Account is disabled!');
-
   const psMatch = await bcrypt.compare(password, user.password);
-  if (!psMatch) throw new Error('Incorrect Password');
+  if (!user || !psMatch)
+    throw new AppError('Invalid email or password', 401, ERROR_CODES.INVALID_CREDENTIAL);
+
+  if (!user.isActive) throw new AppError('Account is disabled!', 403, ERROR_CODES.ACCOUNT_DISABLED);
 
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken();
