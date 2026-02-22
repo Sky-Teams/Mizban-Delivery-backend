@@ -1,6 +1,6 @@
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError } from '#shared/errors/error.js';
-import { DriverModel } from '../../index.js';
+import { DriverModel } from '../../models/driver.model.js';
 
 // Return Boolean value
 export const doesDriverExist = async (userId) => {

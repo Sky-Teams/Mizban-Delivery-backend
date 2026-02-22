@@ -1,5 +1,5 @@
 import { notFound, unauthorized } from '#shared/errors/error.js';
-import { createNewDriver, doesDriverExist } from '../../index.js';
+import { createNewDriver, doesDriverExist } from '../../services/v1/driver.service.js';
 
 export const createDriver = async (req, res) => {
   if (!req.user) throw unauthorized();
