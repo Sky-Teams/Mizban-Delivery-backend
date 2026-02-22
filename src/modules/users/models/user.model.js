@@ -31,6 +31,11 @@ const UserSchema = new mongoose.Schema(
       default: 'customer',
     },
 
+    changedPasswordAt: {
+      type: Date,
+      default: null,
+    },
+
     isActive: { type: Boolean, default: true },
   },
   {
