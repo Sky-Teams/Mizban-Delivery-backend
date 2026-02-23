@@ -1,9 +1,9 @@
-import express from 'express';
 import cors from 'cors';
+import express from 'express';
+import cookieParser from 'cookie-parser';
 import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
-import authRouter from './modules/users/routes/v1/auth.route.js';
-import cookieParser from 'cookie-parser';
+import { authRouter } from './modules/users/index.js';
 
 const app = express();
 
