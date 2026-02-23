@@ -1,5 +1,5 @@
-import { ERROR_CODES } from '../errors/customCodes';
-import { AppError, unauthorized } from '../errors/error';
+import { ERROR_CODES } from '../errors/customCodes.js';
+import { AppError, unauthorized } from '../errors/error.js';
 
 export const authorizeRole = (...allowedRoles) => {
   return (req, res, next) => {
