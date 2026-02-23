@@ -47,6 +47,46 @@ src/
 │ ├── utils/ # Helper functions (date, geo, calculations)
 │ └── event-bus/ # Event emitter for internal events
 │
+├── tests/
+│   ├── unit/                          # Test individual service functions
+│   │   └── modules/
+│   │       ├── deliveries/
+│   │       │   ├── shared/            # Tests for shared logic
+│   │       │   │   ├── delivery-core.test.js
+│   │       │   │   └── helpers.test.js
+│   │       │   ├── v1/                # Tests for v1-specific service logic
+│   │       │   │   └── delivery.service.test.js
+│   │       │   │   └── delivery.controller.test.js
+│   │       │   └── v2/                # Tests for v2-specific service logic
+│   │       │       └── delivery.service.test.js
+│   │       │       └── delivery.controller.test.js
+│   │       ├── drivers/
+│   │       │   ├── shared/
+│   │       │   │   └── driver-core.test.js
+│   │       │   ├── v1/
+│   │       │   │   └── driver.service.test.js
+│   │       │   └── v2/
+│   │       │       └── driver.service.test.js
+│   │       └── ...
+│   │
+│   ├── integration/                    # Test controller + service + DB
+│   │   └── modules/
+│   │       ├── deliveries/
+│   │       │   ├── v1/
+│   │       │   │   └── delivery.routes.test.js
+│   │       │   └── v2/
+│   │       │       └── delivery.routes.test.js
+│   │       ├── drivers/
+│   │       │   ├── v1/
+│   │       │   │   └── driver.routes.test.js
+│   │       │   └── v2/
+│   │       │       └── driver.routes.test.js
+│   │       └── ...                    # other modules if needed
+│   │
+│   └── e2e/                            # Full application flow tests
+│       ├── deliveries.e2e.test.js
+│       ├── drivers.e2e.test.js
+│       └── ...                         # other modules if needed
 ├── config/ # Environment & app configurations
 │ └── db.js
 │

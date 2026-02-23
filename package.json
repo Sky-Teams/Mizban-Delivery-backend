@@ -12,7 +12,18 @@
     "start": "node src/server.js",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint src/**/*.js --fix",
-    "format": "prettier --write src/**/*.js"
+    "format": "prettier --write src/**/*.js",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "test:unit": "vitest src/tests/unit",
+    "test:integration": "vitest src/tests/integration",
+    "test:e2e": "vitest src/tests/e2e",
+    "test:specific": "vitest"
+  },
+  "imports": {
+    "#shared/*": "./src/shared/*",
+    "#modules/*": "./src/modules/*"
   },
   "keywords": [],
   "author": "",
@@ -24,7 +35,8 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.2.1"
+    "mongoose": "^9.2.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "eslint": "^10.0.0",
@@ -32,6 +44,8 @@
     "eslint-plugin-prettier": "^5.5.5",
     "globals": "^17.3.0",
     "nodemon": "^3.1.11",
-    "prettier": "^3.8.1"
+    "prettier": "^3.8.1",
+    "supertest": "^7.2.2",
+    "vitest": "^4.0.18"
   }
 }
