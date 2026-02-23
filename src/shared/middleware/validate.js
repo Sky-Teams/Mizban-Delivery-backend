@@ -1,1 +1,22 @@
-// Global Validator for Zod library that validate user inputs
+import { ERROR_CODES } from '../errors/customCodes.js';
+import { AppError } from '../errors/error.js';
+
+export const validate = (validatorFn) => (req, res, next) => {
+  const result = validatorFn(req);
+
+  if (!result.success) {
+    const issue = result.error.issues[0];
+
+    const field = issue.path.slice(1).join('.') || 'unknown';
+    const errorCode = issue.message || ERROR_CODES.VALIDATION_ERROR;
+
+    return next(new AppError('Validation failed', 400, errorCode, field));
+  }
+
+  //TODO We can add Sanitization in here in future
+  // req.body = result.data.body || {};
+  // req.query = result.data.query || {};
+  // req.params = result.data.params || {};
+
+  next();
+};
