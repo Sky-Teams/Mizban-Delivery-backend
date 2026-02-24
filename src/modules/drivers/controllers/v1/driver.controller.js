@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, unauthorized } from '#shared/errors/error.js';
 import { createNewDriver, doesDriverExist } from '../../services/v1/driver.service.js';
 
