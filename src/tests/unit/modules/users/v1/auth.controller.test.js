@@ -35,7 +35,7 @@ describe('Auth controller - register', () => {
 
     expect(res.json).toHaveBeenCalledWith({
       success: true,
-      message: 'User register successfully',
+      message: 'User registered successfully',
     });
   });
 });
