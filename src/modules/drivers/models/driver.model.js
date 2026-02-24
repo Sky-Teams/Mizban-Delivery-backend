@@ -19,8 +19,8 @@ const DriverSchema = new mongoose.Schema(
       default: 'offline',
     },
     capacity: {
-      maxWeightKg: { type: Number, required: true },
-      maxPackages: { type: Number, required: true },
+      maxWeightKg: { type: Number, min: 0, required: true },
+      maxPackages: { type: Number, min: 0, required: true },
     },
     currentLocation: {
       type: { type: String, enum: ['Point'], default: 'Point' },
