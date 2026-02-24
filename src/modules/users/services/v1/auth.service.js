@@ -3,7 +3,7 @@ import { AppError } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { UserModel } from '../../models/user.model.js';
 
-export const registerService = async (data) => {
+export const registerUser = async (data) => {
   const { email, name, phone, password } = data;
 
   const existingUser = await UserModel.exists({ email });

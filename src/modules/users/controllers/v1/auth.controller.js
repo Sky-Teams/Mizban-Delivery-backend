@@ -1,9 +1,9 @@
-import { registerService } from '../../services/v1/auth.service.js';
+import { registerUser } from '../../services/v1/auth.service.js';
 
 export const register = async (req, res) => {
   const data = req.body;
 
-  await registerService(data);
+  await registerUser(data);
 
   res.status(200).json({
     success: true,
