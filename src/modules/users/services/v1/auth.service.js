@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { UserModel } from '../../models/user.model.js';
-import { generateAccessToken } from '../../../../shared/utils/jwt.js';
-import { AppError } from '../../../../shared/errors/error.js';
-import { ERROR_CODES } from '../../../../shared/errors/customCodes.js';
+import { generateAccessToken } from '#shared/utils/jwt.js';
+import { AppError } from '#shared/errors/error.js';
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 export const loginService = async ({ email, password }) => {
   const user = await UserModel.findOne({ email });
