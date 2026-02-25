@@ -1,5 +1,5 @@
-import { loginValidator } from '../../../../modules/users/dto/login.schema.js';
-import { ERROR_CODES } from '../../../../shared/errors/customCodes.js';
+import { loginValidator } from '#modules/users/dto/login.schema.js';
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 describe('loginValidator', () => {
   it('passes for valid payload', () => {
