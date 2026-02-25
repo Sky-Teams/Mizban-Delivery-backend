@@ -1,10 +1,14 @@
 {
   "compilerOptions": {
     "baseUrl": "./src",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "types": ["vitest/globals"],
     "paths": {
       "#shared/*": ["shared/*"],
       "#modules/*": ["modules/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src/**/*.js"]
 }
