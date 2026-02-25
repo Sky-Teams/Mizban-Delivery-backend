@@ -6,9 +6,10 @@ import { ERROR_CODES } from '../../../../shared/errors/customCodes.js';
 
 export const loginService = async ({ email, password }) => {
   const user = await UserModel.findOne({ email });
+  if (!user) throw new AppError('Invalid email or password', 401, ERROR_CODES.INVALID_CREDENTIAL);
 
   const psMatch = await bcrypt.compare(password, user.password);
-  if (!user || !psMatch)
+  if (!psMatch)
     throw new AppError('Invalid email or password', 401, ERROR_CODES.INVALID_CREDENTIAL);
 
   if (!user.isActive) throw new AppError('Account is disabled!', 403, ERROR_CODES.ACCOUNT_DISABLED);
