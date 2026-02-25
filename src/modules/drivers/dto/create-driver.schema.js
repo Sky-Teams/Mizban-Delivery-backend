@@ -12,18 +12,16 @@ const createDriverSchema = z.object({
     status: z
       .enum(driverStatuses, { errorMap: () => ({ message: ERROR_CODES.INVALID_STATUS }) })
       .optional(),
-    capacity: z
-      .object({
-        maxWeightKg: z.coerce
-          .number({ invalid_type_error: ERROR_CODES.MAX_WEIGHT_MUST_BE_NUMBER })
-          .positive({ message: ERROR_CODES.MAX_WEIGHT_MUST_BE_POSITIVE }),
+    capacity: z.object({
+      maxWeightKg: z.coerce
+        .number({ invalid_type_error: ERROR_CODES.MAX_WEIGHT_MUST_BE_NUMBER })
+        .positive({ message: ERROR_CODES.MAX_WEIGHT_MUST_BE_POSITIVE }),
 
-        maxPackages: z.coerce
-          .number({ invalid_type_error: ERROR_CODES.MAX_PACKAGES_MUST_BE_NUMBER })
-          .int({ message: ERROR_CODES.MAX_PACKAGES_MUST_BE_INTEGER })
-          .positive({ message: ERROR_CODES.MAX_PACKAGES_MUST_BE_POSITIVE }),
-      })
-      .optional(),
+      maxPackages: z.coerce
+        .number({ invalid_type_error: ERROR_CODES.MAX_PACKAGES_MUST_BE_NUMBER })
+        .int({ message: ERROR_CODES.MAX_PACKAGES_MUST_BE_INTEGER })
+        .positive({ message: ERROR_CODES.MAX_PACKAGES_MUST_BE_POSITIVE }),
+    }),
   }),
 });
 
