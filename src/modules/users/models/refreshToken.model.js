@@ -10,6 +10,10 @@ const RefreshTokenSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  deviceId: {
+    type: string,
+    required: true,
+  },
   expireAt: {
     type: Date,
     required: true,
