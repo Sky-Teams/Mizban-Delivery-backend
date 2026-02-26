@@ -35,6 +35,8 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "libphonenumber-js": "^1.12.37",
+    "mongodb-memory-server": "^11.0.1",
     "mongoose": "^9.2.1",
     "zod": "^4.3.6"
   },
