@@ -28,6 +28,6 @@ export const refreshAccessToken = async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: accessToken,
+    data: { accessToken: accessToken },
   });
 };
