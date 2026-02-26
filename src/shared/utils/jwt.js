@@ -1,6 +1,12 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
+export const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'strict',
+};
+
 export const verifyJWT = (token) => {
   return jwt.verify(token, process.env.JWT_SECRET);
 };
