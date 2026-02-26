@@ -2,7 +2,7 @@ import { AppError } from '#shared/errors/error.js';
 
 /**
  * Ensure a value is a number.
- * Zod cannot return our custom codes, so we manually throw AppError
+ * Zod cannot return our custom codes when input is not a number, so we manually throw AppError
  * with the proper field and code if validation fails.
  */
 export const ensureNumber = (val, field, code) => {
