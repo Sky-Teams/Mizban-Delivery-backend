@@ -9,9 +9,6 @@ export const refreshAccessToken = async (req, res) => {
   });
 };
 
-// console.log(new Date());    2026-02-21T15:25:37.569Z
-// console.log(Date.now());    1771687537628
-
 export const login = async (req, res) => {
   const { accessToken, refreshToken, id, email } = await loginService(req.body);
 
