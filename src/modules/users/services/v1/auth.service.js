@@ -1,13 +1,15 @@
 import bcrypt from 'bcryptjs';
-import { AppError } from '#shared/errors/error.js';
-import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { UserModel } from '../../models/user.model.js';
+
+export const doesUserExist = async (fields) => {
+  if (Object.keys(fields).length === 0) return false;
+
+  const exist = await UserModel.exists(fields);
+  return !!exist;
+};
 
 export const registerUser = async (data) => {
   const { email, name, phone, password } = data;
-
-  const existingUser = await UserModel.exists({ email });
-  if (existingUser) throw new AppError('Email already exists', 400, ERROR_CODES.DUPLICATE);
 
   const hashPassword = await bcrypt.hash(password, 12);
 
