@@ -11,7 +11,7 @@ const RefreshTokenSchema = new mongoose.Schema({
     required: true,
   },
   deviceId: {
-    type: string,
+    type: String,
     required: true,
   },
   expireAt: {
