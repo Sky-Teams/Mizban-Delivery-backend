@@ -5,7 +5,9 @@ import { generateAccessToken, generateRefreshToken, hashToken } from '#shared/ut
 import { AppError, notFound, unauthorized } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
-export const loginService = async ({ email, password, deviceId }) => {
+const REFRESH_TOKEN_EXPIRES_TIME = 7 * 24 * 60 * 60 * 1000;
+
+export const loginService = async ({ email, password }, deviceId) => {
   const user = await UserModel.findOne({ email });
 
   if (!user) throw notFound('User');
@@ -18,10 +20,10 @@ export const loginService = async ({ email, password, deviceId }) => {
   const refreshToken = generateRefreshToken();
 
   await RefreshTokenModel.findOneAndUpdate(
-    { userId: user._id, deviceId },
+    { user: user._id, deviceId },
     {
       token: hashToken(refreshToken),
-      expireAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expireAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRES_TIME),
     },
     {
       upsert: true, // if exist update, otherwise insert
@@ -39,45 +41,40 @@ export const loginService = async ({ email, password, deviceId }) => {
   };
 };
 
-export const refreshService = async (req) => {
-  const refreshToken = req.cookies.refreshToken;
-  const deviceId = req.body.deviceId;
-
+export const refreshService = async ({ refreshToken, deviceId }) => {
   if (!refreshToken || !deviceId)
     throw new AppError('Unauthorized: Invalid credential', 401, ERROR_CODES.INVALID_CREDENTIAL);
 
-  const hashedToken = hashToken(refreshToken);
-  const storedToken = await RefreshTokenModel.findOne({ token: hashedToken, deviceId }).populate(
-    'user',
-    '_id, email'
-  );
+  // 1) Validate current refresh token
+  const currentToken = await RefreshTokenModel.findOne({
+    token: hashToken(refreshToken),
+    deviceId,
+  }).populate('user', '_id email');
 
-  if (!storedToken)
-    throw new AppError('Unauthorized: Token not found', 401, ERROR_CODES.INVALID_CREDENTIAL);
-
-  if (storedToken.expireAt < new Date()) {
-    await storedToken.deleteOne();
-    throw new AppError('Unauthorized: Token expired', 401, ERROR_CODES.INVALID_CREDENTIAL);
+  if (!currentToken) throw new AppError('Token not found', 401, ERROR_CODES.INVALID_CREDENTIAL);
+  if (currentToken.expireAt < new Date()) {
+    await currentToken.deleteOne();
+    throw new AppError('Token expired', 401, ERROR_CODES.INVALID_CREDENTIAL);
   }
 
-  const user = await UserModel.findById(storedToken.user._id);
+  // 2) Check user existence
+  const user = await UserModel.findById(currentToken.user._id);
   if (!user) throw unauthorized();
 
+  // 3) Rotate refresh token
+  const newRefreshToken = generateRefreshToken();
+  const newHashedToken = hashToken(newRefreshToken);
+
   await RefreshTokenModel.findOneAndUpdate(
-    { userId: user._id, deviceId },
+    { _id: currentToken._id },
     {
-      token: hashToken(generateRefreshToken()),
-      expireAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      token: newHashedToken,
+      expireAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRES_TIME),
     },
-    {
-      upsert: true,
-      new: true,
-      runValidators: true,
-      setDefaultsOnInsert: true,
-    }
+    { new: true, runValidators: true, setDefaultsOnInsert: true }
   );
 
-  const newAccessToken = generateAccessToken(storedToken.user);
-
-  return { accessToken: newAccessToken };
+  // 4) Generate and return new access token
+  const accessToken = generateAccessToken(user);
+  return { accessToken, refreshToken: newRefreshToken };
 };
