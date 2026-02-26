@@ -1,25 +1,33 @@
+import { cookieOptions } from '#shared/utils/jwt.js';
+import { getDeviceId } from '#shared/utils/auth.helper.js';
 import { loginService, refreshService } from '../../services/v1/auth.service.js';
 
-export const refreshAccessToken = async (req, res) => {
-  const { accessToken } = await refreshService(req.cookies.refreshToken);
-
-  res.status(200).json({
-    success: true,
-    data: accessToken,
-  });
-};
-
 export const login = async (req, res) => {
-  const { accessToken, refreshToken, id, email } = await loginService(req.body);
+  const deviceId = getDeviceId(req);
 
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-  });
+  const { accessToken, refreshToken, id, email } = await loginService(req.body, deviceId);
+
+  res.cookie('refreshToken', refreshToken, cookieOptions);
 
   res.status(200).json({
     success: true,
     data: { accessToken, id, email },
+  });
+};
+
+export const refreshAccessToken = async (req, res) => {
+  const deviceId = getDeviceId(req);
+  const refreshToken = req.cookies?.refreshToken;
+
+  const { accessToken, refreshToken: rotatedRefreshToken } = await refreshService({
+    refreshToken,
+    deviceId,
+  });
+
+  res.cookie('refreshToken', rotatedRefreshToken, cookieOptions);
+
+  res.status(200).json({
+    success: true,
+    data: accessToken,
   });
 };
