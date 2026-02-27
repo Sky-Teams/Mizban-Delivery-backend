@@ -16,11 +16,13 @@ describe('login controller', () => {
       body: {
         email: 'user@example.com',
         password: '123456',
+        deviceId: 'device-1',
       },
     };
 
     const res = {
       status: vi.fn().mockReturnThis(),
+      cookie: vi.fn(),
       json: vi.fn(),
     };
 
@@ -28,12 +30,13 @@ describe('login controller', () => {
       id: 'u1',
       email: 'user@example.com',
       role: 'customer',
-      token: 'token-123',
+      accessToken: 'access-token-123',
+      refreshToken: 'refresh-token-123',
     });
 
     await login(req, res);
 
-    expect(loginService).toHaveBeenCalledWith(req.body);
+    expect(loginService).toHaveBeenCalledWith(req.body, 'device-1');
   });
 
   it('returns 200 with success response', async () => {
@@ -41,11 +44,13 @@ describe('login controller', () => {
       body: {
         email: 'user@example.com',
         password: '123456',
+        deviceId: 'device-1',
       },
     };
 
     const res = {
       status: vi.fn().mockReturnThis(),
+      cookie: vi.fn(),
       json: vi.fn(),
     };
 
@@ -53,17 +58,28 @@ describe('login controller', () => {
       id: 'u1',
       email: 'user@example.com',
       role: 'customer',
-      token: 'token-123',
+      accessToken: 'access-token-123',
+      refreshToken: 'refresh-token-123',
     };
 
     loginService.mockResolvedValue(serviceResult);
 
     await login(req, res);
 
+    expect(res.cookie).toHaveBeenCalledWith(
+      'refreshToken',
+      'refresh-token-123',
+      expect.any(Object)
+    );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
-      data: serviceResult,
+      data: {
+        accessToken: 'access-token-123',
+        id: 'u1',
+        email: 'user@example.com',
+        role: 'customer',
+      },
     });
   });
 });

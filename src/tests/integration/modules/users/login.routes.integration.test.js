@@ -2,14 +2,22 @@ import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
-const { findOne, compare, generateAccessToken } = vi.hoisted(() => ({
+const { findOne, findOneAndUpdate, compare, generateAccessToken, generateRefreshToken, hashToken } =
+  vi.hoisted(() => ({
   findOne: vi.fn(),
+  findOneAndUpdate: vi.fn(),
   compare: vi.fn(),
   generateAccessToken: vi.fn(),
+  generateRefreshToken: vi.fn(),
+  hashToken: vi.fn(),
 }));
 
 vi.mock('#modules/users/models/user.model.js', () => ({
   UserModel: { findOne },
+}));
+
+vi.mock('#modules/users/models/refreshToken.model.js', () => ({
+  RefreshTokenModel: { findOneAndUpdate },
 }));
 
 vi.mock('bcryptjs', () => ({
@@ -17,7 +25,10 @@ vi.mock('bcryptjs', () => ({
 }));
 
 vi.mock('#shared/utils/jwt.js', () => ({
+  cookieOptions: { httpOnly: true, sameSite: 'strict', secure: false },
   generateAccessToken,
+  generateRefreshToken,
+  hashToken,
 }));
 
 import app from '../../../../app.js';
@@ -25,12 +36,16 @@ import app from '../../../../app.js';
 describe('POST /api/v1/auth/login', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    generateRefreshToken.mockReturnValue('refresh-token-123');
+    hashToken.mockReturnValue('hashed-refresh-token');
+    findOneAndUpdate.mockResolvedValue({});
   });
 
   it('returns 400 for invalid email format', async () => {
     const response = await request(app).post('/api/v1/auth/login').send({
       email: 'invalid-email',
       password: '123456',
+      deviceId: 'device-1',
     });
 
     expect(response.status).toBe(400);
@@ -45,6 +60,7 @@ describe('POST /api/v1/auth/login', () => {
     const response = await request(app).post('/api/v1/auth/login').send({
       email: 'user@example.com',
       password: '123456',
+      deviceId: 'device-1',
     });
 
     expect(response.status).toBe(401);
@@ -65,6 +81,7 @@ describe('POST /api/v1/auth/login', () => {
     const response = await request(app).post('/api/v1/auth/login').send({
       email: 'user@example.com',
       password: 'wrong-password',
+      deviceId: 'device-1',
     });
 
     expect(response.status).toBe(401);
@@ -84,6 +101,7 @@ describe('POST /api/v1/auth/login', () => {
     const response = await request(app).post('/api/v1/auth/login').send({
       email: 'user@example.com',
       password: '123456',
+      deviceId: 'device-1',
     });
 
     expect(response.status).toBe(403);
@@ -104,15 +122,16 @@ describe('POST /api/v1/auth/login', () => {
     const response = await request(app).post('/api/v1/auth/login').send({
       email: 'user@example.com',
       password: '123456',
+      deviceId: 'device-1',
     });
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
     expect(response.body.data).toEqual({
+      accessToken: 'token-123',
       id: 'u1',
       email: 'user@example.com',
       role: 'customer',
-      token: 'token-123',
     });
   });
 });
