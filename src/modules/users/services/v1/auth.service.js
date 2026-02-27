@@ -33,6 +33,7 @@ export const loginService = async ({ email, password }, deviceId) => {
     id: user._id,
     email: user.email,
     accessToken,
+    refreshToken,
     role: user.role,
   };
 };
@@ -56,6 +57,8 @@ export const refreshService = async ({ refreshToken, deviceId }) => {
   // 2) Check user existence
   const user = await UserModel.findById(currentToken.user._id);
   if (!user) throw unauthorized();
+
+  if (!user.isActive) throw new AppError('Account is disabled!', 403, ERROR_CODES.ACCOUNT_DISABLED);
 
   // 3) Rotate refresh token
   const newRefreshToken = generateRefreshToken();
