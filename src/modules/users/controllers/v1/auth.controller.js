@@ -5,7 +5,7 @@ import { loginService, refreshService } from '../../services/v1/auth.service.js'
 export const login = async (req, res) => {
   const deviceId = getDeviceId(req);
 
-  const { accessToken, refreshToken, id, email } = await loginService(req.body, deviceId);
+  const { accessToken, refreshToken, id, email, role } = await loginService(req.body, deviceId);
 
   res.cookie('refreshToken', refreshToken, cookieOptions);
 
