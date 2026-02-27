@@ -11,7 +11,7 @@ export const login = async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: { accessToken, id, email },
+    data: { accessToken, id, email, role },
   });
 };
 

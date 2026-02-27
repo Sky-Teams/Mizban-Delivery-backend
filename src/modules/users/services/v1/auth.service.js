@@ -1,20 +1,16 @@
-import bcrypt from 'bcryptjs';
 import { UserModel } from '../../models/user.model.js';
 import { RefreshTokenModel } from '../../models/refreshToken.model.js';
 import { generateAccessToken, generateRefreshToken, hashToken } from '#shared/utils/jwt.js';
-import { AppError, notFound, unauthorized } from '#shared/errors/error.js';
+import { AppError, unauthorized } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import { getUserByEmail, validateLoginUser } from '#shared/utils/auth.helper.js';
 
 const REFRESH_TOKEN_EXPIRES_TIME = 7 * 24 * 60 * 60 * 1000;
 
 export const loginService = async ({ email, password }, deviceId) => {
-  const user = await UserModel.findOne({ email });
+  const user = await getUserByEmail(email);
 
-  if (!user) throw notFound('User');
-  if (!user.isActive) throw new AppError('Account is disabled!', 403, ERROR_CODES.ACCOUNT_DISABLED);
-
-  const psMatch = await bcrypt.compare(password, user.password);
-  if (!psMatch) throw new AppError('Invalid password', 401, ERROR_CODES.INVALID_CREDENTIAL);
+  await validateLoginUser(user, password);
 
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken();
@@ -37,7 +33,7 @@ export const loginService = async ({ email, password }, deviceId) => {
     id: user._id,
     email: user.email,
     accessToken,
-    refreshToken,
+    role: user.role,
   };
 };
 
