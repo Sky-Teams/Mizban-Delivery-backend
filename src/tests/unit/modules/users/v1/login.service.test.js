@@ -6,13 +6,13 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 // These replace real DB calls, password compare, and token generation
 const { findOne, findOneAndUpdate, compare, generateAccessToken, generateRefreshToken, hashToken } =
   vi.hoisted(() => ({
-  findOne: vi.fn(), // mock for UserModel.findOne
-  findOneAndUpdate: vi.fn(), // mock for RefreshTokenModel.findOneAndUpdate
-  compare: vi.fn(), // mock for bcrypt.compare
-  generateAccessToken: vi.fn(), // mock for JWT generator
-  generateRefreshToken: vi.fn(), // mock for refresh token generator
-  hashToken: vi.fn(), // mock for token hash
-}));
+    findOne: vi.fn(), // mock for UserModel.findOne
+    findOneAndUpdate: vi.fn(), // mock for RefreshTokenModel.findOneAndUpdate
+    compare: vi.fn(), // mock for bcrypt.compare
+    generateAccessToken: vi.fn(), // mock for JWT generator
+    generateRefreshToken: vi.fn(), // mock for refresh token generator
+    hashToken: vi.fn(), // mock for token hash
+  }));
 
 // Replace real UserModel with mocked version
 vi.mock('#modules/users/models/user.model.js', () => ({
@@ -126,10 +126,13 @@ describe('loginService', () => {
     hashToken.mockReturnValue('hashed-refresh-token');
     findOneAndUpdate.mockResolvedValue({});
 
-    const result = await loginService({
-      email: 'x@test.com',
-      password: '123456',
-    }, 'device-1');
+    const result = await loginService(
+      {
+        email: 'x@test.com',
+        password: '123456',
+      },
+      'device-1'
+    );
 
     expect(findOneAndUpdate).toHaveBeenCalledWith(
       { user: 'u1', deviceId: 'device-1' },

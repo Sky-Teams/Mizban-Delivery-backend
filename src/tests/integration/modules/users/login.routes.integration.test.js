@@ -4,13 +4,13 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 const { findOne, findOneAndUpdate, compare, generateAccessToken, generateRefreshToken, hashToken } =
   vi.hoisted(() => ({
-  findOne: vi.fn(),
-  findOneAndUpdate: vi.fn(),
-  compare: vi.fn(),
-  generateAccessToken: vi.fn(),
-  generateRefreshToken: vi.fn(),
-  hashToken: vi.fn(),
-}));
+    findOne: vi.fn(),
+    findOneAndUpdate: vi.fn(),
+    compare: vi.fn(),
+    generateAccessToken: vi.fn(),
+    generateRefreshToken: vi.fn(),
+    hashToken: vi.fn(),
+  }));
 
 vi.mock('#modules/users/models/user.model.js', () => ({
   UserModel: { findOne },
