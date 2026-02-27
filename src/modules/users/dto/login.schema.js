@@ -12,6 +12,9 @@ const loginSchema = z.object({
         .string({ message: ERROR_CODES.REQUIRED_FIELD })
         .trim()
         .min(6, { message: ERROR_CODES.PASSWORD_TOO_SHORT }),
+      deviceId: z.string({ message: ERROR_CODES.REQUIRED_FIELD }).trim().min(1, {
+        message: ERROR_CODES.REQUIRED_FIELD,
+      }),
     })
     .strict(),
 });
