@@ -1,9 +1,9 @@
 import { cookieOptions } from '#shared/utils/jwt.js';
-import { getDeviceId } from '#shared/utils/auth.helper.js';
+import { ensureDeviceId, getDeviceId } from '#shared/utils/auth.helper.js';
 import { loginService, refreshService } from '../../services/v1/auth.service.js';
 
 export const login = async (req, res) => {
-  const deviceId = getDeviceId(req);
+  const deviceId = ensureDeviceId(req, res);
 
   const { accessToken, refreshToken, id, email, role } = await loginService(req.body, deviceId);
 
