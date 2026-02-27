@@ -59,7 +59,7 @@ describe('User API v1 Integration', () => {
       res = await request(app).post('/api/v1/auth/register').send(newUser);
 
       expect(res.status).toBe(400);
-      expect(res.body.code).toBe('DUPLICATE');
+      expect(res.body.code).toBe(ERROR_CODES.DUPLICATE);
       expect(res.body.message).toBe('Email already exists');
     });
 
