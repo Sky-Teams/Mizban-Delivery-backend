@@ -139,7 +139,7 @@ describe('User API v1 Integration', () => {
       expect(res.body.field).toBe('password');
     });
 
-    it('shoulf return an error if missing required field', async () => {
+    it('should return an error if missing required field', async () => {
       const newUser = {
         email: 'test@gmail.com',
         name: 'test',
