@@ -45,7 +45,6 @@ describe('POST /api/v1/auth/login', () => {
     const response = await request(app).post('/api/v1/auth/login').send({
       email: 'invalid-email',
       password: '123456',
-      deviceId: 'device-1',
     });
 
     expect(response.status).toBe(400);
@@ -60,7 +59,6 @@ describe('POST /api/v1/auth/login', () => {
     const response = await request(app).post('/api/v1/auth/login').send({
       email: 'user@example.com',
       password: '123456',
-      deviceId: 'device-1',
     });
 
     expect(response.status).toBe(401);
@@ -81,7 +79,6 @@ describe('POST /api/v1/auth/login', () => {
     const response = await request(app).post('/api/v1/auth/login').send({
       email: 'user@example.com',
       password: 'wrong-password',
-      deviceId: 'device-1',
     });
 
     expect(response.status).toBe(401);
@@ -101,7 +98,6 @@ describe('POST /api/v1/auth/login', () => {
     const response = await request(app).post('/api/v1/auth/login').send({
       email: 'user@example.com',
       password: '123456',
-      deviceId: 'device-1',
     });
 
     expect(response.status).toBe(403);
@@ -122,7 +118,6 @@ describe('POST /api/v1/auth/login', () => {
     const response = await request(app).post('/api/v1/auth/login').send({
       email: 'user@example.com',
       password: '123456',
-      deviceId: 'device-1',
     });
 
     expect(response.status).toBe(200);

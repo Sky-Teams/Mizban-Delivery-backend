@@ -18,8 +18,8 @@ describe('refreshAccessToken controller', () => {
 
   it('calls refreshService, sets cookie, and returns 200 with accessToken', async () => {
     const req = {
-      body: { deviceId: 'device-1' },
-      cookies: { refreshToken: 'old-refresh-token' },
+      body: {},
+      cookies: { refreshToken: 'old-refresh-token', deviceId: 'device-1' },
     };
 
     const res = {

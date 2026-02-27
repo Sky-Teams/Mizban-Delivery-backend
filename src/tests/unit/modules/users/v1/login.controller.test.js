@@ -16,6 +16,8 @@ describe('login controller', () => {
       body: {
         email: 'user@example.com',
         password: '123456',
+      },
+      cookies: {
         deviceId: 'device-1',
       },
     };
@@ -44,6 +46,8 @@ describe('login controller', () => {
       body: {
         email: 'user@example.com',
         password: '123456',
+      },
+      cookies: {
         deviceId: 'device-1',
       },
     };
