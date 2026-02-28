@@ -14,9 +14,11 @@ export const validate = (validatorFn) => (req, res, next) => {
   }
 
   //TODO We can add Sanitization in here in future
-  // req.body = result.data.body || {};
-  // req.query = result.data.query || {};
-  // req.params = result.data.params || {};
+  // Only replace req.body with validated data if available.
+  // This prevents one validator (e.g., params/id validator) from overwriting the actual body data.
+  if (result.data.body) req.body = result.data.body;
+  if (result.data.params) req.params = result.data.params;
+  // if (result.data.query) req.query = result.data.query;
 
   next();
 };
