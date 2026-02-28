@@ -4,11 +4,14 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 const registerUserSchema = z.object({
   body: z.object({
-    name: z.string().trim().min(3, { message: ERROR_CODES.MIN_LENGTH_IS_3_CHARACTERS }).toLowerCase(),
-    email: z.string().trim().email({ message: ERROR_CODES.INVALID_EMAIL }),
-    phone: z.string().refine((val) => isValidPhoneNumber(val, 'AF'), {
-      message: ERROR_CODES.INVALID_PHONE_NUMBER,
-    }),
+    name: z.string().trim().min(3, { message: ERROR_CODES.MIN_LENGTH_IS_3_CHARACTERS }),
+    email: z.string().email({ message: ERROR_CODES.INVALID_EMAIL }).trim().toLowerCase(),
+    phone: z
+      .string()
+      .refine((val) => isValidPhoneNumber(val, 'AF'), {
+        message: ERROR_CODES.INVALID_PHONE_NUMBER,
+      })
+      .optional(),
     password: z
       .string()
       .trim()
