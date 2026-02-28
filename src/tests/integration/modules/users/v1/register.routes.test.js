@@ -113,7 +113,7 @@ describe('User API v1 Integration', () => {
       const newUser = {
         name: 'username',
         email: 'email@gmail.com',
-        phone:'12343',
+        phone: '12343',
         password: 'password123',
       };
       const res = await request(app).post('/api/v1/auth/register').send(newUser);
