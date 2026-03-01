@@ -1,118 +1,112 @@
 import request from 'supertest';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ERROR_CODES } from '#shared/errors/customCodes.js';
-
-const { findOne, compare, generateAccessToken } = vi.hoisted(() => ({
-  findOne: vi.fn(),
-  compare: vi.fn(),
-  generateAccessToken: vi.fn(),
-}));
-
-vi.mock('#modules/users/models/user.model.js', () => ({
-  UserModel: { findOne },
-}));
-
-vi.mock('bcryptjs', () => ({
-  default: { compare },
-}));
-
-vi.mock('#shared/utils/jwt.js', () => ({
-  generateAccessToken,
-}));
-
+import bcrypt from 'bcryptjs';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import app from '../../../../app.js';
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import { UserModel } from '#modules/users/models/user.model.js';
+import { connectDB, disconnectDB, clearDB } from '../../../config/memoryDB.js';
 
-describe('POST /api/v1/auth/login', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+describe('POST /api/v1/auth/login Integration', () => {
+  const loginUrl = '/api/v1/auth/login';
+
+  beforeAll(async () => {
+    await connectDB();
   });
 
-  it('returns 400 for invalid email format', async () => {
-    const response = await request(app).post('/api/v1/auth/login').send({
+  afterAll(async () => {
+    await disconnectDB();
+  });
+
+  beforeEach(async () => {
+    await clearDB();
+  });
+
+  const createUser = async (overrides = {}) => {
+    const hashedPassword = await bcrypt.hash(overrides.password || '123456', 10);
+
+    return UserModel.create({
+      name: 'Test User',
+      email: 'user@example.com',
+      password: hashedPassword,
+      role: 'customer',
+      isActive: true,
+      ...overrides,
+      password: overrides.password ? await bcrypt.hash(overrides.password, 10) : hashedPassword,
+    });
+  };
+
+  it('should fail for invalid email format', async () => {
+    const res = await request(app).post(loginUrl).send({
       email: 'invalid-email',
       password: '123456',
     });
 
-    expect(response.status).toBe(400);
-    expect(response.body.code).toBe(ERROR_CODES.INVALID_EMAIL_FORMAT);
-    expect(response.body.message).toBe('Validation failed');
-    expect(response.body.field).toBe('email');
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe(ERROR_CODES.INVALID_EMAIL_FORMAT);
+    expect(res.body.message).toBe('Validation failed');
+    expect(res.body.field).toBe('email');
   });
 
-  it('returns 401 when user is not found', async () => {
-    findOne.mockResolvedValue(null);
-
-    const response = await request(app).post('/api/v1/auth/login').send({
-      email: 'user@example.com',
+  it('should fail when user does not exist', async () => {
+    const res = await request(app).post(loginUrl).send({
+      email: 'nouser@example.com',
       password: '123456',
     });
 
-    expect(response.status).toBe(401);
-    expect(response.body.code).toBe(ERROR_CODES.INVALID_CREDENTIAL);
-    expect(compare).not.toHaveBeenCalled();
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe(ERROR_CODES.INVALID_CREDENTIAL);
+    expect(res.body.message).toBe('Invalid email or password');
   });
 
-  it('returns 401 when password is invalid', async () => {
-    findOne.mockResolvedValue({
-      _id: 'u1',
-      email: 'user@example.com',
-      password: 'hashed-password',
-      role: 'customer',
-      isActive: true,
-    });
-    compare.mockResolvedValue(false);
+  it('should fail when password is wrong', async () => {
+    await createUser({ email: 'user@example.com', password: '123456' });
 
-    const response = await request(app).post('/api/v1/auth/login').send({
+    const res = await request(app).post(loginUrl).send({
       email: 'user@example.com',
       password: 'wrong-password',
     });
 
-    expect(response.status).toBe(401);
-    expect(response.body.code).toBe(ERROR_CODES.INVALID_CREDENTIAL);
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe(ERROR_CODES.INVALID_CREDENTIAL);
+    expect(res.body.message).toBe('Invalid email or password');
   });
 
-  it('returns 403 when account is disabled', async () => {
-    findOne.mockResolvedValue({
-      _id: 'u1',
-      email: 'user@example.com',
-      password: 'hashed-password',
-      role: 'customer',
+  it('should fail when account is disabled', async () => {
+    await createUser({
+      email: 'disabled@example.com',
+      password: '123456',
       isActive: false,
     });
-    compare.mockResolvedValue(true);
 
-    const response = await request(app).post('/api/v1/auth/login').send({
-      email: 'user@example.com',
+    const res = await request(app).post(loginUrl).send({
+      email: 'disabled@example.com',
       password: '123456',
     });
 
-    expect(response.status).toBe(403);
-    expect(response.body.code).toBe(ERROR_CODES.ACCOUNT_DISABLED);
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe(ERROR_CODES.ACCOUNT_DISABLED);
+    expect(res.body.message).toBe('Account is disabled!');
   });
 
-  it('returns 200 and token for valid credentials', async () => {
-    findOne.mockResolvedValue({
-      _id: 'u1',
-      email: 'user@example.com',
-      password: 'hashed-password',
+  it('should login successfully with valid credentials', async () => {
+    const user = await createUser({
+      email: 'valid@example.com',
+      password: '123456',
       role: 'customer',
-      isActive: true,
     });
-    compare.mockResolvedValue(true);
-    generateAccessToken.mockReturnValue('token-123');
 
-    const response = await request(app).post('/api/v1/auth/login').send({
-      email: 'user@example.com',
+    const res = await request(app).post(loginUrl).send({
+      email: 'valid@example.com',
       password: '123456',
     });
 
-    expect(response.status).toBe(200);
-    expect(response.body.success).toBe(true);
-    expect(response.body.data).toEqual({
-      id: 'u1',
-      email: 'user@example.com',
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toMatchObject({
+      id: user._id.toString(),
+      email: 'valid@example.com',
       role: 'customer',
-      token: 'token-123',
     });
+    expect(res.body.data.token).toEqual(expect.any(String));
   });
 });
