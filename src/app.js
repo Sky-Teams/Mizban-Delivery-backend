@@ -4,6 +4,7 @@ import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
 import { businessRoutes } from '#modules/businesses/index.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
+import { driverRoutes } from '#modules/drivers/index.js';
 
 const app = express();
 
@@ -26,6 +27,8 @@ app.get('/api/health', (req, res) => {
 // Protected routes
 app.use('/api/v1/businesses', authMiddleware, businessRoutes);
 // API Versioning Example: app.use('/api/v1/deliveries', deliveryRoutesV1);
+
+app.use('/api/v1/drivers', authMiddleware, driverRoutes);
 
 //#endregion
 
