@@ -90,7 +90,7 @@ describe('User API v1 Integration', () => {
       const res = await request(app).post('/api/v1/auth/register').send(newUser);
 
       expect(res.status).toBe(400);
-      expect(res.body.code).toBe(ERROR_CODES.MIN_LENGTH_IS_3_CHARACTERS);
+      expect(res.body.code).toBe(ERROR_CODES.NAME_TOO_SHORT);
       expect(res.body.message).toBe('Validation failed');
       expect(res.body.field).toBe('name');
     });
