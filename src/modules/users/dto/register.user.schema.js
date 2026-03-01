@@ -4,7 +4,7 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 const registerUserSchema = z.object({
   body: z.object({
-    name: z.string().trim().min(3, { message: ERROR_CODES.MIN_LENGTH_IS_3_CHARACTERS }),
+    name: z.string().trim().min(3, { message: ERROR_CODES.NAME_TOO_SHORT }),
     email: z.string().email({ message: ERROR_CODES.INVALID_EMAIL }).trim().toLowerCase(),
     phone: z
       .string()
