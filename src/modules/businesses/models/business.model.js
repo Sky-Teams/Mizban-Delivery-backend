@@ -6,7 +6,6 @@ const BusinessSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      unique: true,
     },
     name: {
       type: String,
@@ -31,7 +30,7 @@ const BusinessSchema = new mongoose.Schema(
     location: {
       type: {
         type: String,
-        enum: ['point'],
+        enum: ['Point'],
         required: true,
       },
       coordinates: {

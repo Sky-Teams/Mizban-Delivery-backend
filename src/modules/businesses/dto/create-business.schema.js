@@ -20,7 +20,7 @@ const createBusinessSchema = z.object({
 
     addressText: z.string().trim().min(3, { message: ERROR_CODES.MIN_LENGTH_IS_3_CHARACTERS }),
     location: z.object({
-      type: z.literal('point', {
+      type: z.literal('Point', {
         errorMap: () => ({ message: ERROR_CODES.INVALID_LOCATION_TYPE }),
       }),
       coordinates: z.array(z.number()).length(2, { message: ERROR_CODES.INVALID_COORDINATES }),
