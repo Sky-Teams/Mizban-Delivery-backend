@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 export const businessCustomerSchema = new mongoose.Schema(
   {
-    businessId: {
+    business: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Business',
       required: true,
@@ -12,8 +12,8 @@ export const businessCustomerSchema = new mongoose.Schema(
     altPhone: { type: String },
     addressText: { type: String, required: true },
     location: {
-      type: [Number, Number],
-      enum: ['point'],
+      type: { type: String, enum: ['point'], default: 'point' },
+      coordinates: { type: Number, default: [0, 0] },
     },
     notes: { type: String },
     tags: { type: [String], required: true },
@@ -26,7 +26,8 @@ export const businessCustomerSchema = new mongoose.Schema(
   }
 );
 
-businessCustomerSchema.index({ businessId: 1 });
-businessCustomerSchema.index({ businessId: 1, phone: 1 }, { unique: true });
+businessCustomerSchema.index({ business: 1 });
+businessCustomerSchema.index({ business: 1, phone: 1 }, { unique: true });
+businessCustomerSchema.index({ location: '2dsphere' });
 
 export const businessCustomerModel = mongoose.model('BusinessCustomer', businessCustomerSchema);
