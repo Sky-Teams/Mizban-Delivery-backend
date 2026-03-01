@@ -6,7 +6,9 @@
     "target": "ES2022",
     "paths": {
       "#shared/*": ["shared/*"],
-      "#modules/*": ["modules/*"]
+      "#modules/*": ["modules/*"],
+      "#tests/*": ["tests/*"],
+      "#root/*": ["./*"]
     }
   },
   "include": ["src/**/*.js"]
