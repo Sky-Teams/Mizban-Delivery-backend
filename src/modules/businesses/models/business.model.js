@@ -21,7 +21,6 @@ const BusinessSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: true,
       trim: true,
     },
     addressText: {
@@ -53,7 +52,6 @@ const BusinessSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-BusinessSchema.index({ ownerId: 1 });
-BusinessSchema.index({ location: '2dsphere' });
+BusinessSchema.index({ location: '2dsphere', ownerId: 1 });
 
 export const BusinessModel = mongoose.model('Business', BusinessSchema);
