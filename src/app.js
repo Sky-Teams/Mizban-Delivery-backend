@@ -3,6 +3,8 @@ import cors from 'cors';
 import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
 import authRoutesV1 from './modules/users/routes/v1/auth.routes.js';
+import { authMiddleware } from '#shared/middleware/authMiddleware.js';
+import { driverRoutes } from '#modules/drivers/index.js';
 
 const app = express();
 
@@ -26,6 +28,8 @@ app.use('/api/v1/auth', authRoutesV1);
 // Protected routes
 
 // API Versioning Example: app.use('/api/v1/deliveries', deliveryRoutesV1);
+
+app.use('/api/v1/drivers', authMiddleware, driverRoutes);
 
 //#endregion
 
