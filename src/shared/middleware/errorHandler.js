@@ -3,10 +3,7 @@ import { ERROR_CODES } from '../errors/customCodes.js';
 const VALIDATION_ERROR = 'ValidationError'; // Error throw by the mongodb
 
 export const errorHandler = (err, req, res, next) => {
-  const isTestEnv = process.env.NODE_ENV === 'test' || process.env.VITEST;
-  if (!isTestEnv) {
-    console.warn(err);
-  }
+  console.warn(err);
 
   if (err.isOperational) {
     return res.status(err.status).json({
@@ -39,4 +36,3 @@ export const errorHandler = (err, req, res, next) => {
     message: 'Server error',
   });
 };
-
