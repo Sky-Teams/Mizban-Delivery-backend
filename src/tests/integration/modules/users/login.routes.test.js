@@ -21,8 +21,8 @@ describe('POST /api/v1/auth/login Integration', () => {
     await clearDB();
   });
 
-  const createUser = async (overrides = {}) => {
-    const hashedPassword = await bcrypt.hash(overrides.password || '123456', 10);
+  const createUser = async ({ password = '123456', ...overrides } = {}) => {
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     return UserModel.create({
       name: 'Test User',
@@ -31,7 +31,6 @@ describe('POST /api/v1/auth/login Integration', () => {
       role: 'customer',
       isActive: true,
       ...overrides,
-      password: overrides.password ? await bcrypt.hash(overrides.password, 10) : hashedPassword,
     });
   };
 
@@ -106,7 +105,11 @@ describe('POST /api/v1/auth/login Integration', () => {
       id: user._id.toString(),
       email: 'valid@example.com',
       role: 'customer',
+      accessToken: expect.any(String),
     });
-    expect(res.body.data.token).toEqual(expect.any(String));
+
+    const setCookie = res.headers['set-cookie'] || [];
+    expect(setCookie.some((cookie) => cookie.startsWith('refreshToken='))).toBe(true);
+    expect(setCookie.some((cookie) => cookie.startsWith('deviceId='))).toBe(true);
   });
 });
