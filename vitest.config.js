@@ -4,6 +4,7 @@ import path from 'path';
 export default defineConfig({
   resolve: {
     alias: {
+      '#root': path.resolve(__dirname),
       '#shared': path.resolve(__dirname, './src/shared'),
       '#modules': path.resolve(__dirname, './src/modules'),
       '#tests': path.resolve(__dirname, './src/tests'),
