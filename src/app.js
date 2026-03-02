@@ -3,7 +3,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
-import { authRoutes } from './modules/users/index.js';
+import { authRoutesV1 } from './modules/users/index.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import { driverRoutes } from '#modules/drivers/index.js';
 
@@ -25,7 +25,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Public routes
-app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/auth', authRoutesV1);
 
 // Protected routes
 
