@@ -3,7 +3,7 @@ import cors from 'cors';
 import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
-import { driverRoutes } from '#modules/drivers/index.js';
+import { driverRoutesV1 } from '#modules/drivers/index.js';
 
 const app = express();
 
@@ -27,7 +27,7 @@ app.get('/api/health', (req, res) => {
 
 // API Versioning Example: app.use('/api/v1/deliveries', deliveryRoutesV1);
 
-app.use('/api/v1/drivers', authMiddleware, driverRoutes);
+app.use('/api/v1/drivers', authMiddleware, driverRoutesV1);
 
 //#endregion
 
