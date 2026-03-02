@@ -30,7 +30,7 @@ describe('Drivers API v1 Integration', () => {
     token = result.token;
   });
 
-  describe('POST /api/v1/drivers', () => {
+  describe('POST /api/drivers', () => {
     it('should create a new driver successfully', async () => {
       const driverData = {
         vehicleType: 'car',
@@ -39,7 +39,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post('/api/drivers')
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -63,7 +63,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post('/api/drivers')
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -86,7 +86,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post('/api/drivers')
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -102,7 +102,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post('/api/drivers')
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -119,7 +119,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post('/api/drivers')
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -137,7 +137,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post('/api/drivers')
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -155,7 +155,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post('/api/drivers')
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -173,7 +173,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post('/api/drivers')
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -198,7 +198,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post('/api/drivers')
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 

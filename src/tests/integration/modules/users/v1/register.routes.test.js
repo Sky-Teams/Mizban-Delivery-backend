@@ -19,7 +19,7 @@ describe('User API v1 Integration', () => {
     await clearDB();
   });
 
-  describe('POST /api/v1/auth/register', () => {
+  describe('POST /api/auth/register', () => {
     let res;
     it('should create new user return success response', async () => {
       const newUser = {
@@ -29,7 +29,7 @@ describe('User API v1 Integration', () => {
         password: 'myPassword12',
       };
 
-      res = await request(app).post('/api/v1/auth/register').send(newUser);
+      res = await request(app).post('/api/auth/register').send(newUser);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -56,7 +56,7 @@ describe('User API v1 Integration', () => {
         password: 'myPassword12',
       };
 
-      res = await request(app).post('/api/v1/auth/register').send(newUser);
+      res = await request(app).post('/api/auth/register').send(newUser);
 
       expect(res.status).toBe(400);
       expect(res.body.code).toBe(ERROR_CODES.DUPLICATE);
@@ -71,7 +71,7 @@ describe('User API v1 Integration', () => {
         password: 'myPassword12',
       };
 
-      res = await request(app).post('/api/v1/auth/register').send(newUser);
+      res = await request(app).post('/api/auth/register').send(newUser);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -87,7 +87,7 @@ describe('User API v1 Integration', () => {
         phone: '0700123456',
         password: 'password123',
       };
-      const res = await request(app).post('/api/v1/auth/register').send(newUser);
+      const res = await request(app).post('/api/auth/register').send(newUser);
 
       expect(res.status).toBe(400);
       expect(res.body.code).toBe(ERROR_CODES.NAME_TOO_SHORT);
@@ -102,7 +102,7 @@ describe('User API v1 Integration', () => {
         phone: '0700123456',
         password: 'password123',
       };
-      const res = await request(app).post('/api/v1/auth/register').send(newUser);
+      const res = await request(app).post('/api/auth/register').send(newUser);
 
       expect(res.status).toBe(400);
       expect(res.body.code).toBe(ERROR_CODES.INVALID_EMAIL);
@@ -116,7 +116,7 @@ describe('User API v1 Integration', () => {
         phone: '12343',
         password: 'password123',
       };
-      const res = await request(app).post('/api/v1/auth/register').send(newUser);
+      const res = await request(app).post('/api/auth/register').send(newUser);
 
       expect(res.status).toBe(400);
       expect(res.body.code).toBe(ERROR_CODES.INVALID_PHONE_NUMBER);
@@ -131,7 +131,7 @@ describe('User API v1 Integration', () => {
         phone: '0700123456',
         password: '123',
       };
-      const res = await request(app).post('/api/v1/auth/register').send(newUser);
+      const res = await request(app).post('/api/auth/register').send(newUser);
 
       expect(res.status).toBe(400);
       expect(res.body.code).toBe(ERROR_CODES.PASSWORD_MUST_BE_AT_LEAST_6_CHARACTERS);
@@ -146,7 +146,7 @@ describe('User API v1 Integration', () => {
         phone: '0781234567',
       };
 
-      res = await request(app).post('/api/v1/auth/register').send(newUser);
+      res = await request(app).post('/api/auth/register').send(newUser);
 
       expect(res.status).toBe(400);
       expect(res.body.message).toBe('Validation failed');

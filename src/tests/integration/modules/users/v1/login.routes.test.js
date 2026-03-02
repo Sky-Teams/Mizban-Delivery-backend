@@ -1,13 +1,13 @@
 import request from 'supertest';
 import bcrypt from 'bcryptjs';
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import app from '../../../../app.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { UserModel } from '#modules/users/models/user.model.js';
-import { connectDB, disconnectDB, clearDB } from '../../../config/memoryDB.js';
+import { connectDB, disconnectDB, clearDB } from '../../../../config/memoryDB.js';
+import app from '../../../../../app.js';
 
-describe('POST /api/v1/auth/login Integration', () => {
-  const loginUrl = '/api/v1/auth/login';
+describe('POST /api/auth/login Integration', () => {
+  const loginUrl = '/api/auth/login';
 
   beforeAll(async () => {
     await connectDB();
