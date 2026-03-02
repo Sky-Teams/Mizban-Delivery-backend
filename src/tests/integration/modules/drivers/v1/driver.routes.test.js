@@ -11,6 +11,7 @@ import {
 import { DriverModel } from '#modules/drivers/models/driver.model.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
+const baseURL = '/api/drivers/';
 let token;
 let testUserId;
 
@@ -30,7 +31,7 @@ describe('Drivers API v1 Integration', () => {
     token = result.token;
   });
 
-  describe('POST /api/v1/drivers', () => {
+  describe('POST /api/drivers', () => {
     it('should create a new driver successfully', async () => {
       const driverData = {
         vehicleType: 'car',
@@ -39,7 +40,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -63,7 +64,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -86,7 +87,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -102,7 +103,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -119,7 +120,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -137,7 +138,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -155,7 +156,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -173,7 +174,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -198,7 +199,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -208,7 +209,7 @@ describe('Drivers API v1 Integration', () => {
     });
   });
 
-  describe('PUT /api/v1/drivers/:id', () => {
+  describe('PUT /api/drivers/:id', () => {
     let driverId;
 
     beforeEach(async () => {
@@ -229,7 +230,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .put(`/api/v1/drivers/${driverId}`)
+        .put(`${baseURL}${driverId}`)
         .send(updateData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -247,7 +248,7 @@ describe('Drivers API v1 Integration', () => {
       const updateData = { status: 'delivering' };
 
       const res = await request(app)
-        .put(`/api/v1/drivers/${fakeId}`)
+        .put(`${baseURL}${fakeId}`)
         .send(updateData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -262,7 +263,7 @@ describe('Drivers API v1 Integration', () => {
       const updateData = { status: 'delivering' };
 
       const res = await request(app)
-        .put(`/api/v1/drivers/${fakeId}`)
+        .put(`${baseURL}${fakeId}`)
         .send(updateData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -273,7 +274,7 @@ describe('Drivers API v1 Integration', () => {
 
     it('should fail if no fields are provided', async () => {
       const res = await request(app)
-        .put(`/api/v1/drivers/${driverId}`)
+        .put(`${baseURL}${driverId}`)
         .send({})
         .set('Authorization', `Bearer ${token}`);
 
@@ -286,7 +287,7 @@ describe('Drivers API v1 Integration', () => {
       const updateData = { status: 'idle' };
 
       // We dont send the token.
-      const res = await request(app).put(`/api/v1/drivers/${driverId}`).send(updateData);
+      const res = await request(app).put(`${baseURL}${driverId}`).send(updateData);
 
       expect(res.status).toBe(401);
       expect(res.body.message).toMatch('Unauthorized: Token missing');
@@ -297,7 +298,7 @@ describe('Drivers API v1 Integration', () => {
       const updateData = { capacity: { maxWeightKg: 10, maxPackages: 'abc' } };
 
       const res = await request(app)
-        .put(`/api/v1/drivers/${driverId}`)
+        .put(`${baseURL}${driverId}`)
         .send(updateData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -310,7 +311,7 @@ describe('Drivers API v1 Integration', () => {
       const updateData = { capacity: { maxWeightKg: -10 } };
 
       const res = await request(app)
-        .put(`/api/v1/drivers/${driverId}`)
+        .put(`${baseURL}${driverId}`)
         .send(updateData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -323,7 +324,7 @@ describe('Drivers API v1 Integration', () => {
       const updateData = { capacity: { maxWeightKg: 'mahdi' } };
 
       const res = await request(app)
-        .put(`/api/v1/drivers/${driverId}`)
+        .put(`${baseURL}${driverId}`)
         .send(updateData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -336,7 +337,7 @@ describe('Drivers API v1 Integration', () => {
       const updateData = { currentLocation: { coordinates: [15, 33] } };
 
       const res = await request(app)
-        .put(`/api/v1/drivers/${driverId}`)
+        .put(`${baseURL}${driverId}`)
         .send(updateData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -350,7 +351,7 @@ describe('Drivers API v1 Integration', () => {
       const updateData = { currentLocation: { coordinates: ['ab', 33] } };
 
       const res = await request(app)
-        .put(`/api/v1/drivers/${driverId}`)
+        .put(`${baseURL}${driverId}`)
         .send(updateData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -363,7 +364,7 @@ describe('Drivers API v1 Integration', () => {
       const updateData = { currentLocation: { coordinates: [12, 'abc'] } };
 
       const res = await request(app)
-        .put(`/api/v1/drivers/${driverId}`)
+        .put(`${baseURL}${driverId}`)
         .send(updateData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -378,7 +379,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .put(`/api/v1/drivers/${driverId}`)
+        .put(`${baseURL}${driverId}`)
         .send(updateData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -393,7 +394,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .put(`/api/v1/drivers/${driverId}`)
+        .put(`${baseURL}${driverId}`)
         .send(updateData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -406,7 +407,7 @@ describe('Drivers API v1 Integration', () => {
       const updateData = { lastLocationAt: 'invalid-date' };
 
       const res = await request(app)
-        .put(`/api/v1/drivers/${driverId}`)
+        .put(`${baseURL}${driverId}`)
         .send(updateData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -419,7 +420,7 @@ describe('Drivers API v1 Integration', () => {
       const updateData = { lastLocationAt: '2024/1/1' };
 
       const res = await request(app)
-        .put(`/api/v1/drivers/${driverId}`)
+        .put(`${baseURL}${driverId}`)
         .send(updateData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -435,7 +436,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .put(`/api/v1/drivers/${driverId}`)
+        .put(`${baseURL}${driverId}`)
         .send(updateData)
         .set('Authorization', `Bearer ${token}`);
 
