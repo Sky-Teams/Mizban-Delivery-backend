@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
+import { authRoutes } from '#modules/users/index.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import { driverRoutes } from '#modules/drivers/index.js';
 
@@ -22,6 +23,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Public routes
+app.use('/api/v1/auth', authRoutes);
 
 // Protected routes
 
