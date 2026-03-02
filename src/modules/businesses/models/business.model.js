@@ -31,17 +31,14 @@ const BusinessSchema = new mongoose.Schema(
       type: {
         type: String,
         enum: ['Point'],
-        required: true,
       },
       coordinates: {
         type: [Number],
-        required: true,
-        default: [0, 0],
       },
     },
     prepTimeAvgMinutes: {
       type: Number,
-      default: 0,
+      default: 1,
     },
     isActive: {
       type: Boolean,
@@ -51,6 +48,7 @@ const BusinessSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-BusinessSchema.index({ location: '2dsphere', ownerId: 1 });
+BusinessSchema.index({ ownerId: 1 });
+BusinessSchema.index({ location: '2dsphere' });
 
 export const BusinessModel = mongoose.model('Business', BusinessSchema);
