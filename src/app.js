@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
+import { authRoutes } from '#modules/users/index.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import { driverRoutes } from '#modules/drivers/index.js';
 import { notificationRoutes } from '#modules/notifications/index.js';
@@ -23,12 +24,13 @@ app.get('/api/health', (req, res) => {
 });
 
 // Public routes
+app.use('/api/auth', authRoutes);
 
 // Protected routes
 
 // API Versioning Example: app.use('/api/v1/deliveries', deliveryRoutesV1);
 
-app.use('/api/v1/drivers', authMiddleware, driverRoutes);
+app.use('/api/drivers', authMiddleware, driverRoutes);
 app.use('/api/notifications', authMiddleware, notificationRoutes);
 
 //#endregion
