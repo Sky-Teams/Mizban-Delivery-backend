@@ -14,7 +14,7 @@ export const validate = (validatorFn) => (req, res, next) => {
   }
 
   //TODO We can add Sanitization in here in future
-  // req.body = result.data.body || {};
+  req.body = result.data.body || {};
   // req.query = result.data.query || {};
   // req.params = result.data.params || {};
 
