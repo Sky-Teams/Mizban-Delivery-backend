@@ -17,7 +17,7 @@ let testUserId;
 describe('Drivers API v1 Integration', () => {
   beforeAll(async () => {
     await connectDB();
-  });
+  }, 30000);
 
   afterAll(async () => {
     await disconnectDB();

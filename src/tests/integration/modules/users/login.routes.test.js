@@ -11,7 +11,7 @@ describe('POST /api/v1/auth/login Integration', () => {
 
   beforeAll(async () => {
     await connectDB();
-  });
+  }, 30000);
 
   afterAll(async () => {
     await disconnectDB();
