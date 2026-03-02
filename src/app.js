@@ -3,7 +3,7 @@ import cors from 'cors';
 import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
-import { driverRoutesV1 } from '#modules/drivers/index.js';
+import { driverRoutesV1 } from './modules/drivers/index.js';
 
 const app = express();
 
