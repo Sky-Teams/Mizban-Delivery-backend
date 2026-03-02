@@ -25,10 +25,10 @@ app.get('/api/health', (req, res) => {
 // Public routes
 
 // Protected routes
-app.use('/api/v1/businesses', authMiddleware, businessRoutes);
 // API Versioning Example: app.use('/api/v1/deliveries', deliveryRoutesV1);
 
 app.use('/api/v1/drivers', authMiddleware, driverRoutes);
+app.use('/api/businesses', authMiddleware, businessRoutes);
 
 //#endregion
 
