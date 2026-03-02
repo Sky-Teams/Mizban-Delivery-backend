@@ -34,7 +34,7 @@ describe('createDriver Controller', () => {
   it('should throw unauthorized error if user is missing', async () => {
     req.user = null;
 
-    await expect(updateDriver(req, res)).rejects.toMatchObject({
+    await expect(createDriver(req, res)).rejects.toMatchObject({
       message: 'User is not authorized',
       code: ERROR_CODES.UNAUTHORIZED,
     });
