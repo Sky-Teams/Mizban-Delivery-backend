@@ -1,6 +1,10 @@
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, unauthorized } from '#shared/errors/error.js';
-import { createNewDriver, doesDriverExist } from '../../services/v1/driver.service.js';
+import {
+  createNewDriver,
+  doesDriverExist,
+  updateExistedDriver,
+} from '../../services/v1/driver.service.js';
 
 export const createDriver = async (req, res) => {
   if (!req.user) throw unauthorized();
@@ -10,4 +14,11 @@ export const createDriver = async (req, res) => {
 
   const driver = await createNewDriver(req.user._id, req.body);
   res.status(201).json({ success: true, data: driver });
+};
+
+export const updateDriver = async (req, res) => {
+  if (!req.user) throw unauthorized();
+
+  const updatedDriver = await updateExistedDriver(req.params.id, req.user._id, req.body);
+  res.status(200).json({ success: true, data: updatedDriver });
 };
