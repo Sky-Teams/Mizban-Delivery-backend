@@ -13,5 +13,16 @@ const createBusinessCustomerService = z.object({
       .refine((val) => isValidPhoneNumber(val, 'AF'), {
         message: ERROR_CODES.INVALID_PHONE_NUMBER,
       }),
+    altPhone: z.string().trim().optional(),
+    addressText: z.string().trim(),
+    location: z.object({
+      type: z.literal('point').optional(),
+      coordinates: z.preprocess((val) => {
+        if (!Array.isArray(val) || val.length !== 2) return val;
+        return val.map((v, i) =>
+          ensureNumber(v, `location.coordinates[${i}]`, ERROR_CODES.INVALID_COORDINATES)
+        );
+      }),
+    }),
   }),
 });
