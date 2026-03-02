@@ -11,6 +11,7 @@ import {
 import { DriverModel } from '#modules/drivers/models/driver.model.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
+const baseURL = '/api/drivers/';
 let token;
 let testUserId;
 
@@ -30,7 +31,7 @@ describe('Drivers API v1 Integration', () => {
     token = result.token;
   });
 
-  describe('POST /api/v1/drivers', () => {
+  describe('POST /api/drivers', () => {
     it('should create a new driver successfully', async () => {
       const driverData = {
         vehicleType: 'car',
@@ -39,7 +40,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -63,7 +64,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -86,7 +87,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -102,7 +103,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -119,7 +120,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -137,7 +138,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -155,7 +156,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -173,7 +174,7 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
@@ -198,13 +199,251 @@ describe('Drivers API v1 Integration', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/drivers')
+        .post(baseURL)
         .send(driverData)
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(400);
       expect(res.body.code).toBe(ERROR_CODES.DRIVER_ALREADY_EXIST);
       expect(res.body.message).toMatch('Driver already exist');
+    });
+  });
+
+  describe('PUT /api/drivers/:id', () => {
+    let driverId;
+
+    beforeEach(async () => {
+      const driver = await DriverModel.create({
+        user: testUserId,
+        vehicleType: 'car',
+        status: 'idle',
+        capacity: { maxWeightKg: 100, maxPackages: 5 },
+        currentLocation: { type: 'Point', coordinates: [0, 0] },
+      });
+      driverId = driver._id.toString();
+    });
+
+    it('should update driver partially', async () => {
+      const updateData = {
+        capacity: { maxWeightKg: 150 },
+        currentLocation: { coordinates: [10, 20] },
+      };
+
+      const res = await request(app)
+        .put(`${baseURL}${driverId}`)
+        .send(updateData)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data._id).toBe(driverId);
+      expect(res.body.data.capacity.maxWeightKg).toBe(150);
+      expect(res.body.data.capacity.maxPackages).toBe(5);
+      expect(res.body.data.currentLocation.coordinates).toEqual([10, 20]);
+    });
+
+    it('should fail if paramId is not a valid ObjectId', async () => {
+      const fakeId = '63cfa1234567a23123213';
+
+      const updateData = { status: 'delivering' };
+
+      const res = await request(app)
+        .put(`${baseURL}${fakeId}`)
+        .send(updateData)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch('Invalid ID format');
+      expect(res.body.code).toMatch(ERROR_CODES.INVALID_ID);
+    });
+
+    it('should fail if driver does not exist', async () => {
+      const fakeId = '63cfa123456789abcdef0123';
+
+      const updateData = { status: 'delivering' };
+
+      const res = await request(app)
+        .put(`${baseURL}${fakeId}`)
+        .send(updateData)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toMatch(/Driver not found/i);
+      expect(res.body.code).toMatch(ERROR_CODES.NOT_FOUND);
+    });
+
+    it('should fail if no fields are provided', async () => {
+      const res = await request(app)
+        .put(`${baseURL}${driverId}`)
+        .send({})
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch('No fields provided for update');
+      expect(res.body.code).toBe(ERROR_CODES.NO_FIELDS_PROVIDED);
+    });
+
+    it('should fail if unauthorized', async () => {
+      const updateData = { status: 'idle' };
+
+      // We dont send the token.
+      const res = await request(app).put(`${baseURL}${driverId}`).send(updateData);
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toMatch('Unauthorized: Token missing');
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
+    });
+
+    it('should validate incorrect capacity values', async () => {
+      const updateData = { capacity: { maxWeightKg: 10, maxPackages: 'abc' } };
+
+      const res = await request(app)
+        .put(`${baseURL}${driverId}`)
+        .send(updateData)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe(ERROR_CODES.MAX_PACKAGES_MUST_BE_NUMBER);
+      expect(res.body.message).toContain('Validation failed');
+    });
+
+    it('should validate incorrect capacity values', async () => {
+      const updateData = { capacity: { maxWeightKg: -10 } };
+
+      const res = await request(app)
+        .put(`${baseURL}${driverId}`)
+        .send(updateData)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe(ERROR_CODES.MAX_WEIGHT_MUST_BE_POSITIVE);
+      expect(res.body.message).toContain('Validation failed');
+    });
+
+    it('should validate incorrect capacity values', async () => {
+      const updateData = { capacity: { maxWeightKg: 'mahdi' } };
+
+      const res = await request(app)
+        .put(`${baseURL}${driverId}`)
+        .send(updateData)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe(ERROR_CODES.MAX_WEIGHT_MUST_BE_NUMBER);
+      expect(res.body.message).toContain('Validation failed');
+    });
+
+    it('should update driver coordinates', async () => {
+      const updateData = { currentLocation: { coordinates: [15, 33] } };
+
+      const res = await request(app)
+        .put(`${baseURL}${driverId}`)
+        .send(updateData)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.capacity.maxWeightKg).toBe(100);
+      expect(res.body.data.capacity.maxPackages).toBe(5);
+      expect(res.body.data.currentLocation.coordinates).toEqual([15, 33]);
+    });
+
+    it('should fail if currentLocation.coordinates are invalid', async () => {
+      const updateData = { currentLocation: { coordinates: ['ab', 33] } };
+
+      const res = await request(app)
+        .put(`${baseURL}${driverId}`)
+        .send(updateData)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_COORDINATES);
+      expect(res.body.message).toContain('Validation failed');
+    });
+
+    it('should fail if currentLocation.coordinates are invalid', async () => {
+      const updateData = { currentLocation: { coordinates: [12, 'abc'] } };
+
+      const res = await request(app)
+        .put(`${baseURL}${driverId}`)
+        .send(updateData)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_COORDINATES);
+      expect(res.body.message).toContain('Validation failed');
+    });
+
+    it('should fail if currentLocation.coordinates are invalid', async () => {
+      const updateData = {
+        currentLocation: { coordinates: ['not', 'numbers'] },
+      };
+
+      const res = await request(app)
+        .put(`${baseURL}${driverId}`)
+        .send(updateData)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_COORDINATES);
+      expect(res.body.message).toContain('Validation failed');
+    });
+
+    it('should fail if currentLocation.coordinates array length is not 2', async () => {
+      const updateData = {
+        currentLocation: { coordinates: [1, 2, 3] },
+      };
+
+      const res = await request(app)
+        .put(`${baseURL}${driverId}`)
+        .send(updateData)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_COORDINATES);
+      expect(res.body.message).toContain('Validation failed');
+    });
+
+    it('should fail if lastLocationAt is not a valid date', async () => {
+      const updateData = { lastLocationAt: 'invalid-date' };
+
+      const res = await request(app)
+        .put(`${baseURL}${driverId}`)
+        .send(updateData)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_ISO_DATE_FORMAT);
+      expect(res.body.message).toContain('Validation failed');
+    });
+
+    it('should fail if lastLocationAt is not a valid date', async () => {
+      const updateData = { lastLocationAt: '2024/1/1' };
+
+      const res = await request(app)
+        .put(`${baseURL}${driverId}`)
+        .send(updateData)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_ISO_DATE_FORMAT);
+      expect(res.body.message).toContain('Validation failed');
+    });
+
+    it('should pass with valid coordinates and lastLocationAt', async () => {
+      const updateData = {
+        currentLocation: { coordinates: [34.5, 69.2] },
+        lastLocationAt: new Date().toISOString(),
+      };
+
+      const res = await request(app)
+        .put(`${baseURL}${driverId}`)
+        .send(updateData)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.currentLocation.coordinates).toEqual([34.5, 69.2]);
+      expect(new Date(res.body.data.lastLocationAt)).toBeInstanceOf(Date);
     });
   });
 });
