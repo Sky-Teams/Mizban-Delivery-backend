@@ -1,11 +1,14 @@
 import bcrypt from 'bcryptjs';
 import { UserModel } from '../../models/user.model.js';
 import { RefreshTokenModel } from '../../models/refreshToken.model.js';
-import { generateAccessToken, generateRefreshToken, hashToken } from '#shared/utils/jwt.js';
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  hashToken,
+  REFRESH_TOKEN_EXPIRES_TIME,
+} from '#shared/utils/jwt.js';
 import { AppError, unauthorized } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
-
-const REFRESH_TOKEN_EXPIRES_TIME = 7 * 24 * 60 * 60 * 1000;
 
 const getUserByEmail = async (email) => {
   const user = await UserModel.findOne({ email });

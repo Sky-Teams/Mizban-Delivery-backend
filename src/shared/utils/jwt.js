@@ -1,11 +1,14 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
+export const REFRESH_TOKEN_EXPIRES_TIME = 7 * 24 * 60 * 60 * 1000;
+
 export const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict',
-  maxAge: 7 * 24 * 60 * 60 * 1000,
+  sameSite: 'none',
+  secure: true,
+  maxAge: REFRESH_TOKEN_EXPIRES_TIME,
 };
 
 export const verifyJWT = (token) => {
