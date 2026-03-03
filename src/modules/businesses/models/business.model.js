@@ -21,6 +21,7 @@ const BusinessSchema = new mongoose.Schema(
     phone: {
       type: String,
       trim: true,
+      required: true,
     },
     addressText: {
       type: String,

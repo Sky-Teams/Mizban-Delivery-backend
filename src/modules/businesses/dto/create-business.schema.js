@@ -13,12 +13,9 @@ const createBusinessSchema = z.object({
       errorMap: () => ({ message: ERROR_CODES.INVALID_BUSINESS_TYPE }),
     }),
 
-    phone: z
-      .string()
-      .refine((val) => isValidPhoneNumber(val, 'AF'), {
-        message: ERROR_CODES.INVALID_PHONE_NUMBER,
-      })
-      .optional(),
+    phone: z.string().refine((val) => isValidPhoneNumber(val, 'AF'), {
+      message: ERROR_CODES.INVALID_PHONE_NUMBER,
+    }),
 
     addressText: z.string().trim().min(3, { message: ERROR_CODES.LENGTH_IS_TOO_SHORT }),
     location: z
