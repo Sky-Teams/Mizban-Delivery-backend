@@ -11,13 +11,13 @@ export const businessCustomerSchema = new mongoose.Schema({
   altPhone: { type: String },
   addressText: { type: String, required: true },
   location: {
-    type: { type: String, enum: ['point'], default: 'point' },
-    coordinates: { type: Number, default: [0, 0] },
+    type: { type: String, enum: ['Point'], default: 'Point' },
+    coordinates: { type: [Number], default: [0, 0] },
   },
   notes: { type: String },
-  tags: { type: [String], required: true },
+  tags: { type: [String] },
   isActive: { type: Boolean, default: true },
-  lastOrderedAt: { type: Date, default: null },
+  lastOrderAt: { type: Date, default: null },
   totalOrders: { type: Number, default: 0 },
 });
 

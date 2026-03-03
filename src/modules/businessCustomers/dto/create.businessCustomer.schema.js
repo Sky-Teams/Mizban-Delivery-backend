@@ -7,12 +7,12 @@ import { ensureISODate } from '#shared/utils/ensureISODate.js';
 const createBusinessCustomerSchema = z.object({
   body: z.object({
     name: z
-      .string({ required_filed: ERROR_CODES.REQUIRED_FIELD })
+      .string({ required_error: ERROR_CODES.REQUIRED_FIELD })
       .min(3, { message: ERROR_CODES.TOO_SHORT })
       .trim(),
 
     phone: z
-      .string({ required_filed: ERROR_CODES.REQUIRED_FIELD })
+      .string({ required_error: ERROR_CODES.REQUIRED_FIELD })
       .refine((val) => isValidPhoneNumber(val, 'AF'), {
         message: ERROR_CODES.INVALID_PHONE_NUMBER,
       }),
@@ -22,7 +22,7 @@ const createBusinessCustomerSchema = z.object({
     addressText: z.string().trim(),
 
     location: z.object({
-      type: z.literal('point').optional(),
+      type: z.literal('Point').optional(),
 
       coordinates: z.preprocess(
         (val) => {
@@ -37,12 +37,12 @@ const createBusinessCustomerSchema = z.object({
 
     notes: z.string().optional(),
 
-    tags: z.array(),
+    tags: z.array(z.string()).optional(),
 
-    lastOrderedAt: z.preprocess(
+    lastOrderAt: z.preprocess(
       (val) =>
-        val ? ensureISODate(val, ERROR_CODES.INVALID_ISO_DATE_FORMAT, 'lastOrderedAt') : undefined,
-      z.date()
+        val ? ensureISODate(val, ERROR_CODES.INVALID_ISO_DATE_FORMAT, 'lastOrderAt') : undefined,
+      z.date().optional()
     ),
 
     totalOrders: z.number().optional(),
