@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DriverModel } from '#modules/drivers/index.js';
-import { doesDriverExist, createNewDriver } from '#modules/drivers/index.js';
+import { doesDriverExist, createNewDriver, updateExistedDriver } from '#modules/drivers/index.js';
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 // Mock the driver model
 vi.mock('#modules/drivers/models/driver.model.js', () => ({
   DriverModel: {
     exists: vi.fn(),
     create: vi.fn(),
+    findOneAndUpdate: vi.fn(),
   },
 }));
 
@@ -111,6 +113,101 @@ describe('Driver Service', () => {
           'capacity.maxWeightKg': expect.objectContaining({ value: -10 }),
           'capacity.maxPackages': expect.objectContaining({ value: -3 }),
         },
+      });
+    });
+  });
+
+  describe('updateExistedDriver', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('should update driver with partial fields', async () => {
+      const driverId = 'driver123';
+      const userId = 'user567';
+      const driverData = { vehicleType: 'van', status: 'idle' };
+
+      const mockedDriver = {
+        _id: driverId,
+        user: userId,
+        vehicleType: 'van',
+        status: 'idle',
+        capacity: { maxWeightKg: 100, maxPackages: 5 },
+        currentLocation: { coordinates: [0, 0] },
+        lastLocationAt: null,
+      };
+
+      DriverModel.findOneAndUpdate.mockResolvedValue(mockedDriver);
+
+      const result = await updateExistedDriver(driverId, userId, driverData);
+
+      expect(result).toEqual(mockedDriver);
+      expect(DriverModel.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: driverId, user: userId },
+        { $set: driverData },
+        { new: true, runValidators: true }
+      );
+    });
+
+    it('should update driver with partial fields', async () => {
+      const driverId = 'driver123';
+      const userId = 'user567';
+      const driverData = {
+        capacity: { maxWeightKg: 100 },
+        currentLocation: { coordinates: [0, 0] },
+      };
+
+      const mockedDriver = {
+        _id: driverId,
+        user: userId,
+        vehicleType: 'van',
+        status: 'idle',
+        capacity: { maxWeightKg: 100, maxPackages: 5 },
+        currentLocation: { coordinates: [0, 0] },
+        lastLocationAt: null,
+      };
+
+      DriverModel.findOneAndUpdate.mockResolvedValue(mockedDriver);
+
+      const result = await updateExistedDriver(driverId, userId, driverData);
+
+      expect(result).toEqual(mockedDriver);
+
+      expect(DriverModel.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: driverId, user: userId },
+        {
+          $set: {
+            'capacity.maxWeightKg': 100,
+            'currentLocation.coordinates': [0, 0],
+          },
+        },
+        { new: true, runValidators: true }
+      );
+    });
+
+    it('should throw AppError if no fields are provided', async () => {
+      const driverId = 'driver123';
+      const userId = 'user567';
+      const driverData = {};
+
+      await expect(updateExistedDriver(driverId, userId, driverData)).rejects.toMatchObject({
+        message: 'No fields provided for update',
+        code: ERROR_CODES.NO_FIELDS_PROVIDED,
+        status: 400,
+      });
+    });
+
+    it('should throw error if driver not found', async () => {
+      const driverId = 'driver123';
+      const userId = 'user567';
+      const driverData = { status: 'idle' };
+
+      DriverModel.findOneAndUpdate.mockResolvedValue(null);
+
+      await expect(updateExistedDriver(driverId, userId, driverData)).rejects.toMatchObject({
+        message: 'Driver not found',
+        code: ERROR_CODES.NOT_FOUND,
+        status: 404,
       });
     });
   });
