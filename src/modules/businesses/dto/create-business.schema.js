@@ -3,13 +3,13 @@ import { z } from 'zod';
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import { ensureNumber } from '#shared/utils/ensureNumber.js';
 
-const businessTyep = ['restaurant', 'shop', 'pharmacy', 'warehouse', 'other'];
+const businessType = ['restaurant', 'shop', 'pharmacy', 'warehouse', 'other'];
 
 const createBusinessSchema = z.object({
   body: z.object({
     name: z.string().trim().min(3, { message: ERROR_CODES.NAME_TOO_SHORT }),
 
-    type: z.enum(businessTyep, {
+    type: z.enum(businessType, {
       errorMap: () => ({ message: ERROR_CODES.INVALID_BUSINESS_TYPE }),
     }),
 
@@ -22,7 +22,7 @@ const createBusinessSchema = z.object({
       .object({
         type: z.literal('Point', {
           message: ERROR_CODES.INVALID_LOCATION_TYPE,
-        }),
+        }).optional(),
         coordinates: z.preprocess(
           (val) => {
             if (!Array.isArray(val) || val.length !== 2) return val;
@@ -47,10 +47,10 @@ const createBusinessSchema = z.object({
 
     prepTimeAvgMinutes: z
       .preprocess(
-        (val) => ensureNumber(val, 'prepTimeAvgMinutes', ERROR_CODES.PREP_TIME_MUST_BE_INTEGARE),
+        (val) => ensureNumber(val, 'prepTimeAvgMinutes', ERROR_CODES.PREP_TIME_MUST_BE_INTEGER),
         z
           .number()
-          .int({ message: ERROR_CODES.PREP_TIME_MUST_BE_INTEGARE })
+          .int({ message: ERROR_CODES.PREP_TIME_MUST_BE_INTEGER })
           .positive({ message: ERROR_CODES.PREP_TIME_MUST_BE_POSITIVE })
       )
       .optional(),

@@ -49,7 +49,7 @@ describe('Business API Integration', () => {
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
-      expect(res.body.data).toHaveProperty('ownerId');
+      expect(res.body.data).toHaveProperty('owner');
       expect(res.body.data.type).toBe('restaurant');
 
       //In DB
@@ -131,7 +131,7 @@ describe('Business API Integration', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.message).toContain('Validation failed');
-      expect(res.body.code).toContain(ERROR_CODES.PREP_TIME_MUST_BE_INTEGARE);
+      expect(res.body.code).toContain(ERROR_CODES.PREP_TIME_MUST_BE_INTEGER);
     });
     it('should fail if coordinates length is not 2', async () => {
       const businessData = {
