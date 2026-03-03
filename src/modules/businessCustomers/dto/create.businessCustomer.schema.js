@@ -8,7 +8,7 @@ const createBusinessCustomerSchema = z.object({
   body: z.object({
     name: z
       .string({ required_error: ERROR_CODES.REQUIRED_FIELD })
-      .min(3, { message: ERROR_CODES.TOO_SHORT })
+      .min(3, { message: ERROR_CODES.NAME_TOO_SHORT })
       .trim(),
 
     phone: z

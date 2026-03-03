@@ -6,10 +6,10 @@ export const doesBusinessCustomerExist = async (businessId, phone) => {
 };
 
 export const createNewBusinessCustomer = async (req) => {
-  const { name, phone, altPhone, addressText, location, notes, tags, lastOrderAt } = req.body;
+  const { name, phone, altPhone, addressText, location, notes, tags } = req.body;
 
-  const newBusinessCustomer = {
-    business: req.user._id,
+  const businessCustomer = await businessCustomerModel.create({
+    business: req.user.businessId,
     name,
     phone,
     altPhone,
@@ -17,10 +17,7 @@ export const createNewBusinessCustomer = async (req) => {
     location,
     notes,
     tags,
-    lastOrderAt,
-  };
-
-  const businessCustomer = await businessCustomerModel.create(newBusinessCustomer);
+  });
 
   return businessCustomer;
 };
