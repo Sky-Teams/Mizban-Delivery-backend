@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const BusinessSchema = new mongoose.Schema(
   {
-    ownerId: {
+    owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
@@ -32,14 +32,16 @@ const BusinessSchema = new mongoose.Schema(
       type: {
         type: String,
         enum: ['Point'],
+        default: 'Point',
       },
       coordinates: {
         type: [Number],
+        default: [0, 0],
       },
     },
     prepTimeAvgMinutes: {
       type: Number,
-      default: 1,
+      default: 0,
     },
     isActive: {
       type: Boolean,
