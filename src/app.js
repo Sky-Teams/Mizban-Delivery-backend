@@ -5,6 +5,7 @@ import { errorHandler } from './shared/middleware/errorHandler.js';
 import { authRoutes } from '#modules/users/index.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import { driverRoutes } from '#modules/drivers/index.js';
+import { businessRoutes } from '#modules/businesses/index.js';
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes);
 // Protected routes
 
 app.use('/api/drivers', authMiddleware, driverRoutes);
+app.use('/api/businesses', authMiddleware, businessRoutes);
 
 //#endregion
 
