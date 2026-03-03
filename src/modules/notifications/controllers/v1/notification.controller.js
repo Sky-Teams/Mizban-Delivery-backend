@@ -7,22 +7,24 @@ import { unauthorized } from '#shared/errors/error.js';
 
 /** Return all notifications of a user */
 export const getUserNotifications = async (req, res) => {
-  if (!req.user) throw unauthorized;
+  if (!req.user) throw unauthorized();
 
   const notifications = await getNotificationsByUserId(req.user._id);
 
   res.status(200).json({ success: true, data: notifications });
 };
 
+/** Mark notification as read */
 export const markNotificationAsRead = async (req, res) => {
-  if (!req.user) throw unauthorized;
+  if (!req.user) throw unauthorized();
 
   const updatedNotification = await markAsRead(req.params.id, req.user._id);
   res.status(200).json({ success: true, data: updatedNotification });
 };
 
+/** Mark notification as unread */
 export const markNotificationAsUnread = async (req, res) => {
-  if (!req.user) throw unauthorized;
+  if (!req.user) throw unauthorized();
 
   const updatedNotification = await markAsUnread(req.params.id, req.user._id);
   res.status(200).json({ success: true, data: updatedNotification });
