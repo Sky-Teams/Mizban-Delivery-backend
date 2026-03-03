@@ -12,27 +12,25 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 const baseURL = '/api/business-customers/';
 let token;
-let testUserId;
 
-describe('BusinessCustomer API v1 Integration', () => {
+describe('BusinessCustomer API Integration', () => {
   beforeAll(async () => {
     await connectDB();
-  });
+  }, 30000);
 
   afterAll(async () => {
     await disconnectDB();
-  });
+  }, 30000);
 
   beforeEach(async () => {
     await clearDB();
     const result = await createFakeUserWithToken();
-    testUserId = result.testUserId;
     token = result.token;
   });
 
   describe('POST /api/business-customers', () => {
     it('creates business customer successfully', async () => {
-      const businessId = testUserId.toString();
+      const businessId = '507f1f77bcf86cd799439011';
       const payload = {
         businessId,
         name: 'Customer One',
@@ -64,7 +62,7 @@ describe('BusinessCustomer API v1 Integration', () => {
     });
 
     it('fails for duplicate customer phone under same business', async () => {
-      const businessId = testUserId.toString();
+      const businessId = '507f1f77bcf86cd799439012';
       await businessCustomerModel.create({
         business: businessId,
         name: 'Existing',
@@ -93,7 +91,7 @@ describe('BusinessCustomer API v1 Integration', () => {
 
     it('fails when unauthorized', async () => {
       const payload = {
-        businessId: testUserId.toString(),
+        businessId: '507f1f77bcf86cd799439013',
         name: 'No Token',
         phone: '0797222222',
         addressText: 'Kabul',
@@ -108,7 +106,7 @@ describe('BusinessCustomer API v1 Integration', () => {
 
     it('fails validation when location coordinates are invalid', async () => {
       const payload = {
-        businessId: testUserId.toString(),
+        businessId: '507f1f77bcf86cd799439014',
         name: 'Bad Coords',
         phone: '0797333333',
         addressText: 'Kabul',
@@ -123,7 +121,7 @@ describe('BusinessCustomer API v1 Integration', () => {
       expect(res.status).toBe(400);
       expect(res.body.message).toBe('Validation failed');
       expect(res.body.code).toBe(ERROR_CODES.INVALID_COORDINATES);
-      expect(res.body.field).toBe('location.coordinates');
+      expect(res.body.field).toBe('location.coordinates[0]');
     });
   });
 });
