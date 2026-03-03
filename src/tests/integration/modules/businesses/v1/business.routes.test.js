@@ -62,6 +62,7 @@ describe('Business API Integration', () => {
       const businessData = {
         name: 'Reyhan Restaurant',
         addressText: 'Afghanistan, Herat',
+        phone: '0093781234567',
       };
 
       res = await postWithAuth(app, '/api/businesses', businessData, token);
@@ -74,6 +75,7 @@ describe('Business API Integration', () => {
     it('should fail if required field is missing => name', async () => {
       const businessData = {
         type: 'shop',
+        phone: '0093781234567',
         addressText: 'Afghanistan, Herat',
       };
 
@@ -104,6 +106,7 @@ describe('Business API Integration', () => {
       const businessData = {
         name: 'Reyhan Shop',
         type: 'shop',
+        phone: '0093781234567',
         addressText: 'Afghanistan, Herat',
         prepTimeAvgMinutes: -30,
       };
@@ -120,6 +123,7 @@ describe('Business API Integration', () => {
         name: 'Reyhan Shop',
         type: 'shop',
         addressText: 'Afghanistan, Herat',
+        phone: '0093781234567',
         prepTimeAvgMinutes: 'hello',
       };
 
@@ -134,6 +138,7 @@ describe('Business API Integration', () => {
         name: 'Reyhan Shop',
         type: 'shop',
         addressText: 'Afghanistan, Herat',
+        phone: '0093781234567',
         location: {
           type: 'Point',
           coordinates: [63],
@@ -148,6 +153,7 @@ describe('Business API Integration', () => {
         name: 'Reyhan Shop',
         type: 'shop',
         addressText: 'Afghanistan, Herat',
+        phone: '0093781234567',
         location: {
           type: 'point', // Point
           coordinates: [63, 32],
@@ -167,6 +173,7 @@ describe('Business API Integration', () => {
         name: 'Reyhan Shop',
         type: 'shop',
         addressText: 'Afghanistan, Herat',
+        phone: '0093781234567',
         location: {
           type: 'Point',
           coordinates: [62.2, 34.3], //in range
@@ -183,6 +190,7 @@ describe('Business API Integration', () => {
         name: 'Reyhan Shop',
         type: 'shop',
         addressText: 'Afghanistan, Herat',
+        phone: '0093781234567',
         location: {
           type: 'Point',
           coordinates: [80, 34.3], //out of range
