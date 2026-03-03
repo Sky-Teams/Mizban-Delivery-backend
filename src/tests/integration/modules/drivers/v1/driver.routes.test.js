@@ -22,7 +22,7 @@ describe('Drivers API v1 Integration', () => {
 
   afterAll(async () => {
     await disconnectDB();
-  });
+  }, 30000);
 
   beforeEach(async () => {
     await clearDB();

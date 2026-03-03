@@ -6,8 +6,8 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { UserModel } from '#modules/users/models/user.model.js';
 import { connectDB, disconnectDB, clearDB } from '../../../config/memoryDB.js';
 
-describe('POST /api/v1/auth/login Integration', () => {
-  const loginUrl = '/api/v1/auth/login';
+describe('POST /api/auth/login Integration', () => {
+  const loginUrl = '/api/auth/login';
 
   beforeAll(async () => {
     await connectDB();
@@ -15,7 +15,7 @@ describe('POST /api/v1/auth/login Integration', () => {
 
   afterAll(async () => {
     await disconnectDB();
-  });
+  }, 30000);
 
   beforeEach(async () => {
     await clearDB();
