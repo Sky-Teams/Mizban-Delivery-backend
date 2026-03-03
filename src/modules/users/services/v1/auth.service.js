@@ -10,12 +10,13 @@ import {
 import { AppError, unauthorized } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
+//!  Helper Functions
+
 const getUserByEmail = async (email) => {
   const user = await UserModel.findOne({ email });
   if (!user) {
     throw new AppError('Invalid email or password', 401, ERROR_CODES.INVALID_CREDENTIAL);
   }
-
   return user;
 };
 
@@ -25,7 +26,9 @@ const validateLoginUser = async (user, password) => {
     throw new AppError('Invalid email or password', 401, ERROR_CODES.INVALID_CREDENTIAL);
   }
 
-  if (!user.isActive) throw new AppError('Account is disabled!', 403, ERROR_CODES.ACCOUNT_DISABLED);
+  if (!user.isActive) {
+    throw new AppError('Account is disabled!', 403, ERROR_CODES.ACCOUNT_DISABLED);
+  }
 };
 
 const getStoredRefreshToken = async ({ refreshToken, deviceId }) => {
@@ -38,7 +41,10 @@ const getStoredRefreshToken = async ({ refreshToken, deviceId }) => {
     deviceId,
   }).populate('user', '_id email');
 
-  if (!currentToken) throw new AppError('Token not found', 401, ERROR_CODES.INVALID_CREDENTIAL);
+  if (!currentToken) {
+    throw new AppError('Token not found', 401, ERROR_CODES.INVALID_CREDENTIAL);
+  }
+
   if (currentToken.expireAt < new Date()) {
     await currentToken.deleteOne();
     throw new AppError('Token expired', 401, ERROR_CODES.INVALID_CREDENTIAL);
@@ -50,7 +56,10 @@ const getStoredRefreshToken = async ({ refreshToken, deviceId }) => {
 const getActiveUser = async (userId) => {
   const user = await UserModel.findById(userId);
   if (!user) throw unauthorized();
-  if (!user.isActive) throw new AppError('Account is disabled!', 403, ERROR_CODES.ACCOUNT_DISABLED);
+
+  if (!user.isActive) {
+    throw new AppError('Account is disabled!', 403, ERROR_CODES.ACCOUNT_DISABLED);
+  }
 
   return user;
 };
@@ -64,12 +73,13 @@ const rotateRefreshToken = async (currentTokenId) => {
       token: hashToken(newRefreshToken),
       expireAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRES_TIME),
     },
-    { new: true, runValidators: true, setDefaultsOnInsert: true }
+    { new: true, runValidators: true }
   );
 
   return newRefreshToken;
 };
-//----------------------
+
+//!  Services
 
 export const loginService = async ({ email, password }, deviceId) => {
   const user = await getUserByEmail(email);
@@ -86,10 +96,10 @@ export const loginService = async ({ email, password }, deviceId) => {
       expireAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRES_TIME),
     },
     {
-      upsert: true, // if exist update, otherwise insert
+      upsert: true,
       new: true,
       runValidators: true,
-      setDefaultsOnInsert: true, // Apply default schema values when a new document is inserted
+      setDefaultsOnInsert: true,
     }
   );
 
@@ -112,5 +122,30 @@ export const refreshService = async ({ refreshToken, deviceId }) => {
   return {
     accessToken: generateAccessToken(user),
     refreshToken: rotatedRefreshToken,
+  };
+};
+
+export const doesUserExist = async (fields) => {
+  if (Object.keys(fields).length === 0) return false;
+
+  const exist = await UserModel.exists(fields);
+  return !!exist;
+};
+
+export const registerUser = async (data) => {
+  const { email, name, phone, password } = data;
+
+  const hashPassword = await bcrypt.hash(password, 12);
+
+  const user = await UserModel.create({
+    name,
+    email,
+    phone,
+    password: hashPassword,
+  });
+
+  return {
+    id: user._id,
+    email: user.email,
   };
 };
