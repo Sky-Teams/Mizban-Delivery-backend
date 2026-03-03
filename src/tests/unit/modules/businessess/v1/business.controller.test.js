@@ -40,7 +40,7 @@ describe('Controller Business - create business ', () => {
   it('should create business and success response', async () => {
     const mockBusiness = {
       _id: '1',
-      ownerId: '69a2954a71fdaea523228f8d',
+      owner: '69a2954a71fdaea523228f8d',
       name: 'Reyhan Restaurant',
       type: 'restaurant',
       phone: '0093781234567',

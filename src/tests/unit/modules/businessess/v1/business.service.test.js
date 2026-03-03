@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createNewBusiness, BusinessModel } from '#modules/businesses/index.js';
-import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 vi.mock('#modules/businesses/models/business.model.js', () => ({
   BusinessModel: {
@@ -30,7 +29,7 @@ describe('Business Service - CreateNewBusiness', () => {
   it('Should create new business', async () => {
     const mockBusiness = {
       _id: '1',
-      ownerId: '69a2954a71fdaea523228f8d',
+      owner: 'user1',
       name: 'Reyhan Restaurant',
       type: 'restaurant',
       phone: '0093781234567',
@@ -49,7 +48,7 @@ describe('Business Service - CreateNewBusiness', () => {
 
     const result = await createNewBusiness(userId, businessData);
     expect(result).toEqual(mockBusiness);
-    expect(BusinessModel.create).toHaveBeenCalledWith({ ...businessData, ownerId: userId });
+    expect(BusinessModel.create).toHaveBeenCalledWith({ ...businessData, owner: userId });
   });
 
   it('should propagate error if BusinessModel.create fails', async () => {
