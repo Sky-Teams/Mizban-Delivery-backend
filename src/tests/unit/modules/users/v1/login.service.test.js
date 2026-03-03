@@ -33,6 +33,7 @@ vi.mock('#shared/utils/jwt.js', () => ({
   generateAccessToken,
   generateRefreshToken,
   hashToken,
+  REFRESH_TOKEN_EXPIRES_TIME: 7 * 24 * 60 * 60 * 1000,
 }));
 
 // Import the service AFTER mocks (important)
