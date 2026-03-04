@@ -10,7 +10,7 @@ const NotificationSchema = new mongoose.Schema(
       default: 'system',
     },
     title: { type: String, required: true, trim: true, minlength: 1, maxlength: 100 },
-    message: { type: String, trim: true, maxlength: 1000 },
+    message: { type: String, trim: true, maxlength: 500 },
     isRead: { type: Boolean, default: false },
   },
   { timestamps: true }
