@@ -2,7 +2,6 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import { ensureNumber } from '#shared/utils/ensureNumber.js';
-import { ensureISODate } from '#shared/utils/ensureISODate.js';
 import mongoose from 'mongoose';
 
 const createBusinessCustomerSchema = z.object({
@@ -43,14 +42,6 @@ const createBusinessCustomerSchema = z.object({
     notes: z.string().optional(),
 
     tags: z.array(z.string()).optional(),
-
-    lastOrderAt: z.preprocess(
-      (val) =>
-        val ? ensureISODate(val, ERROR_CODES.INVALID_ISO_DATE_FORMAT, 'lastOrderAt') : undefined,
-      z.date().optional()
-    ),
-
-    totalOrders: z.number().optional(),
   }),
 });
 

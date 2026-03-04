@@ -40,26 +40,27 @@ describe('BusinessCustomer Service', () => {
   });
 
   describe('createNewBusinessCustomer', () => {
-    it('creates customer using req.body.businessId as business', async () => {
-      const req = {
-        user: { _id: 'business1' },
-        body: {
-          businessId: '507f1f77bcf86cd799439011',
-          name: 'Mahdi',
-          phone: '0797123456',
-          altPhone: '0797000000',
-          addressText: 'Kabul, street 1',
-          location: { type: 'Point', coordinates: [69.2, 34.5] },
-          notes: 'VIP',
-          tags: ['vip'],
-          lastOrderAt: new Date('2026-01-01T10:00:00.000Z'),
-        },
+    it('creates customer using businessId as business and ignores lastOrderAt from input', async () => {
+      const bodyData = {
+        businessId: '507f1f77bcf86cd799439011',
+        name: 'Mahdi',
+        phone: '0797123456',
+        altPhone: '0797000000',
+        addressText: 'Kabul, street 1',
+        location: { type: 'Point', coordinates: [69.2, 34.5] },
+        notes: 'VIP',
+        tags: ['vip'],
+        lastOrderAt: new Date('2026-01-01T10:00:00.000Z'),
       };
 
-      const createdDoc = { _id: 'cust1', ...req.body, business: req.body.businessId };
+      const createdDoc = {
+        _id: 'cust1',
+        ...bodyData,
+        business: bodyData.businessId,
+      };
       businessCustomerModel.create.mockResolvedValue(createdDoc);
 
-      const result = await createNewBusinessCustomer(req);
+      const result = await createNewBusinessCustomer(bodyData);
 
       expect(businessCustomerModel.create).toHaveBeenCalledWith({
         business: '507f1f77bcf86cd799439011',
@@ -70,7 +71,6 @@ describe('BusinessCustomer Service', () => {
         location: { type: 'Point', coordinates: [69.2, 34.5] },
         notes: 'VIP',
         tags: ['vip'],
-        lastOrderAt: req.body.lastOrderAt,
       });
       expect(result).toEqual(createdDoc);
     });

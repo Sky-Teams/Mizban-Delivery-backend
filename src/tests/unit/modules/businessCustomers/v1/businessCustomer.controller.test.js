@@ -72,7 +72,7 @@ describe('BusinessCustomer controller - createBusinessCustomer', () => {
       '507f1f77bcf86cd799439011',
       '0797123456'
     );
-    expect(createNewBusinessCustomer).toHaveBeenCalledWith(req);
+    expect(createNewBusinessCustomer).toHaveBeenCalledWith(req.body);
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith({
       success: true,

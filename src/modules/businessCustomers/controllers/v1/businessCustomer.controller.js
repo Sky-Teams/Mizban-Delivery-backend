@@ -17,7 +17,7 @@ export const createBusinessCustomer = async (req, res) => {
     );
   }
 
-  const businessCustomer = await createNewBusinessCustomer(req);
+  const businessCustomer = await createNewBusinessCustomer(req.body);
 
   res.status(201).json({
     success: true,
