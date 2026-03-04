@@ -4,7 +4,8 @@ import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
 import { authRoutes } from '#modules/users/index.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
-import { driverRoutes } from '#modules/drivers/index.js';
+import { adminDriverRoutes, driverRoutes } from '#modules/drivers/index.js';
+import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 
 const app = express();
 
@@ -29,6 +30,8 @@ app.use('/api/auth', authRoutes);
 
 app.use('/api/drivers', authMiddleware, driverRoutes);
 
+// Admin routes
+app.use('/api/admin/drivers', authorizeRole('admin'), adminDriverRoutes);
 //#endregion
 
 //#region Not found (404) middleware
