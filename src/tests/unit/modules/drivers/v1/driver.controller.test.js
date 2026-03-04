@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createDriver, updateExistedDriver, updateDriver } from '#modules/drivers/index.js';
+import {
+  createDriver,
+  updateExistedDriver,
+  updateDriver,
+  getDriverProfile,
+  getDriverInfoByUserId,
+} from '#modules/drivers/index.js';
 import { doesDriverExist, createNewDriver } from '#modules/drivers/index.js';
 import { AppError } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
@@ -8,6 +14,7 @@ vi.mock('#modules/drivers/services/v1/driver.service.js', () => ({
   doesDriverExist: vi.fn(),
   createNewDriver: vi.fn(),
   updateExistedDriver: vi.fn(),
+  getDriverInfoByUserId: vi.fn(),
 }));
 
 describe('createDriver Controller', () => {
@@ -149,6 +156,65 @@ describe('updateDriver Controller', () => {
     await expect(updateDriver(req, res)).rejects.toMatchObject({
       message: 'No fields provided',
       code: ERROR_CODES.NO_FIELDS_PROVIDED,
+    });
+  });
+});
+
+describe('getDriverProfile Controller', () => {
+  let req, res;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    req = {
+      user: { _id: 'user123' },
+    };
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+  });
+
+  it('should throw unauthorized error if user is missing', async () => {
+    req.user = null;
+
+    await expect(getDriverProfile(req, res)).rejects.toMatchObject({
+      message: 'User is not authorized',
+      code: ERROR_CODES.UNAUTHORIZED,
+    });
+  });
+
+  it('should call getDriverInfoByUserId and return 200 with driver info', async () => {
+    const mockedDriver = {
+      _id: 'driver123',
+      user: 'user123',
+      vehicleType: 'car',
+      status: 'idle',
+      capacity: { maxWeightKg: 100, maxPackages: 5 },
+      currentLocation: { coordinates: [0, 0] },
+      lastLocationAt: null,
+    };
+
+    getDriverInfoByUserId.mockResolvedValue(mockedDriver);
+
+    await getDriverProfile(req, res);
+
+    expect(getDriverInfoByUserId).toHaveBeenCalledWith(req.user._id);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockedDriver,
+    });
+  });
+
+  it('should propagate error from getDriverProfile', async () => {
+    getDriverInfoByUserId.mockResolvedValue(null);
+
+    await expect(getDriverProfile(req, res)).rejects.toThrow(AppError);
+    await expect(getDriverProfile(req, res)).rejects.toMatchObject({
+      code: ERROR_CODES.NOT_FOUND,
     });
   });
 });
