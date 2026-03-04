@@ -14,16 +14,18 @@ describe('Business Service - Partial Update', () => {
     vi.clearAllMocks();
   });
 
-  describe('isowner, BusinessModel.findById', async () => {
+  describe('isOwner()', () => {
     it('should return true if user is owner of the business', async () => {
       const userId = 'user1';
       const mockBusiness = { owner: 'user1', _id: '1', name: 'Reyhan Resturant' };
 
       BusinessModel.findById.mockResolvedValue(mockBusiness);
 
-      const result = await isOwner(userId, mockBusiness.owner);
+      const businessId = mockBusiness._id;
+      const result = await isOwner(userId, businessId);
 
       expect(result).toBe(true);
+      expect(BusinessModel.findById).toHaveBeenCalledWith(businessId);
     });
 
     it('should return false if user is not owner of the business', async () => {
@@ -31,9 +33,12 @@ describe('Business Service - Partial Update', () => {
       const mockBusiness = { owner: 'user2', _id: '1', name: 'Reyhan Resturant' };
 
       BusinessModel.findById.mockResolvedValue(mockBusiness);
-      const result = await isOwner(userId, mockBusiness._id);
+
+      const businessId = mockBusiness._id;
+      const result = await isOwner(userId, businessId);
 
       expect(result).toBe(false);
+      expect(BusinessModel.findById).toHaveBeenCalledWith(businessId);
     });
 
     it('should throw error if business not found', async () => {
@@ -41,7 +46,8 @@ describe('Business Service - Partial Update', () => {
 
       BusinessModel.findById.mockResolvedValue(null);
 
-      expect(isOwner(userId, null)).rejects.toMatchObject({
+      const businessId = '999';
+      await expect(isOwner(userId, businessId)).rejects.toMatchObject({
         status: 404,
         message: 'Business not found',
         code: ERROR_CODES.NOT_FOUND,
@@ -49,7 +55,7 @@ describe('Business Service - Partial Update', () => {
     });
   });
 
-  describe('updateBusinessService', () => {
+  describe('updateBusinessService()', () => {
     it('should update business successfully (partial)', async () => {
       const userId = 'user1';
       const businessId = '1';
@@ -73,7 +79,7 @@ describe('Business Service - Partial Update', () => {
       const businessId = '2';
       const businessData = {};
 
-      expect(updateBusinessService(userId, businessId, businessData)).rejects.toMatchObject({
+      await expect(updateBusinessService(userId, businessId, businessData)).rejects.toMatchObject({
         message: 'No fields provided for update',
         code: ERROR_CODES.NO_FIELDS_PROVIDED,
         status: 400,
@@ -87,7 +93,7 @@ describe('Business Service - Partial Update', () => {
 
       BusinessModel.findOneAndUpdate.mockResolvedValue(null);
 
-      expect(updateBusinessService(userId, businessId, businessData)).rejects.toMatchObject({
+      await expect(updateBusinessService(userId, businessId, businessData)).rejects.toMatchObject({
         message: 'Business not found',
         code: ERROR_CODES.NOT_FOUND,
         status: 404,
