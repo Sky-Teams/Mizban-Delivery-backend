@@ -12,6 +12,15 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 //!  Helper Functions
 
+// Register helpers
+export const doesUserExist = async (fields) => {
+  if (Object.keys(fields).length === 0) return false;
+
+  const exist = await UserModel.exists(fields);
+  return !!exist;
+};
+
+// Login helpers
 const getUserByEmail = async (email) => {
   const user = await UserModel.findOne({ email });
   if (!user) {
@@ -31,6 +40,7 @@ const validateLoginUser = async (user, password) => {
   }
 };
 
+// Refresh helpers
 const getStoredRefreshToken = async ({ refreshToken, deviceId }) => {
   if (!refreshToken || !deviceId) {
     throw new AppError('Unauthorized: Invalid credential', 401, ERROR_CODES.INVALID_CREDENTIAL);
@@ -81,6 +91,24 @@ const rotateRefreshToken = async (currentTokenId) => {
 
 //!  Services
 
+export const registerUser = async (data) => {
+  const { email, name, phone, password } = data;
+
+  const hashPassword = await bcrypt.hash(password, 12);
+
+  const user = await UserModel.create({
+    name,
+    email,
+    phone,
+    password: hashPassword,
+  });
+
+  return {
+    id: user._id,
+    email: user.email,
+  };
+};
+
 export const loginService = async ({ email, password }, deviceId) => {
   const user = await getUserByEmail(email);
 
@@ -122,30 +150,5 @@ export const refreshService = async ({ refreshToken, deviceId }) => {
   return {
     accessToken: generateAccessToken(user),
     refreshToken: rotatedRefreshToken,
-  };
-};
-
-export const doesUserExist = async (fields) => {
-  if (Object.keys(fields).length === 0) return false;
-
-  const exist = await UserModel.exists(fields);
-  return !!exist;
-};
-
-export const registerUser = async (data) => {
-  const { email, name, phone, password } = data;
-
-  const hashPassword = await bcrypt.hash(password, 12);
-
-  const user = await UserModel.create({
-    name,
-    email,
-    phone,
-    password: hashPassword,
-  });
-
-  return {
-    id: user._id,
-    email: user.email,
   };
 };
