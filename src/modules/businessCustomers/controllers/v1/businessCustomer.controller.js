@@ -1,9 +1,11 @@
 import {
   createNewBusinessCustomer,
   doesBusinessCustomerExist,
+  updateExistedBusinessCustomer,
 } from '#modules/businessCustomers/services/v1/businessCustomer.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, unauthorized } from '#shared/errors/error.js';
+import { success } from 'zod';
 
 export const createBusinessCustomer = async (req, res) => {
   if (!req.user) throw unauthorized();
@@ -22,5 +24,20 @@ export const createBusinessCustomer = async (req, res) => {
   res.status(201).json({
     success: true,
     data: businessCustomer,
+  });
+};
+
+export const updateBusinessCustomer = async (req, res) => {
+  if (!req.user) throw unauthorized();
+
+  const updatedBusinessCustomer = await updateExistedBusinessCustomer(
+    req.params.id,
+    req.user._id,
+    req.body
+  );
+
+  res.status(200).json({
+    success: true,
+    data: updatedBusinessCustomer,
   });
 };
