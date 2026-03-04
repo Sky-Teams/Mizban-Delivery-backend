@@ -1,5 +1,9 @@
 import express from 'express';
-import { createDriver, updateDriver } from '../../controllers/v1/driver.controller.js';
+import {
+  createDriver,
+  getDriverProfile,
+  updateDriver,
+} from '../../controllers/v1/driver.controller.js';
 import { createDriverValidator } from '../../dto/create-driver.schema.js';
 import { updateDriverValidator } from '../../dto/update-driver.schema.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
@@ -15,5 +19,5 @@ router.put(
   validate(updateDriverValidator),
   asyncHandler(updateDriver)
 );
-
+router.get('/me', asyncHandler(getDriverProfile)); // Driver can get its own info from this route.
 export default router;
