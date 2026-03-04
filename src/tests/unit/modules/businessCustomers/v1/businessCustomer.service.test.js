@@ -2,13 +2,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createNewBusinessCustomer,
   doesBusinessCustomerExist,
+  updateExistedBusinessCustomer,
 } from '#modules/businessCustomers/services/v1/businessCustomer.service.js';
 import { businessCustomerModel } from '#modules/businessCustomers/models/businessCustomer.model.js';
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 vi.mock('#modules/businessCustomers/models/businessCustomer.model.js', () => ({
   businessCustomerModel: {
     exists: vi.fn(),
     create: vi.fn(),
+    findOneAndUpdate: vi.fn(),
   },
 }));
 
@@ -75,6 +78,58 @@ describe('BusinessCustomer Service', () => {
         tags: ['vip'],
       });
       expect(result).toEqual(createdDoc);
+    });
+  });
+
+  describe('updateExistedBusinessCustomer', () => {
+    it('updates only allowed fields and returns updated document', async () => {
+      const updatedDoc = {
+        _id: 'customer1',
+        business: 'business1',
+        name: 'Updated',
+        phone: '0797222222',
+      };
+
+      businessCustomerModel.findOneAndUpdate.mockResolvedValue(updatedDoc);
+
+      const result = await updateExistedBusinessCustomer('customer1', 'business1', {
+        name: 'Updated',
+        phone: '0797222222',
+        email: 'not.allowed@example.com',
+      });
+
+      expect(businessCustomerModel.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: 'customer1', business: 'business1' },
+        { $set: { name: 'Updated', phone: '0797222222' } },
+        { new: true, runValidators: true }
+      );
+      expect(result).toEqual(updatedDoc);
+    });
+
+    it('throws NO_FIELDS_PROVIDED when no allowed fields exist in payload', async () => {
+      await expect(
+        updateExistedBusinessCustomer('customer1', 'business1', {
+          email: 'only.email@example.com',
+        })
+      ).rejects.toMatchObject({
+        code: ERROR_CODES.NO_FIELDS_PROVIDED,
+        message: 'No fields provided for update',
+      });
+
+      expect(businessCustomerModel.findOneAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it('throws NOT_FOUND when customer does not exist in business scope', async () => {
+      businessCustomerModel.findOneAndUpdate.mockResolvedValue(null);
+
+      await expect(
+        updateExistedBusinessCustomer('customer1', 'business1', {
+          name: 'Updated',
+        })
+      ).rejects.toMatchObject({
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'BusinessCustomer not found',
+      });
     });
   });
 });
