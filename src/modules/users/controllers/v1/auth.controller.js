@@ -1,6 +1,16 @@
+import { loginService } from '#modules/users/services/v1/auth.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError } from '#shared/errors/error.js';
 import { doesUserExist, registerUser } from '../../services/v1/auth.service.js';
+
+export const login = async (req, res) => {
+  const user = await loginService(req.body);
+
+  res.status(200).json({
+    success: true,
+    data: user,
+  });
+};
 
 export const register = async (req, res) => {
   const data = req.body;
