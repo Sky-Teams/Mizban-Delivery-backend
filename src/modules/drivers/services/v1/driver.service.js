@@ -1,4 +1,5 @@
 import { noFieldsProvidedForUpdate, notFound } from '#shared/errors/error.js';
+import { driverQueryBuilder } from '#shared/utils/queryBuilder.js';
 import { DriverModel } from '../../models/driver.model.js';
 
 /** Check if the driver exist by userId. Return true or false. */
@@ -74,4 +75,40 @@ export const updateExistedDriver = async (driverId, userId, driverData) => {
   if (!updatedDriver) throw notFound('Driver');
 
   return updatedDriver;
+};
+
+export const getDriverInfoByUserId = async (userId) => {
+  const driverInfo = await DriverModel.find({ user: userId });
+  return driverInfo;
+};
+
+//Admin Services
+
+/** Fetch all Drivers with pagination functionality */
+export const fetchDrivers = async (limit = 8, page = 1, searchQuery = {}) => {
+  const skip = (page - 1) * limit;
+
+  const query = driverQueryBuilder(searchQuery);
+
+  const totalDrivers = await DriverModel.countDocuments(query);
+
+  const drivers = await DriverModel.find(query)
+    .populate('user', 'name phone email isActive')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  return { drivers, totalDrivers, totalPages: Math.ceil(totalDrivers / limit) };
+};
+
+/** Fetch a driver by driverId */
+export const fetchDriverByDriverId = async (driverId) => {
+  const drivers = await DriverModel.find({ _id: driverId })
+    .populate({
+      path: 'user',
+      select: 'name phone email isActive',
+    })
+    .lean();
+  return drivers;
 };
