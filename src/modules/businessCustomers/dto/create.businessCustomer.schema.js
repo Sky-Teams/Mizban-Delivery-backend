@@ -23,6 +23,11 @@ const createBusinessCustomerSchema = z.object({
 
     altPhone: z.string().trim().optional(),
 
+    email: z
+      .string({ required_error: ERROR_CODES.REQUIRED_FIELD })
+      .email({ message: ERROR_CODES.INVALID_EMAIL_FORMAT })
+      .trim(),
+
     addressText: z.string().trim(),
 
     location: z.object({

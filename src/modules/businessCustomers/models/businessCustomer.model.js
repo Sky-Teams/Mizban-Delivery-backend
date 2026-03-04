@@ -9,6 +9,7 @@ export const businessCustomerSchema = new mongoose.Schema({
   name: { type: String, required: true },
   phone: { type: String, required: true },
   altPhone: { type: String },
+  email: { type: String, required: true },
   addressText: { type: String, required: true },
   location: {
     type: { type: String, enum: ['Point'], default: 'Point' },
@@ -23,6 +24,7 @@ export const businessCustomerSchema = new mongoose.Schema({
 
 businessCustomerSchema.index({ business: 1 });
 businessCustomerSchema.index({ business: 1, phone: 1 }, { unique: true });
+businessCustomerSchema.index({ business: 1, email: 1 }, { unique: true });
 businessCustomerSchema.index({ location: '2dsphere' });
 
 export const businessCustomerModel = mongoose.model('BusinessCustomer', businessCustomerSchema);

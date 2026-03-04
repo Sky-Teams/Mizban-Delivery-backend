@@ -18,14 +18,14 @@ describe('BusinessCustomer Service', () => {
   });
 
   describe('doesBusinessCustomerExist', () => {
-    it('returns true when customer exists for business and phone', async () => {
+    it('returns true when customer exists for business and phone or email', async () => {
       businessCustomerModel.exists.mockResolvedValue(true);
 
-      const result = await doesBusinessCustomerExist('business1', '0797123456');
+      const result = await doesBusinessCustomerExist('business1', '0797123456', 'mahdi@example.com');
 
       expect(businessCustomerModel.exists).toHaveBeenCalledWith({
         business: 'business1',
-        phone: '0797123456',
+        $or: [{ phone: '0797123456' }, { email: 'mahdi@example.com' }],
       });
       expect(result).toBe(true);
     });
@@ -33,7 +33,7 @@ describe('BusinessCustomer Service', () => {
     it('returns false when customer does not exist', async () => {
       businessCustomerModel.exists.mockResolvedValue(false);
 
-      const result = await doesBusinessCustomerExist('business1', '0797123456');
+      const result = await doesBusinessCustomerExist('business1', '0797123456', 'mahdi@example.com');
 
       expect(result).toBe(false);
     });
@@ -46,6 +46,7 @@ describe('BusinessCustomer Service', () => {
         name: 'Mahdi',
         phone: '0797123456',
         altPhone: '0797000000',
+        email: 'mahdi@example.com',
         addressText: 'Kabul, street 1',
         location: { type: 'Point', coordinates: [69.2, 34.5] },
         notes: 'VIP',
@@ -67,6 +68,7 @@ describe('BusinessCustomer Service', () => {
         name: 'Mahdi',
         phone: '0797123456',
         altPhone: '0797000000',
+        email: 'mahdi@example.com',
         addressText: 'Kabul, street 1',
         location: { type: 'Point', coordinates: [69.2, 34.5] },
         notes: 'VIP',
