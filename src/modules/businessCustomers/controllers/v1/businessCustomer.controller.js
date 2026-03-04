@@ -5,7 +5,6 @@ import {
 } from '#modules/businessCustomers/services/v1/businessCustomer.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, unauthorized } from '#shared/errors/error.js';
-import { success } from 'zod';
 
 export const createBusinessCustomer = async (req, res) => {
   if (!req.user) throw unauthorized();

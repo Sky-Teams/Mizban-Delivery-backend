@@ -5,6 +5,7 @@ import {
 import { createBusinessCustomerValidator } from '#modules/businessCustomers/dto/create.businessCustomer.schema.js';
 import { updateBusinessCustomerValidator } from '#modules/businessCustomers/dto/update.businessCustomer.schema.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
+import { mongoIdValidator } from '#shared/middleware/mongoIdValidator.js';
 import { validate } from '#shared/middleware/validate.js';
 import express from 'express';
 
@@ -16,6 +17,10 @@ router
 
 router
   .route('/:id')
-  .patch(validate(updateBusinessCustomerValidator), asyncHandler(updateBusinessCustomer));
+  .patch(
+    validate(mongoIdValidator),
+    validate(updateBusinessCustomerValidator),
+    asyncHandler(updateBusinessCustomer)
+  );
 
 export default router;
