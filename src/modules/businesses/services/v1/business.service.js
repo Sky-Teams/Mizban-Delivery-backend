@@ -11,17 +11,13 @@ export const createNewBusiness = async (userId, businessData) => {
     location,
   } = businessData;
 
-  const locationData = location?.coordinates
-    ? { type: 'Point', coordinates: location.coordinates }
-    : undefined;
-
   const newBusiness = await BusinessModel.create({
     name,
     type: businessType,
     phone,
     addressText,
     prepTimeAvgMinutes,
-    ...(locationData ? { location: locationData } : {}),
+    location,
     owner: userId,
   });
 

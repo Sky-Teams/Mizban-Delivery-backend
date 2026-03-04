@@ -1,4 +1,4 @@
-import { UserModel } from '../../modules/users/index.js';
+import { UserModel } from '#modules/users/index.js';
 import { ERROR_CODES } from '../errors/customCodes.js';
 import { AppError } from '../errors/error.js';
 import { verifyJWT } from '../utils/jwt.js';

@@ -1,6 +1,9 @@
 {
   "compilerOptions": {
     "baseUrl": "./src",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
     "paths": {
       "#shared/*": ["shared/*"],
       "#modules/*": ["modules/*"],
@@ -8,5 +11,5 @@
       "#root/*": ["./*"]
     }
   },
-  "include": ["src"]
+  "include": ["src/**/*.js"]
 }
