@@ -16,11 +16,11 @@ let token;
 describe('BusinessCustomer API Integration', () => {
   beforeAll(async () => {
     await connectDB();
-  }, 30000);
+  });
 
   afterAll(async () => {
     await disconnectDB();
-  }, 30000);
+  });
 
   beforeEach(async () => {
     await clearDB();
