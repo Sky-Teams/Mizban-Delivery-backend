@@ -30,26 +30,25 @@ const updateBusinessSchema = z.object({
                   ensureNumber(val[1], 'location.coordinates', ERROR_CODES.INVALID_COORDINATES),
                 ];
               },
-              z.tuple([
-                z
-                  .number()
-                  .min(60, { message: ERROR_CODES.LNG_OUT_OF_RANGE }) //Longitude range for Afghanistan
-                  .max(75, { message: ERROR_CODES.LNG_OUT_OF_RANGE }),
-                z
-                  .number()
-                  .min(29, { message: ERROR_CODES.LAT_OUT_OF_RANGE }) // Latitude range for Afghanistan
-                  .max(39, { message: ERROR_CODES.LAT_OUT_OF_RANGE }),
-              ])
+              z
+                .array(z.number())
+                .length(2, { message: ERROR_CODES.INVALID_COORDINATES })
+                .refine(([lng]) => lng >= 60 && lng <= 75, {
+                  message: ERROR_CODES.LNG_OUT_OF_RANGE,
+                })
+                .refine(([, lat]) => lat >= 29 && lat <= 39, {
+                  message: ERROR_CODES.LAT_OUT_OF_RANGE,
+                })
             )
             .optional(),
         })
         .partial(),
 
       prepTimeAvgMinutes: z.preprocess(
-        (val) => ensureNumber(val, 'prepTimeAvgMinutes', ERROR_CODES.PREP_TIME_MUST_BE_INTEGARE),
+        (val) => ensureNumber(val, 'prepTimeAvgMinutes', ERROR_CODES.PREP_TIME_MUST_BE_INTEGER),
         z
           .number()
-          .int({ message: ERROR_CODES.PREP_TIME_MUST_BE_INTEGARE })
+          .int({ message: ERROR_CODES.PREP_TIME_MUST_BE_INTEGER })
           .positive({ message: ERROR_CODES.PREP_TIME_MUST_BE_POSITIVE })
       ),
     })
