@@ -38,7 +38,7 @@ export const markAsRead = async (notificationId, userId) => {
     );
 
   notification.isRead = true;
-  notification.save();
+  await notification.save();
   return notification;
 };
 
@@ -56,6 +56,6 @@ export const markAsUnread = async (notificationId, userId) => {
     );
 
   notification.isRead = false;
-  notification.save();
+  await notification.save();
   return notification;
 };
