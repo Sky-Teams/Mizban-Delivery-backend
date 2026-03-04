@@ -25,6 +25,7 @@ describe('BusinessCustomer controller - createBusinessCustomer', () => {
         businessId: '507f1f77bcf86cd799439011',
         name: 'Mahdi',
         phone: '0797123456',
+        email: 'mahdi@example.com',
         addressText: 'Kabul',
         location: { type: 'Point', coordinates: [69.2, 34.5] },
       },
@@ -56,7 +57,8 @@ describe('BusinessCustomer controller - createBusinessCustomer', () => {
 
     expect(doesBusinessCustomerExist).toHaveBeenCalledWith(
       '507f1f77bcf86cd799439011',
-      '0797123456'
+      '0797123456',
+      'mahdi@example.com'
     );
     expect(createNewBusinessCustomer).not.toHaveBeenCalled();
   });
@@ -70,7 +72,8 @@ describe('BusinessCustomer controller - createBusinessCustomer', () => {
 
     expect(doesBusinessCustomerExist).toHaveBeenCalledWith(
       '507f1f77bcf86cd799439011',
-      '0797123456'
+      '0797123456',
+      'mahdi@example.com'
     );
     expect(createNewBusinessCustomer).toHaveBeenCalledWith(req.body);
     expect(res.status).toHaveBeenCalledWith(201);

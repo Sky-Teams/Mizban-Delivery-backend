@@ -36,6 +36,7 @@ describe('BusinessCustomer API Integration', () => {
         name: 'Customer One',
         phone: '0797123456',
         altPhone: '0797000000',
+        email: 'customer.one@example.com',
         addressText: 'Kabul district 4',
         location: { type: 'Point', coordinates: [69.2, 34.5] },
         notes: 'first order',
@@ -52,6 +53,7 @@ describe('BusinessCustomer API Integration', () => {
       expect(res.body.data).toHaveProperty('_id');
       expect(res.body.data.business).toBe(businessId);
       expect(res.body.data.phone).toBe(payload.phone);
+      expect(res.body.data.email).toBe(payload.email);
 
       const inDB = await businessCustomerModel.findById(res.body.data._id);
       expect(inDB).not.toBeNull();
@@ -67,6 +69,7 @@ describe('BusinessCustomer API Integration', () => {
         business: businessId,
         name: 'Existing',
         phone: '0797123456',
+        email: 'existing@example.com',
         addressText: 'Kabul',
         location: { type: 'Point', coordinates: [69.2, 34.5] },
       });
@@ -75,8 +78,39 @@ describe('BusinessCustomer API Integration', () => {
         businessId,
         name: 'Another',
         phone: '0797123456',
+        email: 'another@example.com',
         addressText: 'Kabul district 5',
         location: { type: 'Point', coordinates: [69.3, 34.6] },
+      };
+
+      const res = await request(app)
+        .post(baseURL)
+        .set('Authorization', `Bearer ${token}`)
+        .send(payload);
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe(ERROR_CODES.BUSINESS_CUSTOMER_ALREADY_EXIST);
+      expect(res.body.message).toBe('Business customer already exists');
+    });
+
+    it('fails for duplicate customer email under same business', async () => {
+      const businessId = '507f1f77bcf86cd799439015';
+      await businessCustomerModel.create({
+        business: businessId,
+        name: 'Existing',
+        phone: '0797444444',
+        email: 'same@example.com',
+        addressText: 'Kabul',
+        location: { type: 'Point', coordinates: [69.2, 34.5] },
+      });
+
+      const payload = {
+        businessId,
+        name: 'Another',
+        phone: '0797555555',
+        email: 'same@example.com',
+        addressText: 'Kabul district 6',
+        location: { type: 'Point', coordinates: [69.4, 34.7] },
       };
 
       const res = await request(app)
@@ -94,6 +128,7 @@ describe('BusinessCustomer API Integration', () => {
         businessId: '507f1f77bcf86cd799439013',
         name: 'No Token',
         phone: '0797222222',
+        email: 'no.token@example.com',
         addressText: 'Kabul',
         location: { type: 'Point', coordinates: [69.2, 34.5] },
       };
@@ -109,6 +144,7 @@ describe('BusinessCustomer API Integration', () => {
         businessId: '507f1f77bcf86cd799439014',
         name: 'Bad Coords',
         phone: '0797333333',
+        email: 'bad.coords@example.com',
         addressText: 'Kabul',
         location: { type: 'Point', coordinates: ['bad', 34.5] },
       };
