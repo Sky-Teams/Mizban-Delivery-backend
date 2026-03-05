@@ -157,7 +157,11 @@ export const doesDriverExist = async (userId) => {
 
 /** create driver account for a user */
 export const createNewDriver = async (userId, driverData) => {
-  const { vehicleType, status, capacity } = driverData;
+  const { vehicleType, status, capacity, address, vehicleRegistrationNumber, timeAvailability } =
+    driverData;
+
+  const { start, end } = timeAvailability;
+
   const { maxWeightKg, maxPackages } = capacity;
 
   const newDriver = {
@@ -168,6 +172,9 @@ export const createNewDriver = async (userId, driverData) => {
       maxWeightKg,
       maxPackages,
     },
+    address,
+    vehicleRegistrationNumber,
+    timeAvailability: { start, end },
   };
 
   const driver = await DriverModel.create(newDriver);
