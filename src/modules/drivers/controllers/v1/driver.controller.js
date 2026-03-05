@@ -1,4 +1,3 @@
-import { doesUserExist } from '#modules/users/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound, unauthorized } from '#shared/errors/error.js';
 import {
@@ -8,6 +7,7 @@ import {
   fetchDriverByDriverId,
   fetchDrivers,
   getDriverInfoByUserId,
+  modifyExistedDriver,
   updateExistedDriver,
 } from '../../services/v1/driver.service.js';
 
@@ -16,12 +16,15 @@ import {
 export const addDrvier = async (req, res) => {
   if (!req.user) throw unauthorized();
 
-  const doesEmailExist = await doesUserExist({ email: req.body.email });
-  if (doesEmailExist) throw new AppError('Email already exist', 400, ERROR_CODES.DUPLICATE);
-
   const newDriver = await addNewDriver(req.body);
 
   res.status(200).json({ success: true, data: newDriver });
+};
+
+export const modifyDriver = async (req, res) => {
+  if (!req.user) throw unauthorized();
+  const updatedDriver = await modifyExistedDriver(req.params.id, req.body);
+  res.status(200).json({ success: true, data: updatedDriver });
 };
 
 // Fetch All Drivers
