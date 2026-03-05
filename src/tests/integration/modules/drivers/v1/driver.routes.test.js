@@ -37,6 +37,11 @@ describe('Drivers API v1 Integration', () => {
         vehicleType: 'car',
         status: 'idle',
         capacity: { maxWeightKg: 100, maxPackages: 5 },
+        vehicleRegistrationNumber: 'ABC-1234',
+        timeAvailability: {
+          start: '08:00',
+          end: '18:00',
+        },
       };
 
       const res = await request(app)
@@ -61,6 +66,11 @@ describe('Drivers API v1 Integration', () => {
         vehicleType: 'bike',
         status: 'offline',
         capacity: { maxWeightKg: '100', maxPackages: '5' },
+        vehicleRegistrationNumber: 'ABC-1234', // required
+        timeAvailability: {
+          start: '08:00', // required
+          end: '18:00', // required
+        },
       };
 
       const res = await request(app)
@@ -190,12 +200,22 @@ describe('Drivers API v1 Integration', () => {
         vehicleType: 'car',
         status: 'idle',
         capacity: { maxWeightKg: 100, maxPackages: 5 },
+        vehicleRegistrationNumber: 'ABC-123',
+        timeAvailability: {
+          start: '08:00',
+          end: '18:00',
+        },
       });
 
       const driverData = {
         vehicleType: 'car',
         status: 'idle',
         capacity: { maxWeightKg: 100, maxPackages: 5 },
+        vehicleRegistrationNumber: 'ABC-123',
+        timeAvailability: {
+          start: '08:00',
+          end: '18:00',
+        },
       };
 
       const res = await request(app)
@@ -219,6 +239,11 @@ describe('Drivers API v1 Integration', () => {
         status: 'idle',
         capacity: { maxWeightKg: 100, maxPackages: 5 },
         currentLocation: { type: 'Point', coordinates: [0, 0] },
+        vehicleRegistrationNumber: 'ABC-1234',
+        timeAvailability: {
+          start: '08:00',
+          end: '18:00',
+        },
       });
       driverId = driver._id.toString();
     });

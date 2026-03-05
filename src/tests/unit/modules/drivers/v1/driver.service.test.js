@@ -44,6 +44,11 @@ describe('Driver Service', () => {
         vehicleType: 'car',
         status: 'offline',
         capacity: { maxWeightKg: 100, maxPackages: 5 },
+        vehicleRegistrationNumber: 'ABC-1234',
+        timeAvailability: {
+          start: '08:00',
+          end: '18:00',
+        },
       };
 
       const mockedDriver = {
@@ -73,6 +78,11 @@ describe('Driver Service', () => {
         vehicleType: 'car',
         status: 'offline',
         capacity: { maxWeightKg: 100, maxPackages: 5 },
+        vehicleRegistrationNumber: 'ABC-1234',
+        timeAvailability: {
+          start: '08:00',
+          end: '18:00',
+        },
       });
     });
 
@@ -82,6 +92,11 @@ describe('Driver Service', () => {
         vehicleType: 'bike',
         status: 'offline',
         capacity: { maxWeightKg: -10, maxPackages: -3 },
+        vehicleRegistrationNumber: 'ABC-1234',
+        timeAvailability: {
+          start: '08:00',
+          end: '18:00',
+        },
       };
 
       const validationError = new Error('Driver validation failed');
