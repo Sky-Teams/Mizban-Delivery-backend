@@ -27,6 +27,18 @@ const DriverSchema = new mongoose.Schema(
       type: { type: String, enum: ['Point'], default: 'Point' },
       coordinates: { type: [Number], default: [0, 0] },
     },
+    vehicleRegistrationNumber: { type: String, required: true, unique: true },
+    Address: { type: String, default: null },
+    TimeAvailability: {
+      start: {
+        type: String,
+        required: true,
+      },
+      end: {
+        type: String,
+        required: true,
+      },
+    },
     lastLocationAt: {
       type: Date,
       default: null,
