@@ -32,7 +32,7 @@ export const fetchDrivers = async (limit = 8, page = 1, searchQuery = {}) => {
 
 /** Fetch a driver by driverId */
 export const fetchDriverByDriverId = async (driverId) => {
-  const drivers = await DriverModel.find({ _id: driverId })
+  const drivers = await DriverModel.findOne({ _id: driverId })
     .populate({
       path: 'user',
       select: 'name phone email isActive',
