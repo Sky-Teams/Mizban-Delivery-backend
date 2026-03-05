@@ -4,11 +4,11 @@ import {
   filterDriverField,
   filterUserField,
 } from '#shared/utils/queryBuilder.js';
-import mongoose from 'mongoose';
 import { DriverModel } from '../../models/driver.model.js';
 import { UserModel } from '#modules/users/index.js';
 import { hashPassword } from '#shared/utils/jwt.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import { withTransaction } from '#shared/middleware/transactionHandler.js';
 
 //#region Admin Services
 
@@ -42,7 +42,7 @@ export const fetchDriverByDriverId = async (driverId) => {
 };
 
 /** Create a new driver in system through admin*/
-export const addNewDriver = async (driverData) => {
+const addDriver = async (session, driverData) => {
   const {
     name,
     email,
@@ -54,138 +54,97 @@ export const addNewDriver = async (driverData) => {
     vehicleRegistrationNumber,
     timeAvailability,
   } = driverData;
-  const { maxWeightKg, maxPackages } = capacity;
 
+  const { maxWeightKg, maxPackages } = capacity;
   const { start, end } = timeAvailability;
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  // Temporary default password for drivers created by admin
+  const userPassword = 'driver@123456789';
+  const hashedPassword = await hashPassword(userPassword);
 
-  try {
-    // Temporary default password for drivers created by admin. For now, we use this fixed password, but in the future:
-    // 1. Generate a random unique password per driver
-    // 2. Send it securely (email) to the driver and require the driver to reset it on first login
-    const userPassword = 'driver@123456789';
-    const hashedPassword = await hashPassword(userPassword);
+  // Create user
+  const newUser = await UserModel.create(
+    [{ name, email, phone, role: 'driver', password: hashedPassword }],
+    { session }
+  );
 
-    const newUser = await UserModel.create(
-      [{ name, email, phone, role: 'driver', password: hashedPassword }],
-      { session }
-    );
-    const newDriver = {
-      user: newUser[0]._id,
-      vehicleType,
-      status,
-      capacity: {
-        maxWeightKg,
-        maxPackages,
-      },
-      address,
-      vehicleRegistrationNumber,
-      timeAvailability: {
-        start,
-        end,
-      },
-      isVerified: true,
-    };
+  // Create driver linked to user
+  const newDriver = {
+    user: newUser[0]._id,
+    vehicleType,
+    status,
+    capacity: { maxWeightKg, maxPackages },
+    address,
+    vehicleRegistrationNumber,
+    timeAvailability: { start, end },
+    isVerified: true,
+  };
 
-    const driver = await DriverModel.create([newDriver], { session });
-    const driverPlainObject = driver[0].toObject();
+  const driver = await DriverModel.create([newDriver], { session });
+  const driverPlainObject = driver[0].toObject();
 
-    await session.commitTransaction();
-    session.endSession();
-
-    const newDriverData = {
-      _id: driverPlainObject._id,
-      userId: driverPlainObject.user,
-      name,
-      email,
-      phone,
-      vehicleType: driverPlainObject.vehicleType,
-      status: driverPlainObject.status,
-      capacity: driverPlainObject.capacity,
-      currentLocation: driverPlainObject.currentLocation,
-      address: driverPlainObject.address,
-      vehicleRegistrationNumber: driverPlainObject.vehicleRegistrationNumber,
-      timeAvailability: driverPlainObject.timeAvailability,
-      isVerified: driverPlainObject.isVerified,
-      createdAt: driverPlainObject.createdAt,
-      updatedAt: driverPlainObject.updatedAt,
-    };
-
-    return newDriverData;
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    // Handle duplicate key error
-    if (error.code === 11000 && error.keyValue) {
-      const duplicateField = Object.keys(error.keyValue)[0];
-      throw new AppError('Duplicate field error', 400, ERROR_CODES.DUPLICATE, duplicateField);
-    }
-    throw new AppError(error.message, 400, ERROR_CODES.TRANSACTION_FAILED);
-  }
+  return {
+    _id: driverPlainObject._id,
+    userId: driverPlainObject.user,
+    name,
+    email,
+    phone,
+    vehicleType: driverPlainObject.vehicleType,
+    status: driverPlainObject.status,
+    capacity: driverPlainObject.capacity,
+    currentLocation: driverPlainObject.currentLocation,
+    address: driverPlainObject.address,
+    vehicleRegistrationNumber: driverPlainObject.vehicleRegistrationNumber,
+    timeAvailability: driverPlainObject.timeAvailability,
+    isVerified: driverPlainObject.isVerified,
+    createdAt: driverPlainObject.createdAt,
+    updatedAt: driverPlainObject.updatedAt,
+  };
 };
 
-export const modifyExistedDriver = async (driverId, driverData) => {
+const modifyDriver = async (session, driverId, driverData) => {
   const driverUpdateQuery = filterDriverField(driverData);
-
   const userUpdateQuery = await filterUserField(driverData);
 
   if (!Object.keys(driverUpdateQuery).length && !Object.keys(userUpdateQuery).length) {
     throw new AppError('No fields provided for update', 400, ERROR_CODES.NO_FIELDS_PROVIDED);
   }
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const updatedDriver = Object.keys(driverUpdateQuery).length
+    ? await DriverModel.findByIdAndUpdate(
+        driverId,
+        { $set: driverUpdateQuery },
+        { runValidators: true, session, returnDocument: 'after' }
+      )
+    : null;
 
-  try {
-    const updatedDriver = Object.keys(driverUpdateQuery).length
-      ? await DriverModel.findByIdAndUpdate(
-          driverId,
-          { $set: driverUpdateQuery },
-          { runValidators: true, session, new: true }
-        )
-      : null;
+  const updatedUser = Object.keys(userUpdateQuery).length
+    ? await UserModel.findOneAndUpdate(
+        { _id: driverData.userId },
+        { $set: userUpdateQuery },
+        { runValidators: true, session, returnDocument: 'after' }
+      )
+    : null;
 
-    const updatedUser = Object.keys(userUpdateQuery).length
-      ? await UserModel.findOneAndUpdate(
-          { _id: driverData.userId },
-          { $set: userUpdateQuery },
-          { runValidators: true, session, new: true }
-        )
-      : null;
+  if (Object.keys(driverUpdateQuery).length && !updatedDriver) throw notFound('Driver');
+  if (Object.keys(userUpdateQuery).length && !updatedUser) throw notFound('User');
 
-    if (Object.keys(driverUpdateQuery).length && !updatedDriver) throw notFound('Driver');
-
-    if (Object.keys(userUpdateQuery).length && !updatedUser) throw notFound('User');
-
-    await session.commitTransaction();
-    session.endSession();
-
-    const result = {
-      ...(updatedDriver ? updatedDriver.toObject() : {}),
-      ...(updatedUser
-        ? {
-            name: updatedUser.name,
-            email: updatedUser.email,
-            phone: updatedUser.phone,
-          }
-        : {}),
-      userId: driverData.userId,
-    };
-
-    return result;
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    // Handle duplicate key error
-    if (error.code === 11000 && error.keyValue) {
-      const duplicateField = Object.keys(error.keyValue)[0];
-      throw new AppError('Duplicate field error', 400, ERROR_CODES.DUPLICATE, duplicateField);
-    }
-    throw new AppError(error.message, 400, ERROR_CODES.TRANSACTION_FAILED);
-  }
+  return {
+    ...(updatedDriver ? updatedDriver.toObject() : {}),
+    ...(updatedUser
+      ? {
+          name: updatedUser.name,
+          email: updatedUser.email,
+          phone: updatedUser.phone,
+        }
+      : {}),
+    userId: driverData.userId,
+  };
 };
+
+export const modifyExistedDriver = withTransaction(modifyDriver);
+export const addNewDriver = withTransaction(addDriver);
+
 //#endregion
 
 //#region User Services => For now we dont need these services, in future we can use them
