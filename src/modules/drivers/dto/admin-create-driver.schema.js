@@ -10,7 +10,13 @@ const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 const adminCreateDriverSchema = z.object({
   body: z.object({
-    name: z.string().trim().min(3, { message: ERROR_CODES.NAME_TOO_SHORT }),
+    name: z
+      .string({
+        required_error: ERROR_CODES.NAME_TOO_SHORT, // triggers if key missing
+        invalid_type_error: ERROR_CODES.NAME_TOO_SHORT, // triggers if type wrong
+      })
+      .trim()
+      .min(3, { message: ERROR_CODES.NAME_TOO_SHORT }),
     email: z.string().email({ message: ERROR_CODES.INVALID_EMAIL }).trim().toLowerCase(),
     phone: z
       .string()
