@@ -27,7 +27,7 @@ export const withTransaction = (fn) => {
         throw new AppError('Duplicate value found', 400, ERROR_CODES.DUPLICATE, field);
       }
 
-      throw new AppError(error.message, 400, ERROR_CODES.TRANSACTION_FAILED);
+      throw error;
     } finally {
       session.endSession();
     }
