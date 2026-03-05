@@ -31,7 +31,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/drivers', authMiddleware, driverRoutes);
 
 // Admin routes
-app.use('/api/admin/drivers', authorizeRole('admin'), adminDriverRoutes);
+app.use('/api/admin/drivers', authMiddleware, authorizeRole('admin'), adminDriverRoutes);
 //#endregion
 
 //#region Not found (404) middleware
