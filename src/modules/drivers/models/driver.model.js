@@ -28,8 +28,8 @@ const DriverSchema = new mongoose.Schema(
       coordinates: { type: [Number], default: [0, 0] },
     },
     vehicleRegistrationNumber: { type: String, required: true, unique: true },
-    Address: { type: String, default: null },
-    TimeAvailability: {
+    address: { type: String, default: null },
+    timeAvailability: {
       start: {
         type: String,
         required: true,
