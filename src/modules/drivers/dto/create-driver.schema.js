@@ -4,6 +4,7 @@ import { z } from 'zod';
 const vehicleTypes = ['bike', 'car', 'van'];
 const driverStatuses = ['offline', 'idle', 'assigned', 'delivering'];
 
+// For now we dont need this schema validation for user.In future we will need this.
 const createDriverSchema = z.object({
   body: z.object({
     vehicleType: z.enum(vehicleTypes, {
