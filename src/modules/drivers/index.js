@@ -6,9 +6,17 @@ export {
   createNewDriver,
   updateExistedDriver,
   getDriverInfoByUserId,
+  modifyExistedDriver,
+  addNewDriver,
+  fetchDriverByDriverId,
+  fetchDrivers,
 } from './services/v1/driver.service.js';
 export {
   createDriver,
   updateDriver,
   getDriverProfile,
+  addDrvier,
+  getAllDrivers,
+  getDriver,
+  modifyDriver,
 } from './controllers/v1/driver.controller.js';
