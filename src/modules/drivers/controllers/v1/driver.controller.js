@@ -18,7 +18,7 @@ export const addDrvier = async (req, res) => {
 
   const newDriver = await addNewDriver(req.body);
 
-  res.status(200).json({ success: true, data: newDriver });
+  res.status(201).json({ success: true, data: newDriver });
 };
 
 export const modifyDriver = async (req, res) => {
@@ -56,6 +56,8 @@ export const getDriver = async (req, res) => {
   if (!req.user) throw unauthorized();
 
   const driver = await fetchDriverByDriverId(req.params.id);
+
+  if (!driver) throw notFound('Driver');
 
   res.status(200).json({ success: true, data: driver });
 };
