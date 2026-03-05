@@ -32,7 +32,7 @@ const adminCreateDriverSchema = z.object({
       .string()
       .min(1, { message: ERROR_CODES.VEHICLE_REGISTRATION_REQUIRED }),
 
-    Address: z.string().optional().nullable(),
+    address: z.string().optional().nullable(),
 
     capacity: z.object({
       maxWeightKg: z.preprocess(
@@ -49,7 +49,7 @@ const adminCreateDriverSchema = z.object({
       ),
     }),
 
-    TimeAvailability: z
+    timeAvailability: z
       .object({
         start: z.string().regex(timeRegex, {
           message: ERROR_CODES.INVALID_TIME_FORMAT,
