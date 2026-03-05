@@ -8,7 +8,11 @@ import { AppError, unauthorized } from '#shared/errors/error.js';
 export const createBusinessCustomer = async (req, res) => {
   if (!req.user) throw unauthorized();
 
-  const exist = await doesBusinessCustomerExist(req.body.businessId, req.body.phone, req.body.email);
+  const exist = await doesBusinessCustomerExist(
+    req.body.businessId,
+    req.body.phone,
+    req.body.email
+  );
   if (exist) {
     throw new AppError(
       'Business customer already exists',

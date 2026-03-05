@@ -25,7 +25,8 @@ const createBusinessCustomerSchema = z.object({
       .string({ required_error: ERROR_CODES.REQUIRED_FIELD })
       .refine((val) => isValidPhoneNumber(val, 'AF'), {
         message: ERROR_CODES.INVALID_PHONE_NUMBER,
-      }),
+      })
+      .optional(),
 
     email: z
       .string({ required_error: ERROR_CODES.REQUIRED_FIELD })
