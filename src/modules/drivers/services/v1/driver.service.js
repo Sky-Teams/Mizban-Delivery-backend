@@ -1,5 +1,9 @@
 import { AppError, noFieldsProvidedForUpdate, notFound } from '#shared/errors/error.js';
-import { driverQueryBuilder } from '#shared/utils/queryBuilder.js';
+import {
+  driverQueryBuilder,
+  filterDriverField,
+  filterUserField,
+} from '#shared/utils/queryBuilder.js';
 import mongoose from 'mongoose';
 import { DriverModel } from '../../models/driver.model.js';
 import { UserModel } from '#modules/users/index.js';
@@ -100,6 +104,7 @@ export const addNewDriver = async (driverData) => {
       vehicleType: driverPlainObject.vehicleType,
       status: driverPlainObject.status,
       capacity: driverPlainObject.capacity,
+      currentLocation: driverPlainObject.currentLocation,
       address: driverPlainObject.address,
       vehicleRegistrationNumber: driverPlainObject.vehicleRegistrationNumber,
       timeAvailability: driverPlainObject.timeAvailability,
@@ -112,12 +117,75 @@ export const addNewDriver = async (driverData) => {
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
+    // Handle duplicate key error
+    if (error.code === 11000 && error.keyValue) {
+      const duplicateField = Object.keys(error.keyValue)[0];
+      throw new AppError('Duplicate field error', 400, ERROR_CODES.DUPLICATE, duplicateField);
+    }
     throw new AppError(error.message, 400, ERROR_CODES.TRANSACTION_FAILED);
   }
 };
 
-export const modifiyDriver = async (driverData) => {};
+export const modifyExistedDriver = async (driverId, driverData) => {
+  const driverUpdateQuery = filterDriverField(driverData);
 
+  const userUpdateQuery = await filterUserField(driverData);
+
+  if (!Object.keys(driverUpdateQuery).length && !Object.keys(userUpdateQuery).length) {
+    throw new AppError('No fields provided for update', 400, ERROR_CODES.NO_FIELDS_PROVIDED);
+  }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const updatedDriver = Object.keys(driverUpdateQuery).length
+      ? await DriverModel.findByIdAndUpdate(
+          driverId,
+          { $set: driverUpdateQuery },
+          { runValidators: true, session, new: true }
+        )
+      : null;
+
+    const updatedUser = Object.keys(userUpdateQuery).length
+      ? await UserModel.findOneAndUpdate(
+          { _id: driverData.userId },
+          { $set: userUpdateQuery },
+          { runValidators: true, session, new: true }
+        )
+      : null;
+
+    if (Object.keys(driverUpdateQuery).length && !updatedDriver) throw notFound('Driver');
+
+    if (Object.keys(userUpdateQuery).length && !updatedUser) throw notFound('User');
+
+    await session.commitTransaction();
+    session.endSession();
+
+    const result = {
+      ...(updatedDriver ? updatedDriver.toObject() : {}),
+      ...(updatedUser
+        ? {
+            name: updatedUser.name,
+            email: updatedUser.email,
+            phone: updatedUser.phone,
+          }
+        : {}),
+      userId: driverData.userId,
+    };
+
+    return result;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    // Handle duplicate key error
+    if (error.code === 11000 && error.keyValue) {
+      const duplicateField = Object.keys(error.keyValue)[0];
+      throw new AppError('Duplicate field error', 400, ERROR_CODES.DUPLICATE, duplicateField);
+    }
+    throw new AppError(error.message, 400, ERROR_CODES.TRANSACTION_FAILED);
+  }
+};
 //#endregion
 
 //#region User Services => For now we dont need these services, in future we can use them
