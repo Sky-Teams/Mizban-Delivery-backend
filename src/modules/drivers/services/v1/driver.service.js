@@ -39,8 +39,20 @@ export const fetchDriverByDriverId = async (driverId) => {
 
 /** Create a new driver in system through admin*/
 export const addNewDriver = async (driverData) => {
-  const { name, email, phone, vehicleType, status, capacity } = driverData;
+  const {
+    name,
+    email,
+    phone,
+    vehicleType,
+    status,
+    capacity,
+    address,
+    vehicleRegistrationNumber,
+    timeAvailability,
+  } = driverData;
   const { maxWeightKg, maxPackages } = capacity;
+
+  const { start, end } = timeAvailability;
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -56,7 +68,6 @@ export const addNewDriver = async (driverData) => {
       [{ name, email, phone, role: 'driver', password: hashedPassword }],
       { session }
     );
-
     const newDriver = {
       user: newUser[0]._id,
       vehicleType,
@@ -65,18 +76,36 @@ export const addNewDriver = async (driverData) => {
         maxWeightKg,
         maxPackages,
       },
+      address,
+      vehicleRegistrationNumber,
+      timeAvailability: {
+        start,
+        end,
+      },
+      isVerified: true,
     };
 
     const driver = await DriverModel.create([newDriver], { session });
+    const driverPlainObject = driver[0].toObject();
 
     await session.commitTransaction();
     session.endSession();
 
     const newDriverData = {
+      _id: driverPlainObject._id,
+      userId: driverPlainObject.user,
       name,
-      phone,
       email,
-      ...driver[0],
+      phone,
+      vehicleType: driverPlainObject.vehicleType,
+      status: driverPlainObject.status,
+      capacity: driverPlainObject.capacity,
+      address: driverPlainObject.address,
+      vehicleRegistrationNumber: driverPlainObject.vehicleRegistrationNumber,
+      timeAvailability: driverPlainObject.timeAvailability,
+      isVerified: driverPlainObject.isVerified,
+      createdAt: driverPlainObject.createdAt,
+      updatedAt: driverPlainObject.updatedAt,
     };
 
     return newDriverData;
