@@ -12,6 +12,7 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 const baseURL = '/api/admin/business-customers';
 let token;
+let testUserId;
 
 describe('Admin BusinessCustomer API Integration', () => {
   beforeAll(async () => {
@@ -26,6 +27,7 @@ describe('Admin BusinessCustomer API Integration', () => {
     await clearDB();
     const user = await createFakeUserWithToken();
     token = user.token;
+    testUserId = user.testUserId;
   });
 
   describe('POST /api/admin/business-customers', () => {
@@ -66,6 +68,58 @@ describe('Admin BusinessCustomer API Integration', () => {
       };
 
       const res = await request(app).post(baseURL).send(payload);
+
+      expect(res.status).toBe(401);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
+    });
+  });
+
+  describe('PATCH /api/admin/business-customers/:id', () => {
+    it('updates business customer successfully for authenticated user', async () => {
+      const seeded = await businessCustomerModel.create({
+        business: testUserId,
+        name: 'Before Update',
+        phone: '0797000001',
+        email: 'before.update@example.com',
+        addressText: 'Kabul',
+        location: { type: 'Point', coordinates: [69.2, 34.5] },
+      });
+
+      const payload = {
+        name: 'After Update',
+        notes: 'updated from admin route test',
+      };
+
+      const res = await request(app)
+        .patch(`${baseURL}/${seeded._id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(payload);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data._id).toBe(seeded._id.toString());
+      expect(res.body.data.name).toBe(payload.name);
+      expect(res.body.data.notes).toBe(payload.notes);
+
+      const inDB = await businessCustomerModel.findById(seeded._id);
+      expect(inDB?.name).toBe(payload.name);
+      expect(inDB?.notes).toBe(payload.notes);
+    });
+
+    it('fails when patch id is invalid', async () => {
+      const res = await request(app)
+        .patch(`${baseURL}/invalid-id`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'Any' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_ID);
+    });
+
+    it('fails when patch token is missing', async () => {
+      const id = '507f1f77bcf86cd799439202';
+
+      const res = await request(app).patch(`${baseURL}/${id}`).send({ name: 'Any' });
 
       expect(res.status).toBe(401);
       expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
