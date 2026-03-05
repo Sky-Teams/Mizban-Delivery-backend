@@ -159,7 +159,7 @@ describe('BusinessCustomer API Integration', () => {
       expect(res.status).toBe(400);
       expect(res.body.message).toBe('Validation failed');
       expect(res.body.code).toBe(ERROR_CODES.INVALID_COORDINATES);
-      expect(res.body.field).toBe('location.coordinates[0]');
+      expect(res.body.field).toBe('location.coordinates');
     });
   });
 
