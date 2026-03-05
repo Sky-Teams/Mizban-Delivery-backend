@@ -9,7 +9,6 @@ import {
   adminBusinessCustomerRoutes,
   businessCustomerRoutes,
 } from '#modules/businessCustomers/index.js';
-import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 
 const app = express();
 
@@ -34,7 +33,7 @@ app.use('/api/auth', authRoutes);
 
 app.use('/api/drivers', authMiddleware, driverRoutes);
 app.use('/api/business-customers', authMiddleware, businessCustomerRoutes);
-app.use('/api/admin', authMiddleware, authorizeRole('admin'), adminBusinessCustomerRoutes);
+app.use('/api/admin', authMiddleware, adminBusinessCustomerRoutes);
 //#endregion
 
 //#region Not found (404) middleware
