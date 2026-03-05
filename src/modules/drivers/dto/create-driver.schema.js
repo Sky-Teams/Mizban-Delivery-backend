@@ -4,6 +4,8 @@ import { z } from 'zod';
 const vehicleTypes = ['bike', 'car', 'van'];
 const driverStatuses = ['offline', 'idle', 'assigned', 'delivering'];
 
+const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
 // For now we dont need this schema validation for user.In future we will need this.
 const createDriverSchema = z.object({
   body: z.object({
@@ -26,6 +28,36 @@ const createDriverSchema = z.object({
           .positive({ message: ERROR_CODES.MAX_PACKAGES_MUST_BE_POSITIVE })
       ),
     }),
+    vehicleRegistrationNumber: z
+      .string()
+      .min(1, { message: ERROR_CODES.VEHICLE_REGISTRATION_REQUIRED }),
+
+    address: z.string().optional().nullable(),
+    timeAvailability: z
+      .object({
+        start: z.string().regex(timeRegex, {
+          message: ERROR_CODES.INVALID_TIME_FORMAT,
+        }),
+
+        end: z.string().regex(timeRegex, {
+          message: ERROR_CODES.INVALID_TIME_FORMAT,
+        }),
+      })
+      .refine(
+        (data) => {
+          const [startH, startM] = data.start.split(':').map(Number);
+          const [endH, endM] = data.end.split(':').map(Number);
+
+          const startMinutes = startH * 60 + startM;
+          const endMinutes = endH * 60 + endM;
+
+          return startMinutes < endMinutes;
+        },
+        {
+          message: ERROR_CODES.END_TIME_MUST_BE_GREATER,
+          path: ['end'],
+        }
+      ),
   }),
 });
 
