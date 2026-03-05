@@ -21,28 +21,42 @@ const createBusinessCustomerSchema = z.object({
         message: ERROR_CODES.INVALID_PHONE_NUMBER,
       }),
 
-    altPhone: z.string().trim().optional(),
+    altPhone: z
+      .string({ required_error: ERROR_CODES.REQUIRED_FIELD })
+      .refine((val) => isValidPhoneNumber(val, 'AF'), {
+        message: ERROR_CODES.INVALID_PHONE_NUMBER,
+      }),
 
     email: z
       .string({ required_error: ERROR_CODES.REQUIRED_FIELD })
       .email({ message: ERROR_CODES.INVALID_EMAIL_FORMAT })
       .trim(),
 
-    addressText: z.string().trim(),
+    addressText: z.string().trim().min(3, { message: ERROR_CODES.ADDRESS_TEXT_IS_TOO_SHORT }),
 
-    location: z.object({
-      type: z.literal('Point').optional(),
-
-      coordinates: z.preprocess(
-        (val) => {
-          if (!Array.isArray(val) || val.length !== 2) return val;
-          return val.map((v, i) =>
-            ensureNumber(v, `location.coordinates[${i}]`, ERROR_CODES.INVALID_COORDINATES)
-          );
-        },
-        z.array(z.number()).length(2, { message: ERROR_CODES.INVALID_COORDINATES })
-      ),
-    }),
+    location: z
+      .object({
+        type: z.literal('Point', { message: ERROR_CODES.INVALID_LOCATION_TYPE }).optional(),
+        coordinates: z.preprocess(
+          (val) => {
+            if (!Array.isArray(val) || val.length !== 2) return val;
+            return [
+              ensureNumber(val[0], 'location.coordinates', ERROR_CODES.INVALID_COORDINATES),
+              ensureNumber(val[1], 'location.coordinates', ERROR_CODES.INVALID_COORDINATES),
+            ];
+          },
+          z
+            .array(z.number())
+            .length(2, { message: ERROR_CODES.INVALID_COORDINATES })
+            .refine(([lng]) => lng >= 60 && lng <= 75, {
+              message: ERROR_CODES.LNG_OUT_OF_RANGE,
+            })
+            .refine(([, lat]) => lat >= 29 && lat <= 39, {
+              message: ERROR_CODES.LAT_OUT_OF_RANGE,
+            })
+        ),
+      })
+      .optional(),
 
     notes: z.string().optional(),
 
