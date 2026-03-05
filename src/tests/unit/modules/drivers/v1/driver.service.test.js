@@ -1,7 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DriverModel, getDriverInfoByUserId } from '#modules/drivers/index.js';
+import {
+  addNewDriver,
+  DriverModel,
+  fetchDriverByDriverId,
+  fetchDrivers,
+  getDriverInfoByUserId,
+  modifyExistedDriver,
+} from '#modules/drivers/index.js';
 import { doesDriverExist, createNewDriver, updateExistedDriver } from '#modules/drivers/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import { UserModel } from '#modules/users/index.js';
+import { hashPassword } from '#shared/utils/jwt.js';
+import { AppError } from '#shared/errors/error.js';
+import mongoose from 'mongoose';
 
 // Mock the driver model
 vi.mock('#modules/drivers/models/driver.model.js', () => ({
@@ -10,8 +21,32 @@ vi.mock('#modules/drivers/models/driver.model.js', () => ({
     create: vi.fn(),
     findOneAndUpdate: vi.fn(),
     find: vi.fn(),
+    countDocuments: vi.fn(),
+    findByIdAndUpdate: vi.fn(),
+    findOne: vi.fn(),
   },
 }));
+
+vi.mock('#modules/users/models/user.model.js', () => ({
+  UserModel: {
+    create: vi.fn(),
+    findOneAndUpdate: vi.fn(),
+  },
+}));
+
+vi.mock('#shared/utils/jwt.js', () => ({
+  hashPassword: vi.fn(),
+}));
+
+// ------------------- Mock Mongoose session -------------------
+const fakeSession = {
+  startTransaction: vi.fn(),
+  commitTransaction: vi.fn(),
+  abortTransaction: vi.fn(),
+  endSession: vi.fn(),
+};
+
+vi.spyOn(mongoose, 'startSession').mockResolvedValue(fakeSession);
 
 describe('Driver Service', () => {
   beforeEach(() => {
@@ -279,6 +314,138 @@ describe('Driver Service', () => {
 
       expect(result).toEqual(mockedDriver);
       expect(DriverModel.find).toHaveBeenCalledWith({ user: userId });
+    });
+    describe('fetchDrivers', () => {
+      it('should return paginated drivers', async () => {
+        const mockedDrivers = [{ _id: 'd1' }, { _id: 'd2' }];
+        DriverModel.countDocuments.mockResolvedValue(10);
+        DriverModel.find.mockReturnValue({
+          populate: vi.fn().mockReturnThis(),
+          sort: vi.fn().mockReturnThis(),
+          skip: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          lean: vi.fn().mockResolvedValue(mockedDrivers),
+        });
+
+        const result = await fetchDrivers(2, 2);
+
+        expect(result).toEqual({
+          drivers: mockedDrivers,
+          totalDrivers: 10,
+          totalPages: 5,
+        });
+        expect(DriverModel.countDocuments).toHaveBeenCalled();
+        expect(DriverModel.find).toHaveBeenCalled();
+      });
+    });
+
+    describe('fetchDriverByDriverId', () => {
+      it('should return driver by driverId', async () => {
+        const mockedDriver = [{ _id: 'd1', user: 'u1' }];
+        DriverModel.findOne.mockReturnValue({
+          populate: vi.fn().mockReturnThis(),
+          lean: vi.fn().mockResolvedValue(mockedDriver),
+        });
+
+        const result = await fetchDriverByDriverId('d1');
+        expect(result).toEqual(mockedDriver);
+        expect(DriverModel.findOne).toHaveBeenCalledWith({ _id: 'd1' });
+      });
+    });
+
+    describe('addNewDriver', () => {
+      it('should create a driver and commit transaction', async () => {
+        const driverData = {
+          name: 'John',
+          email: 'john@example.com',
+          phone: '123456789',
+          vehicleType: 'van',
+          status: 'idle',
+          capacity: { maxWeightKg: 100, maxPackages: 5 },
+          address: 'Street 123',
+          vehicleRegistrationNumber: 'ABC123',
+          timeAvailability: { start: '09:00', end: '17:00' },
+        };
+
+        hashPassword.mockResolvedValue('hashedPassword');
+        UserModel.create.mockResolvedValue([{ _id: 'user123' }]);
+        DriverModel.create.mockResolvedValue([
+          {
+            toObject: () => ({
+              _id: 'driver123',
+              user: 'user123',
+              vehicleType: 'van',
+              status: 'idle',
+              capacity: { maxWeightKg: 100, maxPackages: 5 },
+              currentLocation: { coordinates: [0, 0] },
+              address: 'Street 123',
+              vehicleRegistrationNumber: 'ABC123',
+              timeAvailability: { start: '09:00', end: '17:00' },
+              isVerified: true,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }),
+          },
+        ]);
+
+        const result = await addNewDriver(driverData);
+
+        expect(result.userId).toBe('user123');
+        expect(fakeSession.startTransaction).toHaveBeenCalled();
+        expect(fakeSession.commitTransaction).toHaveBeenCalled();
+        expect(fakeSession.endSession).toHaveBeenCalled();
+      });
+
+      it('should abort transaction on error', async () => {
+        const driverData = {
+          name: 'John',
+          email: 'john@example.com',
+          phone: '123456789',
+          vehicleType: 'van',
+          status: 'idle',
+          capacity: { maxWeightKg: 100, maxPackages: 5 },
+          address: 'Street 123',
+          vehicleRegistrationNumber: 'ABC123',
+          timeAvailability: { start: '09:00', end: '17:00' },
+        };
+
+        // Simulate Mongoose create error
+        UserModel.create.mockRejectedValue(new Error('Create failed'));
+
+        await expect(addNewDriver(driverData)).rejects.toBeInstanceOf(Error);
+
+        expect(fakeSession.abortTransaction).toHaveBeenCalled();
+        expect(fakeSession.endSession).toHaveBeenCalled();
+      });
+    });
+
+    describe('modifyExistedDriver', () => {
+      it('should update driver and user and commit', async () => {
+        const driverData = { userId: 'user123', status: 'active', name: 'Updated' };
+
+        const updatedDriverMock = { toObject: () => ({ _id: 'driver123', status: 'active' }) };
+        const updatedUserMock = { name: 'Updated', email: 'u@example.com', phone: '123' };
+
+        DriverModel.findByIdAndUpdate = vi.fn().mockResolvedValue(updatedDriverMock);
+        UserModel.findOneAndUpdate = vi.fn().mockResolvedValue(updatedUserMock);
+
+        const result = await modifyExistedDriver('driver123', driverData);
+
+        expect(result.status).toBe('active');
+        expect(result.name).toBe('Updated');
+        expect(result.userId).toBe('user123');
+        expect(fakeSession.commitTransaction).toHaveBeenCalled();
+        expect(fakeSession.endSession).toHaveBeenCalled();
+      });
+
+      it('should abort transaction if no fields provided', async () => {
+        const driverData = { userId: 'user123' }; // no update fields
+
+        await expect(modifyExistedDriver('driver123', driverData)).rejects.toBeInstanceOf(AppError);
+
+        expect(fakeSession.abortTransaction).toHaveBeenCalled();
+        expect(fakeSession.endSession).toHaveBeenCalled();
+      });
     });
   });
 });

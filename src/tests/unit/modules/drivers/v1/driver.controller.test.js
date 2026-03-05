@@ -5,6 +5,14 @@ import {
   updateDriver,
   getDriverProfile,
   getDriverInfoByUserId,
+  addDrvier,
+  modifyDriver,
+  getAllDrivers,
+  getDriver,
+  addNewDriver,
+  modifyExistedDriver,
+  fetchDrivers,
+  fetchDriverByDriverId,
 } from '#modules/drivers/index.js';
 import { doesDriverExist, createNewDriver } from '#modules/drivers/index.js';
 import { AppError } from '#shared/errors/error.js';
@@ -15,6 +23,10 @@ vi.mock('#modules/drivers/services/v1/driver.service.js', () => ({
   createNewDriver: vi.fn(),
   updateExistedDriver: vi.fn(),
   getDriverInfoByUserId: vi.fn(),
+  addNewDriver: vi.fn(),
+  modifyExistedDriver: vi.fn(),
+  fetchDrivers: vi.fn(),
+  fetchDriverByDriverId: vi.fn(),
 }));
 
 describe('createDriver Controller', () => {
@@ -215,6 +227,167 @@ describe('getDriverProfile Controller', () => {
     await expect(getDriverProfile(req, res)).rejects.toThrow(AppError);
     await expect(getDriverProfile(req, res)).rejects.toMatchObject({
       code: ERROR_CODES.NOT_FOUND,
+    });
+  });
+});
+
+describe('Admin Driver Controllers', () => {
+  let req, res;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+  });
+
+  describe('addDrvier', () => {
+    beforeEach(() => {
+      req = {
+        user: { _id: 'user123' },
+        body: {
+          name: 'John',
+          email: 'john@example.com',
+          phone: '123456789',
+          vehicleType: 'van',
+        },
+      };
+    });
+
+    it('should throw unauthorized error if user is missing', async () => {
+      req.user = null;
+      await expect(addDrvier(req, res)).rejects.toBeInstanceOf(AppError);
+    });
+
+    it('should create a driver and return 201', async () => {
+      const mockedDriver = { _id: 'driver123', name: 'John' };
+      addNewDriver.mockResolvedValue(mockedDriver);
+
+      await addDrvier(req, res);
+
+      expect(addNewDriver).toHaveBeenCalledWith(req.body);
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith({ success: true, data: mockedDriver });
+    });
+
+    it('should propagate service error', async () => {
+      const error = new AppError('Validation failed', 400, ERROR_CODES.VALIDATION_ERROR);
+      addNewDriver.mockRejectedValue(error);
+
+      await expect(addDrvier(req, res)).rejects.toThrow(AppError);
+    });
+  });
+
+  describe('modifyDriver', () => {
+    beforeEach(() => {
+      req = {
+        user: { _id: 'user123' },
+        params: { id: 'driver123' },
+        body: { status: 'active' },
+      };
+    });
+
+    it('should throw unauthorized error if user is missing', async () => {
+      req.user = null;
+      await expect(modifyDriver(req, res)).rejects.toBeInstanceOf(AppError);
+    });
+
+    it('should update driver and return 200', async () => {
+      const updatedDriver = { _id: 'driver123', status: 'active' };
+      modifyExistedDriver.mockResolvedValue(updatedDriver);
+
+      await modifyDriver(req, res);
+
+      expect(modifyExistedDriver).toHaveBeenCalledWith('driver123', req.body);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ success: true, data: updatedDriver });
+    });
+
+    it('should propagate service error', async () => {
+      const error = new AppError('No fields provided', 400, ERROR_CODES.NO_FIELDS_PROVIDED);
+      modifyExistedDriver.mockRejectedValue(error);
+
+      await expect(modifyDriver(req, res)).rejects.toThrow(AppError);
+    });
+  });
+
+  describe('getAllDrivers', () => {
+    beforeEach(() => {
+      req = {
+        user: { _id: 'user123' },
+        query: { limit: '5', page: '2', searchTerm: 'John', vehicleType: 'van' },
+      };
+    });
+
+    it('should throw unauthorized error if user is missing', async () => {
+      req.user = null;
+      await expect(getAllDrivers(req, res)).rejects.toBeInstanceOf(AppError);
+    });
+
+    it('should fetch drivers and return 200', async () => {
+      const mockData = {
+        drivers: [{ _id: 'driver1' }],
+        totalDrivers: 10,
+        totalPages: 2,
+      };
+      fetchDrivers.mockResolvedValue(mockData);
+
+      await getAllDrivers(req, res);
+
+      expect(fetchDrivers).toHaveBeenCalledWith(5, 2, {
+        searchTerm: 'John',
+        vehicleType: 'van',
+        status: undefined,
+        isVerified: undefined,
+      });
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: mockData.drivers,
+        totalDrivers: 10,
+        totalPages: 2,
+      });
+    });
+
+    it('should propagate service error', async () => {
+      const error = new AppError('Fetch failed', 400, ERROR_CODES.TRANSACTION_FAILED);
+      fetchDrivers.mockRejectedValue(error);
+
+      await expect(getAllDrivers(req, res)).rejects.toThrow(AppError);
+    });
+  });
+
+  describe('getDriver', () => {
+    beforeEach(() => {
+      req = {
+        user: { _id: 'user123' },
+        params: { id: 'driver123' },
+      };
+    });
+
+    it('should throw unauthorized error if user is missing', async () => {
+      req.user = null;
+      await expect(getDriver(req, res)).rejects.toBeInstanceOf(AppError);
+    });
+
+    it('should fetch driver by ID and return 200', async () => {
+      const driver = { _id: 'driver123', name: 'John' };
+      fetchDriverByDriverId.mockResolvedValue(driver);
+
+      await getDriver(req, res);
+
+      expect(fetchDriverByDriverId).toHaveBeenCalledWith('driver123');
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ success: true, data: driver });
+    });
+
+    it('should propagate service error', async () => {
+      const error = new AppError('Not found', 404, ERROR_CODES.NOT_FOUND);
+      fetchDriverByDriverId.mockRejectedValue(error);
+
+      await expect(getDriver(req, res)).rejects.toThrow(AppError);
     });
   });
 });
