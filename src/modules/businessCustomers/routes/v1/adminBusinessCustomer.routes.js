@@ -7,7 +7,7 @@ import express from 'express';
 const router = express.Router();
 
 router
-  .route('/business-customers')
+  .route('/')
   .post(validate(createBusinessCustomerValidator), asyncHandler(createBusinessCustomer));
 
 export default router;
