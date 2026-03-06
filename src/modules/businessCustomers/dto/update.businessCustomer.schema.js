@@ -7,7 +7,7 @@ const updateBusinessCustomerSchema = z.object({
   body: z
     .object({
       name: z
-        .string({ required_error: ERROR_CODES.REQUIRED_FIELD })
+        .string({ message: ERROR_CODES.REQUIRED_FIELD })
         .trim()
         .min(2, { message: ERROR_CODES.NAME_TOO_SHORT }),
 
