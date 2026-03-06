@@ -7,29 +7,29 @@ import mongoose from 'mongoose';
 const createBusinessCustomerSchema = z.object({
   body: z.object({
     businessId: z
-      .string({ required_error: ERROR_CODES.REQUIRED_FIELD })
+      .string({ message: ERROR_CODES.REQUIRED_FIELD })
       .refine((val) => mongoose.Types.ObjectId.isValid(val), { message: ERROR_CODES.INVALID_ID }),
 
     name: z
-      .string({ required_error: ERROR_CODES.REQUIRED_FIELD })
+      .string({ message: ERROR_CODES.REQUIRED_FIELD })
       .min(3, { message: ERROR_CODES.NAME_TOO_SHORT })
       .trim(),
 
     phone: z
-      .string({ required_error: ERROR_CODES.REQUIRED_FIELD })
+      .string({ message: ERROR_CODES.REQUIRED_FIELD })
       .refine((val) => isValidPhoneNumber(val, 'AF'), {
         message: ERROR_CODES.INVALID_PHONE_NUMBER,
       }),
 
     altPhone: z
-      .string({ required_error: ERROR_CODES.REQUIRED_FIELD })
+      .string({ message: ERROR_CODES.REQUIRED_FIELD })
       .refine((val) => isValidPhoneNumber(val, 'AF'), {
         message: ERROR_CODES.INVALID_PHONE_NUMBER,
       })
       .optional(),
 
     email: z
-      .string({ required_error: ERROR_CODES.REQUIRED_FIELD })
+      .string({ message: ERROR_CODES.REQUIRED_FIELD })
       .email({ message: ERROR_CODES.INVALID_EMAIL_FORMAT })
       .trim(),
 
