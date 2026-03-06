@@ -1,7 +1,23 @@
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, unauthorized } from '#shared/errors/error.js';
-import { isOwner, updateBusinessService } from '../../services/v1/business.service.js';
+import {
+  isOwner,
+  updateBusinessService,
+  createNewBusiness,
+} from '../../services/v1/business.service.js';
 
+//Create new Business
+export const createBusiness = async (req, res) => {
+  if (!req.user) throw unauthorized();
+
+  const business = await createNewBusiness(req.user._id, req.body);
+  res.status(201).json({
+    success: true,
+    data: business,
+  });
+};
+
+//Update business
 export const updateBusiness = async (req, res) => {
   if (!req.user) throw unauthorized();
 

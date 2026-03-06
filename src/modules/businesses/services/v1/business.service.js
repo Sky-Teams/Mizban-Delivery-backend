@@ -9,6 +9,30 @@ export const isOwner = async (userId, id) => {
   return String(userId) === String(business.owner);
 };
 
+//Create new Business
+export const createNewBusiness = async (userId, businessData) => {
+  const {
+    name,
+    type: businessType,
+    phone,
+    addressText,
+    prepTimeAvgMinutes,
+    location,
+  } = businessData;
+
+  const newBusiness = await BusinessModel.create({
+    name,
+    type: businessType,
+    phone,
+    addressText,
+    prepTimeAvgMinutes,
+    location,
+    owner: userId,
+  });
+
+  return newBusiness;
+};
+
 //Partial Update (Business)
 export const updateBusinessService = async (userId, businessId, businessData) => {
   const allowedFieldsToUpdate = [
@@ -42,4 +66,4 @@ export const updateBusinessService = async (userId, businessId, businessData) =>
   if (!updateBusiness) throw notFound('Business');
 
   return updateBusiness;
-};
+}

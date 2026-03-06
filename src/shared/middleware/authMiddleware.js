@@ -1,4 +1,4 @@
-import { UserModel } from '../../modules/users/index.js';
+import { UserModel } from '#modules/users/index.js';
 import { ERROR_CODES } from '../errors/customCodes.js';
 import { AppError } from '../errors/error.js';
 import { verifyJWT } from '../utils/jwt.js';
@@ -8,7 +8,7 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer')) {
-    throw new AppError('Unauthorized: Token missing ', 401, ERROR_CODES.INVALID_JWT);
+    throw new AppError('Unauthorized: Token missing', 401, ERROR_CODES.INVALID_JWT);
   }
 
   const token = authHeader.split(' ')[1];
