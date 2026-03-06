@@ -4,15 +4,23 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 // Create mocked versions of external dependencies
 // These replace real DB calls, password compare, and token generation
-const { findOne, compare, generateAccessToken } = vi.hoisted(() => ({
-  findOne: vi.fn(), // mock for UserModel.findOne
-  compare: vi.fn(), // mock for bcrypt.compare
-  generateAccessToken: vi.fn(), // mock for JWT generator
-}));
+const { findOne, findOneAndUpdate, compare, generateAccessToken, generateRefreshToken, hashToken } =
+  vi.hoisted(() => ({
+    findOne: vi.fn(), // mock for UserModel.findOne
+    findOneAndUpdate: vi.fn(), // mock for RefreshTokenModel.findOneAndUpdate
+    compare: vi.fn(), // mock for bcrypt.compare
+    generateAccessToken: vi.fn(), // mock for JWT generator
+    generateRefreshToken: vi.fn(), // mock for refresh token generator
+    hashToken: vi.fn(), // mock for token hash
+  }));
 
 // Replace real UserModel with mocked version
 vi.mock('#modules/users/models/user.model.js', () => ({
   UserModel: { findOne },
+}));
+
+vi.mock('#modules/users/models/refreshToken.model.js', () => ({
+  RefreshTokenModel: { findOneAndUpdate },
 }));
 
 // Replace real bcrypt with mocked compare function
@@ -23,6 +31,9 @@ vi.mock('bcryptjs', () => ({
 // Replace real JWT util with mocked generator
 vi.mock('#shared/utils/jwt.js', () => ({
   generateAccessToken,
+  generateRefreshToken,
+  hashToken,
+  REFRESH_TOKEN_EXPIRES_TIME: 7 * 24 * 60 * 60 * 1000,
 }));
 
 // Import the service AFTER mocks (important)
@@ -39,7 +50,9 @@ describe('loginService', () => {
     findOne.mockResolvedValue(null);
 
     // Expect service to reject with 401
-    await expect(loginService({ email: 'x@test.com', password: '123456' })).rejects.toMatchObject({
+    await expect(
+      loginService({ email: 'x@test.com', password: '123456' }, 'device-1')
+    ).rejects.toMatchObject({
       status: 401,
       code: ERROR_CODES.INVALID_CREDENTIAL,
     });
@@ -63,12 +76,12 @@ describe('loginService', () => {
 
     // Expect AppError
     await expect(
-      loginService({ email: 'x@test.com', password: 'wrongpass' })
+      loginService({ email: 'x@test.com', password: 'wrongpass' }, 'device-1')
     ).rejects.toBeInstanceOf(AppError);
 
     // Expect 401 invalid credential
     await expect(
-      loginService({ email: 'x@test.com', password: 'wrongpass' })
+      loginService({ email: 'x@test.com', password: 'wrongpass' }, 'device-1')
     ).rejects.toMatchObject({
       status: 401,
       code: ERROR_CODES.INVALID_CREDENTIAL,
@@ -89,7 +102,9 @@ describe('loginService', () => {
     compare.mockResolvedValue(true);
 
     // Expect 403 forbidden
-    await expect(loginService({ email: 'x@test.com', password: '123456' })).rejects.toMatchObject({
+    await expect(
+      loginService({ email: 'x@test.com', password: '123456' }, 'device-1')
+    ).rejects.toMatchObject({
       status: 403,
       code: ERROR_CODES.ACCOUNT_DISABLED,
     });
@@ -107,19 +122,36 @@ describe('loginService', () => {
     // Simulate successful login flow
     findOne.mockResolvedValue(user);
     compare.mockResolvedValue(true);
-    generateAccessToken.mockReturnValue('token-123');
+    generateAccessToken.mockReturnValue('access-token-123');
+    generateRefreshToken.mockReturnValue('refresh-token-123');
+    hashToken.mockReturnValue('hashed-refresh-token');
+    findOneAndUpdate.mockResolvedValue({});
 
-    const result = await loginService({
-      email: 'x@test.com',
-      password: '123456',
-    });
+    const result = await loginService(
+      {
+        email: 'x@test.com',
+        password: '123456',
+      },
+      'device-1'
+    );
+
+    expect(findOneAndUpdate).toHaveBeenCalledWith(
+      { user: 'u1', deviceId: 'device-1' },
+      expect.objectContaining({
+        token: 'hashed-refresh-token',
+      }),
+      expect.objectContaining({
+        upsert: true,
+      })
+    );
 
     // Service should return safe user data (no password!)
     expect(result).toEqual({
       id: 'u1',
       email: 'x@test.com',
       role: 'customer',
-      token: 'token-123',
+      accessToken: 'access-token-123',
+      refreshToken: 'refresh-token-123',
     });
   });
 });
