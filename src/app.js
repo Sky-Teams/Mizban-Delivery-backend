@@ -6,6 +6,7 @@ import { businessRoutes } from '#modules/businesses/index.js';
 import { authRoutes } from '#modules/users/index.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import { driverRoutes } from '#modules/drivers/index.js';
+import { notificationRoutes } from '#modules/notifications/index.js';
 
 const app = express();
 
@@ -27,8 +28,9 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 
 // Protected routes
-// API Versioning Example: app.use('/api/v1/deliveries', deliveryRoutesV1);
+
 app.use('/api/drivers', authMiddleware, driverRoutes);
+app.use('/api/notifications', authMiddleware, notificationRoutes);
 app.use('/api/businesses', authMiddleware, businessRoutes);
 
 //#endregion
