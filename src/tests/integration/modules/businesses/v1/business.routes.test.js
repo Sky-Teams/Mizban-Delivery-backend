@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import request from 'supertest';
+import mongoose from 'mongoose';
 import app from '../../../../../app.js';
 import {
   connectDB,
@@ -200,6 +202,107 @@ describe('Business API Integration', () => {
       res = await postWithAuth(app, '/api/businesses', businessData, token);
       expect(res.status).toBe(400);
       expect(res.body.code).toBe(ERROR_CODES.LNG_OUT_OF_RANGE);
+    });
+  });
+
+  describe('GET /api/businesses', () => {
+    it('should return all businesses for authenticated user', async () => {
+      await BusinessModel.create([
+        {
+          owner: testUserId,
+          name: 'Business A',
+          type: 'restaurant',
+          phone: '0093781234501',
+          addressText: 'Herat, District 1',
+        },
+        {
+          owner: testUserId,
+          name: 'Business B',
+          type: 'shop',
+          phone: '0093781234502',
+          addressText: 'Herat, District 2',
+        },
+      ]);
+
+      res = await request(app).get('/api/businesses').set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data).toHaveLength(2);
+    });
+
+    it('should return empty array when there are no businesses', async () => {
+      res = await request(app).get('/api/businesses').set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toEqual([]);
+    });
+
+    it('should include expected fields in returned businesses', async () => {
+      await BusinessModel.create({
+        owner: testUserId,
+        name: 'Business Details',
+        type: 'warehouse',
+        phone: '0093781234508',
+        addressText: 'Herat, District 8',
+      });
+
+      res = await request(app).get('/api/businesses').set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data[0]).toHaveProperty('_id');
+      expect(res.body.data[0]).toHaveProperty('name', 'Business Details');
+      expect(res.body.data[0]).toHaveProperty('owner');
+    });
+
+    it('should fail with 401 when token is missing', async () => {
+      res = await request(app).get('/api/businesses');
+
+      expect(res.status).toBe(401);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
+      expect(res.body.message).toBe('Unauthorized: Token missing');
+    });
+  });
+
+  describe('GET /api/businesses/:id', () => {
+    it('should return business by id for authenticated user', async () => {
+      const business = await BusinessModel.create({
+        owner: testUserId,
+        name: 'Business C',
+        type: 'pharmacy',
+        phone: '0093781234503',
+        addressText: 'Herat, District 3',
+      });
+
+      res = await request(app)
+        .get(`/api/businesses/${business._id}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data._id).toBe(String(business._id));
+      expect(res.body.data.name).toBe('Business C');
+    });
+
+    it('should return 404 when business id does not exist', async () => {
+      const missingId = new mongoose.Types.ObjectId();
+
+      res = await request(app)
+        .get(`/api/businesses/${missingId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe('Business not found');
+    });
+
+    it('should return 400 for invalid business id format', async () => {
+      res = await request(app).get('/api/businesses/invalid-id').set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Validation failed');
     });
   });
 });
