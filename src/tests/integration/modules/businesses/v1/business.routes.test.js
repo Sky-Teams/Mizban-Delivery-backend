@@ -12,7 +12,11 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { BusinessModel } from '#modules/businesses/index.js';
 import { postWithAuth } from '#tests/utils/testHelpers.js';
 
+const BUSINESS_BASE_URL = '/api/businesses';
+const ADMIN_BUSINESS_BASE_URL = '/api/admin/businesses';
+
 let token;
+let adminToken;
 let testUserId;
 
 describe('Business API Integration', () => {
@@ -26,14 +30,61 @@ describe('Business API Integration', () => {
 
   beforeEach(async () => {
     await clearDB();
-    const result = await createFakeUserWithToken();
-    testUserId = result.testUserId;
-    token = result.token;
+    const userResult = await createFakeUserWithToken({
+      email: 'business-user@example.com',
+      role: 'customer',
+    });
+    testUserId = userResult.testUserId;
+    token = userResult.token;
+
+    const adminResult = await createFakeUserWithToken({
+      email: 'business-admin@example.com',
+      role: 'admin',
+    });
+    adminToken = adminResult.token;
   });
 
   let res;
 
-  describe('POST /api/businesses', () => {
+  describe(`POST ${BUSINESS_BASE_URL}`, () => {
+    it('should allow customer to create business via customer route', async () => {
+      const businessData = {
+        name: 'Customer Business',
+        type: 'shop',
+        addressText: 'Herat, Customer Street',
+        location: {
+          type: 'Point',
+          coordinates: [62.2, 34.1],
+        },
+        phone: '0093781234001',
+      };
+
+      res = await postWithAuth(app, BUSINESS_BASE_URL, businessData, token);
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveProperty('owner');
+    });
+
+    it('should return 403 when customer tries to create business via admin route', async () => {
+      const businessData = {
+        name: 'Blocked Customer Business',
+        type: 'shop',
+        addressText: 'Herat, Admin Street',
+        location: {
+          type: 'Point',
+          coordinates: [62.21, 34.11],
+        },
+        phone: '0093781234002',
+      };
+
+      res = await postWithAuth(app, ADMIN_BUSINESS_BASE_URL, businessData, token);
+
+      expect(res.status).toBe(403);
+      expect(res.body.code).toBe(ERROR_CODES.FORBIDDEN);
+      expect(res.body.message).toBe("Forbidden: You don't have permission to access this resource");
+    });
+
     it('should create new business successfully', async () => {
       const businessData = {
         name: 'Reyhan Restaurant',
@@ -47,7 +98,7 @@ describe('Business API Integration', () => {
         prepTimeAvgMinutes: 30,
       };
 
-      res = await postWithAuth(app, '/api/businesses', businessData, token);
+      res = await postWithAuth(app, BUSINESS_BASE_URL, businessData, token);
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -67,7 +118,7 @@ describe('Business API Integration', () => {
         phone: '0093781234567',
       };
 
-      res = await postWithAuth(app, '/api/businesses', businessData, token);
+      res = await postWithAuth(app, BUSINESS_BASE_URL, businessData, token);
 
       expect(res.status).toBe(400);
       expect(res.body.field).toBe('type');
@@ -81,7 +132,7 @@ describe('Business API Integration', () => {
         addressText: 'Afghanistan, Herat',
       };
 
-      res = await postWithAuth(app, '/api/businesses', businessData, token);
+      res = await postWithAuth(app, BUSINESS_BASE_URL, businessData, token);
 
       expect(res.status).toBe(400);
       expect(res.body.field).toBe('name');
@@ -96,7 +147,7 @@ describe('Business API Integration', () => {
         phone: '078342',
       };
 
-      res = await postWithAuth(app, '/api/businesses', businessData, token);
+      res = await postWithAuth(app, BUSINESS_BASE_URL, businessData, token);
 
       expect(res.status).toBe(400);
       expect(res.body.field).toBe('phone');
@@ -113,7 +164,7 @@ describe('Business API Integration', () => {
         prepTimeAvgMinutes: -30,
       };
 
-      res = await postWithAuth(app, '/api/businesses', businessData, token);
+      res = await postWithAuth(app, BUSINESS_BASE_URL, businessData, token);
 
       expect(res.status).toBe(400);
       expect(res.body.message).toContain('Validation failed');
@@ -129,7 +180,7 @@ describe('Business API Integration', () => {
         prepTimeAvgMinutes: 'hello',
       };
 
-      res = await postWithAuth(app, '/api/businesses', businessData, token);
+      res = await postWithAuth(app, BUSINESS_BASE_URL, businessData, token);
 
       expect(res.status).toBe(400);
       expect(res.body.message).toContain('Validation failed');
@@ -147,6 +198,8 @@ describe('Business API Integration', () => {
         },
       };
 
+      res = await postWithAuth(app, BUSINESS_BASE_URL, businessData, token);
+
       expect(res.status).toBe(400);
     });
 
@@ -162,7 +215,7 @@ describe('Business API Integration', () => {
         },
       };
 
-      res = await postWithAuth(app, '/api/businesses', businessData, token);
+      res = await postWithAuth(app, BUSINESS_BASE_URL, businessData, token);
 
       expect(res.status).toBe(400);
       expect(res.body.message).toContain('Validation failed');
@@ -182,7 +235,7 @@ describe('Business API Integration', () => {
         },
       };
 
-      res = await postWithAuth(app, '/api/businesses', businessData, token);
+      res = await postWithAuth(app, BUSINESS_BASE_URL, businessData, token);
 
       expect(res.status).toBe(201);
     });
@@ -199,13 +252,13 @@ describe('Business API Integration', () => {
         },
       };
 
-      res = await postWithAuth(app, '/api/businesses', businessData, token);
+      res = await postWithAuth(app, BUSINESS_BASE_URL, businessData, token);
       expect(res.status).toBe(400);
       expect(res.body.code).toBe(ERROR_CODES.LNG_OUT_OF_RANGE);
     });
   });
 
-  describe('GET /api/businesses', () => {
+  describe(`GET ${ADMIN_BUSINESS_BASE_URL}`, () => {
     it('should return all businesses for authenticated user', async () => {
       await BusinessModel.create([
         {
@@ -224,7 +277,9 @@ describe('Business API Integration', () => {
         },
       ]);
 
-      res = await request(app).get('/api/businesses').set('Authorization', `Bearer ${token}`);
+      res = await request(app)
+        .get(ADMIN_BUSINESS_BASE_URL)
+        .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -233,7 +288,9 @@ describe('Business API Integration', () => {
     });
 
     it('should return empty array when there are no businesses', async () => {
-      res = await request(app).get('/api/businesses').set('Authorization', `Bearer ${token}`);
+      res = await request(app)
+        .get(ADMIN_BUSINESS_BASE_URL)
+        .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -249,7 +306,9 @@ describe('Business API Integration', () => {
         addressText: 'Herat, District 8',
       });
 
-      res = await request(app).get('/api/businesses').set('Authorization', `Bearer ${token}`);
+      res = await request(app)
+        .get(ADMIN_BUSINESS_BASE_URL)
+        .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -259,7 +318,7 @@ describe('Business API Integration', () => {
     });
 
     it('should fail with 401 when token is missing', async () => {
-      res = await request(app).get('/api/businesses');
+      res = await request(app).get(ADMIN_BUSINESS_BASE_URL);
 
       expect(res.status).toBe(401);
       expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
@@ -267,7 +326,7 @@ describe('Business API Integration', () => {
     });
   });
 
-  describe('GET /api/businesses/:id', () => {
+  describe(`GET ${ADMIN_BUSINESS_BASE_URL}/:id`, () => {
     it('should return business by id for authenticated user', async () => {
       const business = await BusinessModel.create({
         owner: testUserId,
@@ -278,8 +337,8 @@ describe('Business API Integration', () => {
       });
 
       res = await request(app)
-        .get(`/api/businesses/${business._id}`)
-        .set('Authorization', `Bearer ${token}`);
+        .get(`${ADMIN_BUSINESS_BASE_URL}/${business._id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -291,18 +350,20 @@ describe('Business API Integration', () => {
       const missingId = new mongoose.Types.ObjectId();
 
       res = await request(app)
-        .get(`/api/businesses/${missingId}`)
-        .set('Authorization', `Bearer ${token}`);
+        .get(`${ADMIN_BUSINESS_BASE_URL}/${missingId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(404);
       expect(res.body.message).toBe('Business not found');
     });
 
     it('should return 400 for invalid business id format', async () => {
-      res = await request(app).get('/api/businesses/invalid-id').set('Authorization', `Bearer ${token}`);
+      res = await request(app)
+        .get(`${ADMIN_BUSINESS_BASE_URL}/invalid-id`)
+        .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(400);
-      expect(res.body.message).toBe('Validation failed');
+      expect(res.body.message).toBe('Invalid ID format');
     });
   });
 });
