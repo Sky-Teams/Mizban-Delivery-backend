@@ -25,11 +25,13 @@ export const clearDB = async () => {
   }
 };
 
-export const createFakeUserWithToken = async () => {
+export const createFakeUserWithToken = async (overrides = {}) => {
+  const unique = Date.now() + Math.floor(Math.random() * 10000);
   const user = await UserModel.create({
-    name: 'Test User',
-    email: 'test@example.com',
-    password: 'hashedpassword123',
+    name: overrides.name || 'Test User',
+    email: overrides.email || `test-${unique}@example.com`,
+    password: overrides.password || 'hashedpassword123',
+    role: overrides.role || 'customer',
   });
 
   const secret = process.env.JWT_SECRET || 'mizban-delivery-system-key';
@@ -40,5 +42,5 @@ export const createFakeUserWithToken = async () => {
     expiresIn: '1h',
   });
 
-  return { testUserId, token };
+  return { testUserId, token, user };
 };

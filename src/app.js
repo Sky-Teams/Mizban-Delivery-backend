@@ -11,8 +11,8 @@ import {
   adminBusinessCustomerRoutes,
   businessCustomerRoutes,
 } from '#modules/businessCustomers/index.js';
-import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { notificationRoutes } from '#modules/notifications/index.js';
+import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 
 const app = express();
 
@@ -41,6 +41,7 @@ app.use('/api/business-customers', authMiddleware, businessCustomerRoutes);
 app.use('/api/notifications', authMiddleware, notificationRoutes);
 app.use('/api/businesses', authMiddleware, businessRoutes);
 
+// Admin routes
 app.use(
   '/api/admin/business-customers',
   authMiddleware,
