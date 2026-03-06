@@ -1,7 +1,7 @@
 import { BusinessModel } from '../../models/business.model.js';
 
-export const DoesBusinessesExist = async (ownerId, phone) => {
-  const exist = await BusinessModel.exists({ owner: ownerId, phone });
+export const DoesBusinessesExist = async (ownerId, phone, addressText) => {
+  const exist = await BusinessModel.exists({ owner: ownerId, phone, addressText });
 
   return !!exist;
 };
