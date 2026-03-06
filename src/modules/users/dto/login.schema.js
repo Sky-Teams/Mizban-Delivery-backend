@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ERROR_CODES } from '../../../shared/errors/customCodes.js';
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 const loginSchema = z.object({
   body: z
