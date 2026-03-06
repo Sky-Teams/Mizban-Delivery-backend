@@ -1,5 +1,6 @@
-import express from 'express';
 import cors from 'cors';
+import express from 'express';
+import cookieParser from 'cookie-parser';
 import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
 import { businessRoutes } from '#modules/businesses/index.js';
@@ -15,6 +16,7 @@ const app = express();
 app.use(express.json());
 
 app.use(cors(corsOptions));
+app.use(cookieParser());
 
 //#endregion
 
