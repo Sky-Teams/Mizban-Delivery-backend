@@ -42,7 +42,7 @@ app.use('/api/notifications', authMiddleware, notificationRoutes);
 app.use('/api/businesses', authMiddleware, businessRoutes);
 
 app.use(
-  '/api/admin/business-customer',
+  '/api/admin/business-customers',
   authMiddleware,
   authorizeRole('admin'),
   adminBusinessCustomerRoutes
