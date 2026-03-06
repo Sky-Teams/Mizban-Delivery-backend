@@ -1,16 +1,9 @@
-import { loginService } from '#modules/users/services/v1/auth.service.js';
+import { cookieOptions } from '#shared/utils/jwt.js';
+import { ensureDeviceId, getDeviceId } from '#shared/utils/auth.helper.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError } from '#shared/errors/error.js';
+import { loginService, refreshService } from '../../services/v1/auth.service.js';
 import { doesUserExist, registerUser } from '../../services/v1/auth.service.js';
-
-export const login = async (req, res) => {
-  const user = await loginService(req.body);
-
-  res.status(200).json({
-    success: true,
-    data: user,
-  });
-};
 
 export const register = async (req, res) => {
   const data = req.body;
@@ -23,5 +16,35 @@ export const register = async (req, res) => {
   res.status(200).json({
     success: true,
     message: 'User registered successfully',
+  });
+};
+
+export const login = async (req, res) => {
+  const deviceId = ensureDeviceId(req, res);
+
+  const { accessToken, refreshToken, id, email, role } = await loginService(req.body, deviceId);
+
+  res.cookie('refreshToken', refreshToken, cookieOptions);
+
+  res.status(200).json({
+    success: true,
+    data: { accessToken, id, email, role },
+  });
+};
+
+export const refreshAccessToken = async (req, res) => {
+  const deviceId = getDeviceId(req);
+  const refreshToken = req.cookies?.refreshToken;
+
+  const { accessToken, refreshToken: rotatedRefreshToken } = await refreshService({
+    refreshToken,
+    deviceId,
+  });
+
+  res.cookie('refreshToken', rotatedRefreshToken, cookieOptions);
+
+  res.status(200).json({
+    success: true,
+    data: { accessToken },
   });
 };
