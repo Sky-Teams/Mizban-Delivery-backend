@@ -37,7 +37,6 @@ app.use('/api/auth', authRoutes);
 // Protected routes
 
 app.use('/api/drivers', authMiddleware, driverRoutes);
-app.use('/api/business-customers', authMiddleware, businessCustomerRoutes);
 app.use('/api/notifications', authMiddleware, notificationRoutes);
 app.use('/api/businesses', authMiddleware, businessRoutes);
 
