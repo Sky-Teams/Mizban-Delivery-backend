@@ -5,7 +5,7 @@ import {
   updateDriver,
   getDriverProfile,
   getDriverInfoByUserId,
-  addDrvier,
+  addDriver,
   modifyDriver,
   getAllDrivers,
   getDriver,
@@ -243,7 +243,7 @@ describe('Admin Driver Controllers', () => {
     };
   });
 
-  describe('addDrvier', () => {
+  describe('addDriver', () => {
     beforeEach(() => {
       req = {
         user: { _id: 'user123' },
@@ -258,14 +258,14 @@ describe('Admin Driver Controllers', () => {
 
     it('should throw unauthorized error if user is missing', async () => {
       req.user = null;
-      await expect(addDrvier(req, res)).rejects.toBeInstanceOf(AppError);
+      await expect(addDriver(req, res)).rejects.toBeInstanceOf(AppError);
     });
 
     it('should create a driver and return 201', async () => {
       const mockedDriver = { _id: 'driver123', name: 'John' };
       addNewDriver.mockResolvedValue(mockedDriver);
 
-      await addDrvier(req, res);
+      await addDriver(req, res);
 
       expect(addNewDriver).toHaveBeenCalledWith(req.body);
       expect(res.status).toHaveBeenCalledWith(201);
@@ -276,7 +276,7 @@ describe('Admin Driver Controllers', () => {
       const error = new AppError('Validation failed', 400, ERROR_CODES.VALIDATION_ERROR);
       addNewDriver.mockRejectedValue(error);
 
-      await expect(addDrvier(req, res)).rejects.toThrow(AppError);
+      await expect(addDriver(req, res)).rejects.toThrow(AppError);
     });
   });
 

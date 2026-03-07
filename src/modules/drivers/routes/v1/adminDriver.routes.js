@@ -1,6 +1,6 @@
 import express from 'express';
 import {
-  addDrvier,
+  addDriver,
   getAllDrivers,
   getDriver,
   modifyDriver,
@@ -13,7 +13,7 @@ import { adminUpdateDriverValidator } from '../../dto/admin-update-driver.schema
 
 const router = express.Router();
 
-router.post('/', validate(adminCreateDriverValidator), asyncHandler(addDrvier));
+router.post('/', validate(adminCreateDriverValidator), asyncHandler(addDriver));
 router.get('/', asyncHandler(getAllDrivers));
 router.get('/:id', validate(mongoIdValidator), asyncHandler(getDriver)); // route /:id => id is driverId
 router.put(

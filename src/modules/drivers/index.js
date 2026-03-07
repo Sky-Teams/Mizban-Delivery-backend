@@ -15,7 +15,7 @@ export {
   createDriver,
   updateDriver,
   getDriverProfile,
-  addDrvier,
+  addDriver,
   getAllDrivers,
   getDriver,
   modifyDriver,

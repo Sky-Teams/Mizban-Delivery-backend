@@ -13,7 +13,7 @@ import {
 
 //#region Admin controllers
 
-export const addDrvier = async (req, res) => {
+export const addDriver = async (req, res) => {
   if (!req.user) throw unauthorized();
 
   const newDriver = await addNewDriver(req.body);
