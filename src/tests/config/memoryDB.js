@@ -25,17 +25,16 @@ export const clearDB = async () => {
   }
 };
 
-export const createFakeUserWithToken = async () => {
+export const createFakeUserWithToken = async (role = 'customer') => {
   const user = await UserModel.create({
     name: 'Test User',
     email: 'test@example.com',
     password: 'hashedpassword123',
+    role,
   });
 
   const secret = process.env.JWT_SECRET || 'mizban-delivery-system-key';
-
   const testUserId = user._id;
-
   const token = jwt.sign({ id: testUserId }, secret, {
     expiresIn: '1h',
   });
