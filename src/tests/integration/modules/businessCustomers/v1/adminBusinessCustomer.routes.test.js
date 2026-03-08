@@ -25,10 +25,7 @@ describe('Admin BusinessCustomer API Integration', () => {
 
   beforeEach(async () => {
     await clearDB();
-    const user = await createFakeUserWithToken({
-      role: 'admin',
-      email: 'admin-business-customer@example.com',
-    });
+    const user = await createFakeUserWithToken('admin');
     token = user.token;
     testUserId = user.testUserId;
   });

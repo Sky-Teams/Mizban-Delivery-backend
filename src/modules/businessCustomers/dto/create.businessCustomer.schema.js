@@ -33,7 +33,7 @@ const createBusinessCustomerSchema = z.object({
       .email({ message: ERROR_CODES.INVALID_EMAIL_FORMAT })
       .trim(),
 
-    addressText: z.string().trim().min(3, { message: ERROR_CODES.ADDRESS_TEXT_IS_TOO_SHORT }),
+    addressText: z.string().trim(),
 
     location: z
       .object({

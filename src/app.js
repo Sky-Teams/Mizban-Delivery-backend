@@ -7,10 +7,7 @@ import { businessRoutes } from '#modules/businesses/index.js';
 import { authRoutes } from '#modules/users/index.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import { driverRoutes } from '#modules/drivers/index.js';
-import {
-  adminBusinessCustomerRoutes,
-  businessCustomerRoutes,
-} from '#modules/businessCustomers/index.js';
+import { adminBusinessCustomerRoutes } from '#modules/businessCustomers/index.js';
 import { notificationRoutes } from '#modules/notifications/index.js';
 import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 
@@ -37,7 +34,6 @@ app.use('/api/auth', authRoutes);
 // Protected routes
 
 app.use('/api/drivers', authMiddleware, driverRoutes);
-app.use('/api/business-customers', authMiddleware, businessCustomerRoutes);
 app.use('/api/notifications', authMiddleware, notificationRoutes);
 app.use('/api/businesses', authMiddleware, businessRoutes);
 
