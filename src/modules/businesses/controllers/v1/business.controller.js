@@ -11,7 +11,7 @@ import {
 export const createBusiness = async (req, res) => {
   if (!req.user) throw unauthorized();
 
-  const exist = await DoesBusinessesExist(req.user._id, req.body.phone, req.body.addressText);
+  const exist = await DoesBusinessesExist(req.user._id, req.body.name, req.body.addressText);
   if (exist) throw new AppError('Business already exist', 400, ERROR_CODES.BUSINESS_ALREADY_EXIST);
 
   const business = await createNewBusiness(req.user._id, req.body);
