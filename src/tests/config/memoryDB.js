@@ -35,9 +35,7 @@ export const createFakeUserWithToken = async (role = 'customer') => {
   });
 
   const secret = process.env.JWT_SECRET || 'mizban-delivery-system-key';
-
   const testUserId = user._id;
-
   const token = jwt.sign({ id: testUserId }, secret, {
     expiresIn: '1h',
   });
