@@ -147,6 +147,7 @@ describe('Admin Business API Integration', () => {
           coordinates: [63],
         },
       };
+      res = await postWithAuth(app, '/api/admin/businesses', businessData, token);
 
       expect(res.status).toBe(400);
     });

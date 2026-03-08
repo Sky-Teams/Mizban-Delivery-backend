@@ -1,10 +1,23 @@
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, unauthorized } from '#shared/errors/error.js';
 import {
-  isOwner,
   updateBusinessService,
   createNewBusiness,
+  addNewBusiness,
 } from '../../services/v1/business.service.js';
+
+//region admin
+export const addBusiness = async (req, res) => {
+  if (!req.user) throw unauthorized();
+
+  const business = await addNewBusiness(req.body);
+  res.status(201).json({
+    success: true,
+    data: business,
+  });
+};
+
+//endregion
 
 //Create new Business
 export const createBusiness = async (req, res) => {
@@ -20,10 +33,6 @@ export const createBusiness = async (req, res) => {
 //Update business
 export const updateBusiness = async (req, res) => {
   if (!req.user) throw unauthorized();
-
-  const isUserOwner = await isOwner(req.user._id, req.params.id);
-  if (!isUserOwner)
-    throw new AppError('You donot have permission to update', 403, ERROR_CODES.FORBIDDEN);
 
   const businessData = await updateBusinessService(req.user._id, req.params.id, req.body);
 

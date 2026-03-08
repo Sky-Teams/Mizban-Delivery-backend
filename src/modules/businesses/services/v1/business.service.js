@@ -1,13 +1,50 @@
 import { noFieldsProvidedForUpdate, notFound } from '#shared/errors/error.js';
 import { BusinessModel } from '../../models/business.model.js';
+import { withTransaction } from '#shared/middleware/transactionHandler.js';
+import { UserModel } from '#modules/users/index.js';
+import { hashPassword } from '#shared/utils/jwt.js';
 
-//Check ownership
-export const isOwner = async (userId, id) => {
-  const business = await BusinessModel.findById(id);
-  if (!business) throw notFound('Business');
+//region admin
+export const addNewBusiness = withTransaction(async (session, businessData) => {
+  const {
+    username,
+    email,
+    userPhoneNumber,
+    name,
+    type,
+    addressText,
+    phone,
+    location,
+    prepTimeAvgMinutes,
+  } = businessData;
 
-  return String(userId) === String(business.owner);
-};
+  //user info
+  const userPassword = 'business123';
+  const hashPassw = await hashPassword(userPassword);
+  const userData = {
+    name: username,
+    email,
+    phone: userPhoneNumber,
+    password: hashPassw,
+    role: 'business',
+  };
+  const [user] = await UserModel.create([userData], { session });
+
+  const newBusiness = {
+    owner: user._id,
+    name,
+    type,
+    addressText,
+    phone,
+    location,
+    prepTimeAvgMinutes,
+  };
+  const [business] = await BusinessModel.create([newBusiness], { session });
+
+  return business;
+});
+
+//endregion
 
 //Create new Business
 export const createNewBusiness = async (userId, businessData) => {
@@ -66,4 +103,4 @@ export const updateBusinessService = async (userId, businessId, businessData) =>
   if (!updateBusiness) throw notFound('Business');
 
   return updateBusiness;
-}
+};

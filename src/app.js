@@ -7,6 +7,7 @@ import { adminBusinessRoutes, businessRoutes } from '#modules/businesses/index.j
 import { authRoutes } from '#modules/users/index.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import { adminDriverRoutes, driverRoutes } from '#modules/drivers/index.js';
+import { notificationRoutes } from '#modules/notifications/index.js';
 import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { adminBusinessCustomerRoutes } from '#modules/businessCustomers/index.js';
 import { notificationRoutes } from '#modules/notifications/index.js';

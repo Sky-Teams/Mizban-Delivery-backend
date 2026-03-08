@@ -3,7 +3,11 @@ export { default as adminBusinessRoutes } from './routes/v1/adminBusiness.routes
 export { BusinessModel } from './models/business.model.js';
 export {
   createNewBusiness,
-  isOwner,
   updateBusinessService,
+  addNewBusiness,
 } from './services/v1/business.service.js';
-export { createBusiness, updateBusiness } from './controllers/v1/business.controller.js';
+export {
+  createBusiness,
+  updateBusiness,
+  addBusiness,
+} from './controllers/v1/business.controller.js';
