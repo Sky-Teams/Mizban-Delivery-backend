@@ -12,8 +12,7 @@ const adminCreateDriverSchema = z.object({
   body: z.object({
     name: z
       .string({
-        required_error: ERROR_CODES.NAME_TOO_SHORT, // triggers if key missing
-        invalid_type_error: ERROR_CODES.NAME_TOO_SHORT, // triggers if type wrong
+        message: ERROR_CODES.NAME_TOO_SHORT,
       })
       .trim()
       .min(3, { message: ERROR_CODES.NAME_TOO_SHORT }),
