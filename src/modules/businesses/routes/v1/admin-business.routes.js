@@ -11,8 +11,11 @@ import express from 'express';
 
 const router = express.Router();
 
-router.get('/', asyncHandler(getBusinesses));
-router.post('/', validate(createBusinessValidator), asyncHandler(createBusiness));
+router
+  .route('/')
+  .get(asyncHandler(getBusinesses))
+  .post(validate(createBusinessValidator), asyncHandler(createBusiness));
+
 router.get('/:id', validate(mongoIdValidator), asyncHandler(getBusiness));
 
 export default router;
