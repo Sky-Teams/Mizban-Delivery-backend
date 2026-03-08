@@ -11,7 +11,15 @@ export const createGeoPointSchema = (customErrorCode = ERROR_CODES.INVALID_COORD
         if (!Array.isArray(val) || val.length !== 2) return val;
         return val.map((v, i) => ensureNumber(v, `coordinates[${i}]`, customErrorCode));
       },
-      z.array(z.number()).length(2, { message: customErrorCode })
+      z
+        .array(z.number())
+        .length(2, { message: customErrorCode })
+        .refine(([lng]) => lng >= 60 && lng <= 75, {
+          message: ERROR_CODES.LNG_OUT_OF_RANGE,
+        })
+        .refine(([, lat]) => lat >= 29 && lat <= 39, {
+          message: ERROR_CODES.LAT_OUT_OF_RANGE,
+        })
     ),
   });
 };
