@@ -73,12 +73,12 @@ describe('Business Service', () => {
     it('should return true when business already exists', async () => {
       BusinessModel.exists.mockResolvedValue({ _id: 'business1' });
 
-      const result = await DoesBusinessesExist('owner1', '0093781234567', 'Herat');
+      const result = await DoesBusinessesExist('owner1', 'hamid', 'Herat');
 
       expect(result).toBe(true);
       expect(BusinessModel.exists).toHaveBeenCalledWith({
         owner: 'owner1',
-        phone: '0093781234567',
+        name: 'hamid',
         addressText: 'Herat',
       });
     });
@@ -86,7 +86,7 @@ describe('Business Service', () => {
     it('should return false when business does not exist', async () => {
       BusinessModel.exists.mockResolvedValue(null);
 
-      const result = await DoesBusinessesExist('owner1', '0093781234567', 'Herat');
+      const result = await DoesBusinessesExist('owner1', 'hamid', 'Herat');
 
       expect(result).toBe(false);
     });

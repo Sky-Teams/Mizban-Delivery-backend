@@ -18,7 +18,10 @@ export const disconnectDB = async () => {
     await mongoose.connection.close();
   }
 
-  await mongoServer.stop();
+  if (mongoServer) {
+    await mongoServer.stop();
+    mongoServer = undefined;
+  }
 };
 export const clearDB = async () => {
   const collections = mongoose.connection.collections;
