@@ -20,7 +20,7 @@ const createBusinessSchema = z.object({
     addressText: z.string().trim().min(3, { message: ERROR_CODES.LENGTH_IS_TOO_SHORT }),
     location: z
       .object({
-        type: z.literal('Point', {message: ERROR_CODES.INVALID_LOCATION_TYPE}).optional(),
+        type: z.literal('Point', { message: ERROR_CODES.INVALID_LOCATION_TYPE }).optional(),
         coordinates: z.preprocess(
           (val) => {
             if (!Array.isArray(val) || val.length !== 2) return val;
