@@ -19,7 +19,8 @@
     "test:unit": "vitest src/tests/unit",
     "test:integration": "vitest src/tests/integration",
     "test:e2e": "vitest src/tests/e2e",
-    "test:specific": "vitest"
+    "test:specific": "vitest",
+    "create:admin": "node src/scripts/createAdmin.js"
   },
   "imports": {
     "#shared/*": "./src/shared/*",
