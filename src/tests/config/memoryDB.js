@@ -65,8 +65,16 @@ export const createFakeDriver = async () => {
     user: user._id,
     vehicleType: 'car',
     status: 'idle',
-    capacity: { maxWeightKg: 100, maxPackages: 5 },
-    currentLocation: { type: 'Point', coordinates: [0, 0] },
+    currentLocation: { coordinates: [55, 55] },
+    vehicleRegistrationNumber: 'ADM-123',
+    capacity: {
+      maxWeightKg: 100,
+      maxPackages: 5,
+    },
+    timeAvailability: {
+      start: '08:00',
+      end: '18:00',
+    },
   });
 
   return newDriver;
