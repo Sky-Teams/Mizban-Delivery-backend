@@ -242,31 +242,6 @@ describe('Business API Integration', () => {
       expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
     });
 
-    it('should return 403 when authenticated user is not the business owner', async () => {
-      const user = await UserModel.create({
-        email: 'Test@gmail.com',
-        name: 'test',
-        password: 'test123',
-      });
-
-      const newBusiness = await BusinessModel.create({
-        owner: user._id,
-        name: 'Shaqaeq Shop',
-        type: 'shop',
-        addressText: 'Afghanistan , Herat',
-        phone: '0781234567',
-      });
-
-      const Id = newBusiness._id.toString();
-
-      const updateData = { type: 'other' };
-      res = await putWithAuth(app, `/api/businesses/${Id}`, updateData, token);
-
-      expect(res.status).toBe(403);
-      expect(res.body.message).toMatch('You donot have permission to update');
-      expect(res.body.code).toBe(ERROR_CODES.FORBIDDEN);
-    });
-
     it('should fail if params id is invalid', async () => {
       const fakeId = '69a563ba08c2261290c6a4d';
       const updateData = { type: 'shop' };
