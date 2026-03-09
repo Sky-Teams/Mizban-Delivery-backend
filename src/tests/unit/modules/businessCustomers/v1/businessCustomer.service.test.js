@@ -5,6 +5,7 @@ import {
   updateExistedBusinessCustomer,
 } from '#modules/businessCustomers/services/v1/businessCustomer.service.js';
 import { businessCustomerModel } from '#modules/businessCustomers/models/businessCustomer.model.js';
+import { BusinessModel } from '#modules/businesses/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 vi.mock('#modules/businessCustomers/models/businessCustomer.model.js', () => ({
@@ -12,6 +13,12 @@ vi.mock('#modules/businessCustomers/models/businessCustomer.model.js', () => ({
     exists: vi.fn(),
     create: vi.fn(),
     findOneAndUpdate: vi.fn(),
+  },
+}));
+
+vi.mock('#modules/businesses/index.js', () => ({
+  BusinessModel: {
+    exists: vi.fn(),
   },
 }));
 
@@ -62,10 +69,14 @@ describe('BusinessCustomer Service', () => {
         ...bodyData,
         business: bodyData.businessId,
       };
+      BusinessModel.exists.mockResolvedValue(true);
       businessCustomerModel.create.mockResolvedValue(createdDoc);
 
       const result = await createNewBusinessCustomer(bodyData);
 
+      expect(BusinessModel.exists).toHaveBeenCalledWith({
+        _id: '507f1f77bcf86cd799439011',
+      });
       expect(businessCustomerModel.create).toHaveBeenCalledWith({
         business: '507f1f77bcf86cd799439011',
         name: 'Mahdi',
