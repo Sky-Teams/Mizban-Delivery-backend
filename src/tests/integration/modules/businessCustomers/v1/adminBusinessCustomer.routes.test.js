@@ -34,6 +34,7 @@ describe('Admin BusinessCustomer API Integration', () => {
     testUserId = user.testUserId;
 
     business = await BusinessModel.create({
+      _id: testUserId,
       owner: testUserId,
       name: 'Kabul Fresh',
       type: 'shop',
