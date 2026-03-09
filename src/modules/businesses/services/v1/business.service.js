@@ -70,9 +70,13 @@ export const modifyExistedBusiness = withTransaction(async (session, businessId,
   const businessUpdateFields = {};
 
   for (const key of Object.keys(businessData)) {
-    if (allowedFieldsToUpdate.includes(key)) {
+    if (allowedFieldsToUpdate.includes(key) && key !== 'location') {
       businessUpdateFields[key] = businessData[key];
     }
+  }
+
+  if (businessData.location?.coordinates !== undefined) {
+    businessUpdateFields['location.coordinates'] = businessData.location.coordinates;
   }
 
   if (
@@ -152,6 +156,10 @@ export const updateBusinessService = async (userId, businessId, businessData) =>
     if (allowedFieldsToUpdate.includes(key) && key !== 'location') {
       updates[key] = businessData[key];
     }
+  }
+  
+  if (businessData.location?.coordinates !== undefined) {
+    updates['location.coordinates'] = businessData.location.coordinates;
   }
 
   if (Object.keys(updates).length === 0) throw noFieldsProvidedForUpdate();
