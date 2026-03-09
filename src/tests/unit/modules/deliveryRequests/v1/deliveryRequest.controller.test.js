@@ -1,10 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createDelivery, createDeliveryRequest } from '#modules/deliveryRequests/index.js';
+import {
+  assignDriver,
+  assignDriverToDeliveryRequest,
+  cancelDeliveryRequest,
+  cancelOrder,
+  createDelivery,
+  createDeliveryRequest,
+  deliverDeliveryRequest,
+  deliverOrder,
+  pickupDeliveryRequest,
+  pickupOrder,
+  updateDeliveryRequest,
+  updateDeliveryRequestInfo,
+} from '#modules/deliveryRequests/index.js';
 import { notFound } from '#shared/errors/error.js';
 
 // Mock the service
 vi.mock('#modules/deliveryRequests/services/v1/deliveryRequest.service.js', () => ({
   createDeliveryRequest: vi.fn(),
+  updateDeliveryRequestInfo: vi.fn(),
+  assignDriverToDeliveryRequest: vi.fn(),
+  pickupDeliveryRequest: vi.fn(),
+  deliverDeliveryRequest: vi.fn(),
+  cancelDeliveryRequest: vi.fn(),
 }));
 
 describe('Controller Delivery - create delivery request', () => {
@@ -154,5 +172,335 @@ describe('Controller Delivery - create delivery request', () => {
     createDeliveryRequest.mockRejectedValue(error);
 
     await expect(createDelivery(req, res)).rejects.toThrow('DB failed');
+  });
+});
+
+describe('Controller Delivery - updateDeliveryRequest', () => {
+  let req, res;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    req = {
+      user: { _id: 'user1' },
+      params: { id: 'delivery123' },
+      body: { status: 'assigned' },
+    };
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+  });
+
+  it('should throw unauthorized error if user is missing', async () => {
+    req.user = null;
+
+    await expect(updateDeliveryRequest(req, res)).rejects.toThrow();
+  });
+
+  it('should call service and return 200 response with updated delivery request', async () => {
+    const mockUpdatedDelivery = { _id: 'delivery123', status: 'assigned' };
+    updateDeliveryRequestInfo.mockResolvedValue(mockUpdatedDelivery);
+
+    await updateDeliveryRequest(req, res);
+
+    expect(updateDeliveryRequestInfo).toHaveBeenCalledWith(req.params.id, req.body);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockUpdatedDelivery,
+    });
+  });
+
+  it('should propagate error from service', async () => {
+    const error = new Error('DB failed');
+    updateDeliveryRequestInfo.mockRejectedValue(error);
+
+    await expect(updateDeliveryRequest(req, res)).rejects.toThrow('DB failed');
+  });
+
+  it('should update delivery request with partial fields', async () => {
+    req.body = { status: 'pickedUp' }; // partial update
+    const mockUpdatedDelivery = { _id: 'delivery123', status: 'pickedUp' };
+    updateDeliveryRequestInfo.mockResolvedValue(mockUpdatedDelivery);
+
+    await updateDeliveryRequest(req, res);
+
+    expect(updateDeliveryRequestInfo).toHaveBeenCalledWith(req.params.id, req.body);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockUpdatedDelivery,
+    });
+  });
+});
+
+describe('Controller Delivery - assignDriver', () => {
+  let req, res;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    req = {
+      user: { _id: 'user1' },
+      params: { id: 'delivery123' },
+      body: { driverId: 'driver456' },
+    };
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+  });
+
+  it('should throw unauthorized error if user is missing', async () => {
+    req.user = null;
+
+    await expect(assignDriver(req, res)).rejects.toThrow();
+  });
+
+  it('should assign driver and return 200 response', async () => {
+    const mockDelivery = { _id: 'delivery123', driverId: 'driver456', status: 'assigned' };
+    assignDriverToDeliveryRequest.mockResolvedValue(mockDelivery);
+
+    await assignDriver(req, res);
+
+    expect(assignDriverToDeliveryRequest).toHaveBeenCalledWith(req.params.id, req.body.driverId);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockDelivery,
+    });
+  });
+
+  it('should propagate error from service', async () => {
+    const error = new Error('Driver not idle');
+    assignDriverToDeliveryRequest.mockRejectedValue(error);
+
+    await expect(assignDriver(req, res)).rejects.toThrow('Driver not idle');
+  });
+
+  it('should assign driver with a different driverId', async () => {
+    req.body.driverId = 'driver789';
+    const mockDelivery = { _id: 'delivery123', driverId: 'driver789', status: 'assigned' };
+    assignDriverToDeliveryRequest.mockResolvedValue(mockDelivery);
+
+    await assignDriver(req, res);
+
+    expect(assignDriverToDeliveryRequest).toHaveBeenCalledWith(req.params.id, 'driver789');
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockDelivery,
+    });
+  });
+});
+
+describe('Controller Delivery - pickupOrder', () => {
+  let req, res;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    req = {
+      user: { _id: 'user1' },
+      params: { id: 'delivery123' },
+    };
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+  });
+
+  it('should throw unauthorized error if user is missing', async () => {
+    req.user = null;
+
+    await expect(pickupOrder(req, res)).rejects.toThrow();
+  });
+
+  it('should pick up delivery and return 200 response', async () => {
+    const mockDelivery = {
+      _id: 'delivery123',
+      status: 'pickedUp',
+      timeline: { pickedUpAt: new Date() },
+    };
+    pickupDeliveryRequest.mockResolvedValue(mockDelivery);
+
+    await pickupOrder(req, res);
+
+    expect(pickupDeliveryRequest).toHaveBeenCalledWith(req.params.id);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockDelivery,
+    });
+  });
+
+  it('should propagate error from service', async () => {
+    const error = new Error('Pickup not allowed');
+    pickupDeliveryRequest.mockRejectedValue(error);
+
+    await expect(pickupOrder(req, res)).rejects.toThrow('Pickup not allowed');
+  });
+
+  it('should ensure delivery status is updated to pickedUp', async () => {
+    const now = new Date();
+    const mockDelivery = { _id: 'delivery123', status: 'pickedUp', timeline: { pickedUpAt: now } };
+    pickupDeliveryRequest.mockResolvedValue(mockDelivery);
+
+    await pickupOrder(req, res);
+
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: expect.objectContaining({
+        status: 'pickedUp',
+        timeline: expect.objectContaining({ pickedUpAt: now }),
+      }),
+    });
+  });
+});
+
+describe('Controller Delivery - deliverOrder', () => {
+  let req, res;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    req = {
+      user: { _id: 'user1' },
+      params: { id: 'delivery123' },
+    };
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+  });
+
+  it('should throw unauthorized error if user is missing', async () => {
+    req.user = null;
+
+    await expect(deliverOrder(req, res)).rejects.toThrow();
+  });
+
+  it('should deliver order and return 200 response', async () => {
+    const mockDelivery = {
+      _id: 'delivery123',
+      status: 'delivered',
+      paymentStatus: 'paid',
+    };
+
+    deliverDeliveryRequest.mockResolvedValue(mockDelivery);
+
+    await deliverOrder(req, res);
+
+    expect(deliverDeliveryRequest).toHaveBeenCalledWith(req.params.id);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockDelivery,
+    });
+  });
+
+  it('should propagate error from service', async () => {
+    const error = new Error('Delivery failed');
+    deliverDeliveryRequest.mockRejectedValue(error);
+
+    await expect(deliverOrder(req, res)).rejects.toThrow('Delivery failed');
+  });
+
+  it('should return delivered status in response', async () => {
+    const mockDelivery = {
+      _id: 'delivery123',
+      status: 'delivered',
+      timeline: { deliveredAt: new Date() },
+    };
+
+    deliverDeliveryRequest.mockResolvedValue(mockDelivery);
+
+    await deliverOrder(req, res);
+
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: expect.objectContaining({
+        status: 'delivered',
+      }),
+    });
+  });
+});
+
+describe('Controller Delivery - cancelOrder', () => {
+  let req, res;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    req = {
+      user: { _id: 'user1' },
+      params: { id: 'delivery123' },
+      body: { cancelReason: 'Customer requested cancellation' },
+    };
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+  });
+
+  it('should throw unauthorized error if user is missing', async () => {
+    req.user = null;
+
+    await expect(cancelOrder(req, res)).rejects.toThrow();
+  });
+
+  it('should cancel order and return 200 response', async () => {
+    const mockDelivery = {
+      _id: 'delivery123',
+      status: 'cancelled',
+      cancelReason: 'Customer requested cancellation',
+    };
+
+    cancelDeliveryRequest.mockResolvedValue(mockDelivery);
+
+    await cancelOrder(req, res);
+
+    expect(cancelDeliveryRequest).toHaveBeenCalledWith(req.params.id, req.body.cancelReason);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockDelivery,
+    });
+  });
+
+  it('should propagate error from service', async () => {
+    const error = new Error('Cancel not allowed');
+    cancelDeliveryRequest.mockRejectedValue(error);
+
+    await expect(cancelOrder(req, res)).rejects.toThrow('Cancel not allowed');
+  });
+
+  it('should cancel order even if cancelReason is undefined', async () => {
+    req.body = {};
+
+    const mockDelivery = {
+      _id: 'delivery123',
+      status: 'cancelled',
+      cancelReason: null,
+    };
+
+    cancelDeliveryRequest.mockResolvedValue(mockDelivery);
+
+    await cancelOrder(req, res);
+
+    expect(cancelDeliveryRequest).toHaveBeenCalledWith(req.params.id, undefined);
+
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockDelivery,
+    });
   });
 });
