@@ -32,7 +32,6 @@ describe('DeliveryRequest Service', () => {
       name: 'Bob',
       phone: '456',
       address: 'Herat',
-      location: { type: 'Point', coordinates: [0, 0] },
     },
     pickupLocation: { type: 'Point', coordinates: [0, 0] },
     dropoffLocation: { type: 'Point', coordinates: [1, 1] },

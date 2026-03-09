@@ -23,7 +23,6 @@ describe('Controller Delivery - create delivery request', () => {
           name: 'Ahmad',
           phone: '0790909090',
           address: 'Herat, Afghanistan',
-          location: { coordinates: [62.2, 34.35] },
         },
         pickupLocation: { coordinates: [62.2, 34.35] },
         dropoffLocation: { coordinates: [62.5, 34.4] },
