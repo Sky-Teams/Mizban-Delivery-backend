@@ -82,7 +82,6 @@ const adminCreateDeliveryRequestSchema = z.object({
         message: ERROR_CODES.INVALID_PHONE_NUMBER,
       }),
       address: z.string().min(1, { message: ERROR_CODES.INVALID_RECEIVER_ADDRESS }),
-      location: createGeoPointSchema(ERROR_CODES.INVALID_RECEIVER_COORDINATES),
     }),
 
     pickupLocation: createGeoPointSchema(ERROR_CODES.INVALID_PICKUP_COORDINATES),
