@@ -79,7 +79,7 @@ describe('login controller', () => {
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       data: {
-        accessToken: 'access-token-123',
+        token: 'access-token-123',
         id: 'u1',
         email: 'user@example.com',
         role: 'customer',
