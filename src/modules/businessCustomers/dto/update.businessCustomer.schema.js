@@ -25,7 +25,7 @@ const updateBusinessCustomerSchema = z.object({
           message: ERROR_CODES.INVALID_PHONE_NUMBER,
         }),
 
-      addressText: z.string().trim().min(2, { message: ERROR_CODES.LENGTH_IS_TOO_SHORT }),
+      addressText: z.string().trim(),
 
       location: z
         .object({
