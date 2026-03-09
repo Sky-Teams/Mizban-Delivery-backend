@@ -8,6 +8,8 @@ import {
   doesBusinessCustomerExist,
   updateExistedBusinessCustomer,
 } from '#modules/businessCustomers/services/v1/businessCustomer.service.js';
+import { businessCustomerModel } from '#modules/businessCustomers/models/businessCustomer.model.js';
+import { BusinessModel } from '#modules/businesses/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError } from '#shared/errors/error.js';
 
@@ -15,6 +17,18 @@ vi.mock('#modules/businessCustomers/services/v1/businessCustomer.service.js', ()
   createNewBusinessCustomer: vi.fn(),
   doesBusinessCustomerExist: vi.fn(),
   updateExistedBusinessCustomer: vi.fn(),
+}));
+
+vi.mock('#modules/businessCustomers/models/businessCustomer.model.js', () => ({
+  businessCustomerModel: {
+    findById: vi.fn(),
+  },
+}));
+
+vi.mock('#modules/businesses/index.js', () => ({
+  BusinessModel: {
+    findById: vi.fn(),
+  },
 }));
 
 describe('BusinessCustomer controller - createBusinessCustomer', () => {
@@ -127,11 +141,26 @@ describe('BusinessCustomer controller - updateBusinessCustomer', () => {
       business: 'business1',
       ...req.body,
     };
+    const customer = {
+      _id: 'customer1',
+      business: 'business1',
+    };
+    const business = {
+      _id: 'business1',
+      owner: {
+        equals: vi.fn().mockReturnValue(true),
+      },
+    };
 
+    businessCustomerModel.findById.mockResolvedValue(customer);
+    BusinessModel.findById.mockResolvedValue(business);
     updateExistedBusinessCustomer.mockResolvedValue(updated);
 
     await updateBusinessCustomer(req, res);
 
+    expect(businessCustomerModel.findById).toHaveBeenCalledWith('customer1');
+    expect(BusinessModel.findById).toHaveBeenCalledWith('business1');
+    expect(business.owner.equals).toHaveBeenCalledWith('business1');
     expect(updateExistedBusinessCustomer).toHaveBeenCalledWith('customer1', 'business1', req.body);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
@@ -140,8 +169,38 @@ describe('BusinessCustomer controller - updateBusinessCustomer', () => {
     });
   });
 
+  it('throws unauthorized error when business is not owned by req.user', async () => {
+    businessCustomerModel.findById.mockResolvedValue({
+      _id: 'customer1',
+      business: 'business1',
+    });
+    BusinessModel.findById.mockResolvedValue({
+      _id: 'business1',
+      owner: {
+        equals: vi.fn().mockReturnValue(false),
+      },
+    });
+
+    await expect(updateBusinessCustomer(req, res)).rejects.toMatchObject({
+      code: ERROR_CODES.UNAUTHORIZED,
+      message: 'User is not authorized',
+    });
+
+    expect(updateExistedBusinessCustomer).not.toHaveBeenCalled();
+  });
+
   it('propagates error from service layer', async () => {
     const error = new AppError('BusinessCustomer not found', 404, ERROR_CODES.NOT_FOUND);
+    businessCustomerModel.findById.mockResolvedValue({
+      _id: 'customer1',
+      business: 'business1',
+    });
+    BusinessModel.findById.mockResolvedValue({
+      _id: 'business1',
+      owner: {
+        equals: vi.fn().mockReturnValue(true),
+      },
+    });
     updateExistedBusinessCustomer.mockRejectedValue(error);
 
     await expect(updateBusinessCustomer(req, res)).rejects.toThrow(AppError);
