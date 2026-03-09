@@ -20,11 +20,11 @@ let adminUserId;
 describe('Admin Delivery Request API v1 Integration', () => {
   beforeAll(async () => {
     await connectDB();
-  }, 30000);
+  });
 
   afterAll(async () => {
     await disconnectDB();
-  }, 30000);
+  });
 
   beforeEach(async () => {
     await clearDB();
