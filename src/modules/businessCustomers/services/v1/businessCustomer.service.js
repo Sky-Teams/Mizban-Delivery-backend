@@ -1,4 +1,5 @@
 import { businessCustomerModel } from '#modules/businessCustomers/models/businessCustomer.model.js';
+import { BusinessModel } from '#modules/businesses/index.js';
 import { noFieldsProvidedForUpdate, notFound } from '#shared/errors/error.js';
 
 export const doesBusinessCustomerExist = async (businessId, phone, email) => {
@@ -9,8 +10,16 @@ export const doesBusinessCustomerExist = async (businessId, phone, email) => {
   return !!exist;
 };
 
+const DoesBusinessExits = async (id) => {
+  return await BusinessModel.exists({ _id: id });
+};
+
 export const createNewBusinessCustomer = async (bodyData) => {
   const { businessId, name, phone, altPhone, email, addressText, location, notes, tags } = bodyData;
+
+  const exist = await DoesBusinessExits(businessId);
+
+  if (!exist) throw notFound('Business');
 
   const businessCustomer = await businessCustomerModel.create({
     business: businessId,
