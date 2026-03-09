@@ -10,7 +10,6 @@ import { adminDriverRoutes, driverRoutes } from '#modules/drivers/index.js';
 import { notificationRoutes } from '#modules/notifications/index.js';
 import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { adminBusinessCustomerRoutes } from '#modules/businessCustomers/index.js';
-import { notificationRoutes } from '#modules/notifications/index.js';
 
 const app = express();
 
@@ -46,7 +45,7 @@ app.use(
   authorizeRole('admin'),
   adminBusinessCustomerRoutes
 );
-
+app.use('/api/admin/businesses', authMiddleware, authorizeRole('admin'), adminBusinessRoutes);
 //#endregion
 
 //#region Not found (404) middleware
