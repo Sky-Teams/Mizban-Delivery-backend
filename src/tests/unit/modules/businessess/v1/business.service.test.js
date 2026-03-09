@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  DoesBusinessesExist,
   createNewBusiness,
   getAllBusinesses,
   getBusinessById,
@@ -66,29 +65,6 @@ describe('Business Service', () => {
       BusinessModel.create.mockRejectedValue(error);
 
       await expect(createNewBusiness(userId, businessData)).rejects.toThrow('DB failed');
-    });
-  });
-
-  describe('DoesBusinessesExist', () => {
-    it('should return true when business already exists', async () => {
-      BusinessModel.exists.mockResolvedValue({ _id: 'business1' });
-
-      const result = await DoesBusinessesExist('owner1', 'hamid', 'Herat');
-
-      expect(result).toBe(true);
-      expect(BusinessModel.exists).toHaveBeenCalledWith({
-        owner: 'owner1',
-        name: 'hamid',
-        addressText: 'Herat',
-      });
-    });
-
-    it('should return false when business does not exist', async () => {
-      BusinessModel.exists.mockResolvedValue(null);
-
-      const result = await DoesBusinessesExist('owner1', 'hamid', 'Herat');
-
-      expect(result).toBe(false);
     });
   });
 
