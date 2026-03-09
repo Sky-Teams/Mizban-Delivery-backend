@@ -32,7 +32,7 @@ describe('Business Controller', () => {
         addressText: 'Afghanistan, Herat',
         location: {
           type: 'Point',
-          coordinates: [34.35, 62.2],
+          coordinates: [62.2, 34.35],
         },
         phone: '0093781234567',
         prepTimeAvgMinutes: 30,
