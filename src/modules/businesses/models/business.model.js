@@ -51,7 +51,7 @@ const BusinessSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-BusinessSchema.index({ owner: 1, name: 1, addressText: 1 }, { unique: true });
+BusinessSchema.index({ ownerId: 1 });
 BusinessSchema.index({ location: '2dsphere' });
 
 export const BusinessModel = mongoose.model('Business', BusinessSchema);
