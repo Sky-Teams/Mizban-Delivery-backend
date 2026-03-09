@@ -5,9 +5,11 @@ export {
   createNewBusiness,
   updateBusinessService,
   addNewBusiness,
+  modifyExistedBusiness,
 } from './services/v1/business.service.js';
 export {
   createBusiness,
   updateBusiness,
   addBusiness,
+  modifyBusiness,
 } from './controllers/v1/business.controller.js';
