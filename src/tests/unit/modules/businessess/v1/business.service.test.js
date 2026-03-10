@@ -12,6 +12,7 @@ vi.mock('#modules/businesses/models/business.model.js', () => ({
     create: vi.fn(),
     find: vi.fn(),
     findById: vi.fn(),
+    countDocuments: vi.fn(),
   },
 }));
 
@@ -73,14 +74,21 @@ describe('Business Service', () => {
       const businesses = [{ _id: '1', name: 'Business A' }];
       const lean = vi.fn().mockResolvedValue(businesses);
       const populate = vi.fn().mockReturnValue({ lean });
-      BusinessModel.find.mockReturnValue({ populate });
+      const limit = vi.fn().mockReturnValue({ populate });
+      const skip = vi.fn().mockReturnValue({ limit });
+
+      BusinessModel.countDocuments.mockResolvedValue(1);
+      BusinessModel.find.mockReturnValue({ skip });
 
       const result = await getAllBusinesses();
 
-      expect(BusinessModel.find).toHaveBeenCalledTimes(1);
+      expect(BusinessModel.countDocuments).toHaveBeenCalledWith({});
+      expect(BusinessModel.find).toHaveBeenCalledWith({});
+      expect(skip).toHaveBeenCalledTimes(1);
+      expect(limit).toHaveBeenCalledTimes(1);
       expect(populate).toHaveBeenCalledWith('owner', 'name email');
       expect(lean).toHaveBeenCalledTimes(1);
-      expect(result).toEqual(businesses);
+      expect(result).toEqual({ businesses, totalBusinesses: 1, totalPages: 1 });
     });
   });
 

@@ -97,6 +97,7 @@ describe('Controller Business - get businesses', () => {
     vi.clearAllMocks();
     req = {
       user: { _id: 'user1' },
+      query: {},
       params: { id: '507f191e810c19729de860ea' },
     };
     res = {
@@ -110,7 +111,7 @@ describe('Controller Business - get businesses', () => {
       { _id: '1', name: 'Reyhan Restaurant' },
       { _id: '2', name: 'Mizban Shop' },
     ];
-    getAllBusinesses.mockResolvedValue(businesses);
+    getAllBusinesses.mockResolvedValue({ businesses, totalBusinesses: 2, totalPages: 1 });
 
     await getBusinesses(req, res);
 
@@ -119,6 +120,8 @@ describe('Controller Business - get businesses', () => {
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       data: businesses,
+      totalBusinesses: 2,
+      totalPages: 1,
     });
   });
 
