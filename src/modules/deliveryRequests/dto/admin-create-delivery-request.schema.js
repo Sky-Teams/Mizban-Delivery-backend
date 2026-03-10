@@ -57,7 +57,7 @@ const adminCreateDeliveryRequestSchema = z.object({
             message: ERROR_CODES.INVALID_SENDER_ID,
           }
         ),
-      name: z.string().min(1, { message: ERROR_CODES.INVALID_SENDER_NAME }),
+      name: z.string().min(3, { message: ERROR_CODES.INVALID_SENDER_NAME }),
       phone: z.string().refine((val) => isValidPhoneNumber(val, 'AF'), {
         message: ERROR_CODES.INVALID_PHONE_NUMBER,
       }),
@@ -77,7 +77,7 @@ const adminCreateDeliveryRequestSchema = z.object({
             message: ERROR_CODES.INVALID_RECEIVER_ID,
           }
         ),
-      name: z.string().min(1, { message: ERROR_CODES.INVALID_RECEIVER_NAME }),
+      name: z.string().min(3, { message: ERROR_CODES.INVALID_RECEIVER_NAME }),
       phone: z.string().refine((val) => isValidPhoneNumber(val, 'AF'), {
         message: ERROR_CODES.INVALID_PHONE_NUMBER,
       }),

@@ -48,7 +48,7 @@ const adminUpdateDeliveryRequestSchema = z.object({
           .refine((val) => !val || mongoose.Types.ObjectId.isValid(val), {
             message: ERROR_CODES.INVALID_SENDER_ID,
           }),
-        name: z.string().min(1, { message: ERROR_CODES.INVALID_SENDER_NAME }).optional(),
+        name: z.string().min(3, { message: ERROR_CODES.INVALID_SENDER_NAME }).optional(),
         phone: z
           .string()
           .refine((val) => !val || isValidPhoneNumber(val, 'AF'), {
@@ -68,7 +68,7 @@ const adminUpdateDeliveryRequestSchema = z.object({
           .refine((val) => !val || mongoose.Types.ObjectId.isValid(val), {
             message: ERROR_CODES.INVALID_RECEIVER_ID,
           }),
-        name: z.string().min(1, { message: ERROR_CODES.INVALID_RECEIVER_NAME }).optional(),
+        name: z.string().min(3, { message: ERROR_CODES.INVALID_RECEIVER_NAME }).optional(),
         phone: z
           .string()
           .refine((val) => !val || isValidPhoneNumber(val, 'AF'), {
