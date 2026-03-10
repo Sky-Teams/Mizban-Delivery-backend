@@ -46,7 +46,7 @@ describe('Business Service', () => {
     vi.clearAllMocks();
   });
 
-  describe('Business Service - CreateNewBusiness', () => {
+  describe('CreateNewBusiness', () => {
     const userId = 'user1';
 
     const businessData = {
@@ -71,7 +71,7 @@ describe('Business Service', () => {
         addressText: 'Afghanistan, Herat',
         location: {
           type: 'Point',
-          coordinates: [34.35, 62.2],
+          coordinates: [62.2, 32],
         },
         prepTimeAvgMinutes: 30,
         isActive: true,
@@ -94,7 +94,7 @@ describe('Business Service', () => {
     });
   });
 
-  describe('Business Service - Partial Update', () => {
+  describe('Partial Update', () => {
     it('should update business successfully (partial)', async () => {
       const userId = 'user1';
       const businessId = '1';
@@ -161,14 +161,17 @@ describe('Business Service', () => {
         const mockBusiness = {
           _id: '1',
           owner: 'user123',
+          username: 'test',
+          email: 'test@example.com',
+          userPhoneNumber: '0781234567',
           name: 'Reyhan Restaurant',
           type: 'restaurant',
-          phone: '0093781234567',
           addressText: 'Afghanistan, Herat',
           location: {
             type: 'Point',
-            coordinates: [34.35, 62.2],
+            coordinates: [62.3, 32],
           },
+          phone: '0093781234567',
           prepTimeAvgMinutes: 30,
           isActive: true,
           createdAt: new Date(),
@@ -187,6 +190,8 @@ describe('Business Service', () => {
         const result = await addNewBusiness(businessData);
 
         expect(result.owner).toBe('user123');
+        expect(result.username).toBe('test')
+        expect(result.type).toBe('restaurant')
         expect(fakeSession.startTransaction).toHaveBeenCalled();
         expect(fakeSession.commitTransaction).toHaveBeenCalled();
         expect(fakeSession.endSession).toHaveBeenCalled();

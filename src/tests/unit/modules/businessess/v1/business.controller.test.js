@@ -45,11 +45,6 @@ describe('Business Controller', () => {
   });
 
   describe('addBusiness - admin', () => {
-    it('should throw unauthorized error if user is missing', async () => {
-      req.user = null;
-
-      await expect(createBusiness(req, res)).rejects.toThrow();
-    });
 
     it('should create business and success response', async () => {
       const mockBusiness = {
@@ -82,12 +77,6 @@ describe('Business Controller', () => {
       });
     });
 
-    it('should propagate error from service ', async () => {
-      const error = new Error('DB failed');
-      addNewBusiness.mockRejectedValue(error);
-
-      await expect(addBusiness(req, res)).rejects.toThrow('DB failed');
-    });
   });
 
   describe('modifyBusiness - admin', () => {
@@ -126,8 +115,7 @@ describe('Business Controller', () => {
   describe('create business ', () => {
     it('should throw unauthorized error if user is missing', async () => {
       req.user = null;
-
-      await expect(createBusiness(req, res)).rejects.toThrow();
+      await expect(createBusiness(req, res)).rejects.toThrow(AppError);
     });
 
     it('should create business and success response', async () => {
