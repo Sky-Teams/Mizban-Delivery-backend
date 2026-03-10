@@ -9,6 +9,7 @@ import {
 } from '../../../../config/memoryDB.js';
 import { businessCustomerModel } from '#modules/businessCustomers/models/businessCustomer.model.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import mongoose from 'mongoose';
 
 const baseURL = '/api/admin/business-customers';
 let token;
@@ -104,6 +105,34 @@ describe('Admin BusinessCustomer API Integration', () => {
 
       expect(res.status).toBe(401);
       expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
+    });
+  });
+
+  describe('GET /api/admin/business-customers', () => {
+    beforeEach(async () => {
+      await businessCustomerModel.create({
+        _id: new mongoose.Types.ObjectId(),
+        business: new mongoose.Types.ObjectId(),
+        name: 'Test',
+        email: 'test@gmail.com',
+        phone: '0789123456',
+        addressText: 'Afghanistan, Herat',
+      });
+    });
+
+    it('should throw unauthorized error if user is missing', async () => {
+      const res = await request(app).get(baseURL);
+
+      expect(res.status).toBe(401);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
+    });
+
+    it('should return business customers lists', async () => {
+      const res = await request(app).get(baseURL).set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(1);
     });
   });
 });
