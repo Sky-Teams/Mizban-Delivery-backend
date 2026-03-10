@@ -1,6 +1,7 @@
 import {
   createNewBusinessCustomer,
   doesBusinessCustomerExist,
+  getAllBusinessCustomer,
 } from '#modules/businessCustomers/services/v1/businessCustomer.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, unauthorized } from '#shared/errors/error.js';
@@ -26,5 +27,23 @@ export const createBusinessCustomer = async (req, res) => {
   res.status(201).json({
     success: true,
     data: businessCustomer,
+  });
+};
+
+export const getBusinessCustomers = async (req, res) => {
+  if (!req.user) throw unauthorized();
+
+  const { page, limit, sort } = req.query;
+  const { businessCustomers, totalBusinessCustomers, totalPage } = await getAllBusinessCustomer(
+    page,
+    limit,
+    sort
+  );
+
+  res.status(200).json({
+    success: true,
+    data: businessCustomers,
+    totalBusinessCustomers,
+    totalPage,
   });
 };
