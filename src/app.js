@@ -10,6 +10,7 @@ import { adminDriverRoutes, driverRoutes } from '#modules/drivers/index.js';
 import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { adminBusinessCustomerRoutes } from '#modules/businessCustomers/index.js';
 import { notificationRoutes } from '#modules/notifications/index.js';
+import { routeNotFound } from '#shared/errors/error.js';
 
 const app = express();
 
@@ -49,8 +50,8 @@ app.use(
 
 //#region Not found (404) middleware
 
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+app.use((req, res, next) => {
+  next(routeNotFound());
 });
 
 //#endregion
