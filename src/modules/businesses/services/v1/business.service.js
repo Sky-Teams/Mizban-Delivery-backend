@@ -157,7 +157,7 @@ export const updateBusinessService = async (userId, businessId, businessData) =>
       updates[key] = businessData[key];
     }
   }
-  
+
   if (businessData.location?.coordinates !== undefined) {
     updates['location.coordinates'] = businessData.location.coordinates;
   }
