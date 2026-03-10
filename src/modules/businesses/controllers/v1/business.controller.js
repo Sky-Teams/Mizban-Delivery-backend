@@ -20,11 +20,24 @@ export const createBusiness = async (req, res) => {
 export const getBusinesses = async (req, res) => {
   if (!req.user) throw unauthorized();
 
-  const allBusinesses = await getAllBusinesses();
+  const limit = Number(req.query.limit) || 8;
+  const page = Number(req.query.page) || 1;
+
+  const searchQuery = {
+    searchTerm: req.query.searchTerm,
+  };
+
+  const { businesses, totalBusinesses, totalPages } = await getAllBusinesses(
+    limit,
+    page,
+    searchQuery
+  );
 
   res.status(200).json({
     success: true,
-    data: allBusinesses,
+    data: businesses,
+    totalBusinesses,
+    totalPages,
   });
 };
 
