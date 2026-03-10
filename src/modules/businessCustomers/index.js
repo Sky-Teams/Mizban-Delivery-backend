@@ -3,5 +3,9 @@ export { businessCustomerModel } from './models/businessCustomer.model.js';
 export {
   doesBusinessCustomerExist,
   createNewBusinessCustomer,
+  getAllBusinessCustomer,
 } from './services/v1/businessCustomer.service.js';
-export { createBusinessCustomer } from './controllers/v1/businessCustomer.controller.js';
+export {
+  createBusinessCustomer,
+  getBusinessCustomers,
+} from './controllers/v1/businessCustomer.controller.js';
