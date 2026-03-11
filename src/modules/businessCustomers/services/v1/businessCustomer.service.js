@@ -14,14 +14,15 @@ export const findBusinessCustomerById = async (customerId) => {
   return await businessCustomerModel.findById(customerId);
 };
 
-const DoesBusinessExits = async (id) => {
-  return await BusinessModel.exists({ _id: id });
+const DoesBusinessExist = async (id) => {
+  const exists = await BusinessModel.exists({ _id: id });
+  return !!exists;
 };
 
 export const createNewBusinessCustomer = async (bodyData) => {
   const { businessId, name, phone, altPhone, email, addressText, location, notes, tags } = bodyData;
 
-  const exist = await DoesBusinessExits(businessId);
+  const exist = await DoesBusinessExist(businessId);
 
   if (!exist) throw notFound('Business');
 
