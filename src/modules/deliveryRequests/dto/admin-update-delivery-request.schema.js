@@ -164,14 +164,6 @@ const adminUpdateDeliveryRequestSchema = z.object({
       })
       .partial()
       .optional(),
-
-    driverId: z
-      .string()
-      .nullable()
-      .optional()
-      .refine((val) => !val || mongoose.Types.ObjectId.isValid(val), {
-        message: ERROR_CODES.INVALID_DRIVER_ID,
-      }),
   }),
 });
 
