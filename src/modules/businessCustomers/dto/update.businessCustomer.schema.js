@@ -18,6 +18,11 @@ const updateBusinessCustomerSchema = z.object({
           message: ERROR_CODES.INVALID_PHONE_NUMBER,
         }),
 
+      email: z
+        .string({ message: ERROR_CODES.REQUIRED_FIELD })
+        .email({ message: ERROR_CODES.INVALID_EMAIL_FORMAT })
+        .trim(),
+
       altPhone: z
         .string()
         .trim()
