@@ -6,8 +6,24 @@ import mongoose from 'mongoose';
 
 const businessType = ['restaurant', 'shop', 'pharmacy', 'warehouse', 'other'];
 
-const createBusinessSchema = z.object({
+const adminCreateBusinessSchema = z.object({
   body: z.object({
+    username: z
+      .string({
+        message: ERROR_CODES.NAME_TOO_SHORT,
+      })
+      .trim()
+      .min(3, { message: ERROR_CODES.NAME_TOO_SHORT }),
+
+    email: z.string().email({ message: ERROR_CODES.INVALID_EMAIL }).trim().toLowerCase(),
+
+    userPhoneNumber: z
+      .string()
+      .refine((val) => isValidPhoneNumber(val, 'AF'), {
+        message: ERROR_CODES.INVALID_PHONE_NUMBER,
+      })
+      .optional(),
+
     name: z.string().trim().min(3, { message: ERROR_CODES.NAME_TOO_SHORT }),
 
     type: z.enum(businessType, {
@@ -55,6 +71,6 @@ const createBusinessSchema = z.object({
   }),
 });
 
-export const createBusinessValidator = (req) => {
-  return createBusinessSchema.safeParse({ body: req.body });
+export const adminCreateBusinessValidator = (req) => {
+  return adminCreateBusinessSchema.safeParse({ body: req.body });
 };
