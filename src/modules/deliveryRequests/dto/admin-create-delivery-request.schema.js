@@ -91,7 +91,7 @@ const adminCreateDeliveryRequestSchema = z.object({
     items: z
       .array(
         z.object({
-          name: z.string().min(1, { message: ERROR_CODES.INVALID_DELIVERY_TYPE }),
+          name: z.string().min(1, { message: ERROR_CODES.INVALID_ITEM_NAME }),
           quantity: z.preprocess(
             (val) => ensureNumber(val, 'items.quantity', ERROR_CODES.INVALID_ITEM_QUANTITY),
             z.number().positive({ message: ERROR_CODES.INVALID_ITEM_QUANTITY })
