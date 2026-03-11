@@ -1,8 +1,7 @@
-import { businessCustomerModel } from '#modules/businessCustomers/models/businessCustomer.model.js';
 import {
   createNewBusinessCustomer,
   doesBusinessCustomerExist,
-  doesBusinessCustomerExistById,
+  findBusinessCustomerById,
   updateExistedBusinessCustomer,
 } from '#modules/businessCustomers/services/v1/businessCustomer.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
@@ -35,7 +34,7 @@ export const createBusinessCustomer = async (req, res) => {
 export const updateBusinessCustomer = async (req, res) => {
   if (!req.user) throw unauthorized();
 
-  const customer = await doesBusinessCustomerExistById(req.params.id);
+  const customer = await findBusinessCustomerById(req.params.id);
   if (!customer) throw notFound('Customer');
 
   const updatedBusinessCustomer = await updateExistedBusinessCustomer(

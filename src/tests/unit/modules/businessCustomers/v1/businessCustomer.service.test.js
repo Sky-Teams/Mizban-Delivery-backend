@@ -12,6 +12,7 @@ vi.mock('#modules/businessCustomers/models/businessCustomer.model.js', () => ({
   businessCustomerModel: {
     exists: vi.fn(),
     create: vi.fn(),
+    findById: vi.fn(),
     findOneAndUpdate: vi.fn(),
   },
 }));
@@ -99,6 +100,7 @@ describe('BusinessCustomer Service', () => {
         business: 'business1',
         name: 'Updated',
         phone: '0797222222',
+        email: 'not.allowed@example.com',
       };
 
       businessCustomerModel.findOneAndUpdate.mockResolvedValue(updatedDoc);
@@ -111,7 +113,7 @@ describe('BusinessCustomer Service', () => {
 
       expect(businessCustomerModel.findOneAndUpdate).toHaveBeenCalledWith(
         { _id: 'customer1', business: 'business1' },
-        { $set: { name: 'Updated', phone: '0797222222' } },
+        { $set: { name: 'Updated', phone: '0797222222', email: 'not.allowed@example.com' } },
         { new: true, runValidators: true }
       );
       expect(result).toEqual(updatedDoc);
@@ -120,7 +122,7 @@ describe('BusinessCustomer Service', () => {
     it('throws NO_FIELDS_PROVIDED when no allowed fields exist in payload', async () => {
       await expect(
         updateExistedBusinessCustomer('customer1', 'business1', {
-          email: 'only.email@example.com',
+          lastOrderAt: new Date('2026-01-01T10:00:00.000Z'),
         })
       ).rejects.toMatchObject({
         code: ERROR_CODES.NO_FIELDS_PROVIDED,

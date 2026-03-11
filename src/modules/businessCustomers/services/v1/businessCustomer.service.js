@@ -10,7 +10,7 @@ export const doesBusinessCustomerExist = async (businessId, phone, email) => {
   return !!exist;
 };
 
-export const doesBusinessCustomerExistById = async (customerId) => {
+export const findBusinessCustomerById = async (customerId) => {
   return await businessCustomerModel.findById(customerId);
 };
 
