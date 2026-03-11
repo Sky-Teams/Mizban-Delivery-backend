@@ -102,7 +102,7 @@ describe('DeliveryRequest Service', () => {
   it('should assign driver if driverId exists and set status "assigned"', async () => {
     const data = { ...baseData, driverId: 'driver123' };
 
-    doesDriverExistByDriverId.mockResolvedValue(true);
+    getDriverStatusByDriverId.mockResolvedValue({ status: 'idle' });
 
     const mockDeliveryRequest = {
       ...data,
@@ -111,17 +111,22 @@ describe('DeliveryRequest Service', () => {
       status: 'assigned',
       timeline: { assignedAt: new Date() },
     };
+
     DeliveryRequestModel.create.mockResolvedValue(mockDeliveryRequest);
 
     const result = await createDeliveryRequest(data);
 
-    expect(doesDriverExistByDriverId).toHaveBeenCalledWith('driver123');
+    expect(getDriverStatusByDriverId).toHaveBeenCalledWith('driver123');
+
     expect(DeliveryRequestModel.create).toHaveBeenCalledWith({
       ...data,
       finalPrice: 120,
       status: 'assigned',
-      timeline: expect.objectContaining({ assignedAt: expect.any(Date) }),
+      timeline: expect.objectContaining({
+        assignedAt: expect.any(Date),
+      }),
     });
+
     expect(result).toEqual(mockDeliveryRequest);
   });
 
@@ -144,12 +149,14 @@ describe('DeliveryRequest Service', () => {
     expect(calculateItemsTotal).toHaveBeenCalledWith(items);
   });
 
-  it('should throw notFound error if driver does not exist', async () => {
+  it('should throw error if driver is not idle', async () => {
     const data = { ...baseData, driverId: 'driver123' };
 
-    doesDriverExistByDriverId.mockResolvedValue(false);
+    getDriverStatusByDriverId.mockResolvedValue({
+      status: 'busy',
+    });
 
-    await expect(createDeliveryRequest(data)).rejects.toThrow(notFound('Driver'));
+    await expect(createDeliveryRequest(data)).rejects.toThrow(AppError);
   });
 
   it('should handle optional fields correctly', async () => {
