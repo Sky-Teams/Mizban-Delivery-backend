@@ -2,13 +2,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createNewBusinessCustomer,
   doesBusinessCustomerExist,
+  updateExistedBusinessCustomer,
 } from '#modules/businessCustomers/services/v1/businessCustomer.service.js';
 import { businessCustomerModel } from '#modules/businessCustomers/models/businessCustomer.model.js';
+import { BusinessModel } from '#modules/businesses/index.js';
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 vi.mock('#modules/businessCustomers/models/businessCustomer.model.js', () => ({
   businessCustomerModel: {
     exists: vi.fn(),
     create: vi.fn(),
+    findById: vi.fn(),
+    findOneAndUpdate: vi.fn(),
+  },
+}));
+
+vi.mock('#modules/businesses/index.js', () => ({
+  BusinessModel: {
+    exists: vi.fn(),
   },
 }));
 
@@ -59,10 +70,14 @@ describe('BusinessCustomer Service', () => {
         ...bodyData,
         business: bodyData.businessId,
       };
+      BusinessModel.exists.mockResolvedValue(true);
       businessCustomerModel.create.mockResolvedValue(createdDoc);
 
       const result = await createNewBusinessCustomer(bodyData);
 
+      expect(BusinessModel.exists).toHaveBeenCalledWith({
+        _id: '507f1f77bcf86cd799439011',
+      });
       expect(businessCustomerModel.create).toHaveBeenCalledWith({
         business: '507f1f77bcf86cd799439011',
         name: 'Mahdi',
@@ -75,6 +90,59 @@ describe('BusinessCustomer Service', () => {
         tags: ['vip'],
       });
       expect(result).toEqual(createdDoc);
+    });
+  });
+
+  describe('updateExistedBusinessCustomer', () => {
+    it('updates only allowed fields and returns updated document', async () => {
+      const updatedDoc = {
+        _id: 'customer1',
+        business: 'business1',
+        name: 'Updated',
+        phone: '0797222222',
+        email: 'not.allowed@example.com',
+      };
+
+      businessCustomerModel.findOneAndUpdate.mockResolvedValue(updatedDoc);
+
+      const result = await updateExistedBusinessCustomer('customer1', 'business1', {
+        name: 'Updated',
+        phone: '0797222222',
+        email: 'not.allowed@example.com',
+      });
+
+      expect(businessCustomerModel.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: 'customer1', business: 'business1' },
+        { $set: { name: 'Updated', phone: '0797222222', email: 'not.allowed@example.com' } },
+        { new: true, runValidators: true }
+      );
+      expect(result).toEqual(updatedDoc);
+    });
+
+    it('throws NO_FIELDS_PROVIDED when no allowed fields exist in payload', async () => {
+      await expect(
+        updateExistedBusinessCustomer('customer1', 'business1', {
+          lastOrderAt: new Date('2026-01-01T10:00:00.000Z'),
+        })
+      ).rejects.toMatchObject({
+        code: ERROR_CODES.NO_FIELDS_PROVIDED,
+        message: 'No fields provided for update',
+      });
+
+      expect(businessCustomerModel.findOneAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it('throws NOT_FOUND when customer does not exist in business scope', async () => {
+      businessCustomerModel.findOneAndUpdate.mockResolvedValue(null);
+
+      await expect(
+        updateExistedBusinessCustomer('customer1', 'business1', {
+          name: 'Updated',
+        })
+      ).rejects.toMatchObject({
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'BusinessCustomer not found',
+      });
     });
   });
 });
