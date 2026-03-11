@@ -1,6 +1,6 @@
-import { doesDriverExistByDriverId, getDriverStatusByDriverId } from '#modules/drivers/index.js';
+import { getDriverStatusByDriverId } from '#modules/drivers/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
-import { AppError, notFound } from '#shared/errors/error.js';
+import { AppError, noFieldsProvidedForUpdate, notFound } from '#shared/errors/error.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
 import { deliveryRequestUpdateQuery } from '#shared/utils/queryBuilder.js';
@@ -14,9 +14,14 @@ export const createDeliveryRequest = async (deliveryRequestData) => {
 
   // Driver validation
   if (deliveryRequestData.driverId) {
-    const driver = await doesDriverExistByDriverId(deliveryRequestData.driverId);
+    const driver = await getDriverStatusByDriverId(deliveryRequestData.driverId);
 
-    if (!driver) throw notFound('Driver');
+    if (driver.status !== 'idle')
+      throw new AppError(
+        `Driver is not available. Driver status is ${driver.status}`,
+        409,
+        ERROR_CODES.DRIVER_NOT_IDLE
+      );
 
     status = 'assigned';
     timeline.assignedAt = new Date();
