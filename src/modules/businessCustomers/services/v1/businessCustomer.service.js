@@ -10,6 +10,10 @@ export const doesBusinessCustomerExist = async (businessId, phone, email) => {
   return !!exist;
 };
 
+export const doesBusinessCustomerExistById = async (customerId) => {
+  return await businessCustomerModel.findById(customerId);
+};
+
 const DoesBusinessExits = async (id) => {
   return await BusinessModel.exists({ _id: id });
 };
@@ -44,6 +48,7 @@ export const updateExistedBusinessCustomer = async (
   const allowedFields = {
     name: true,
     phone: true,
+    email: true,
     altPhone: true,
     addressText: true,
     location: true,
