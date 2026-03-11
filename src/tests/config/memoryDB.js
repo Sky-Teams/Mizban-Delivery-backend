@@ -19,21 +19,12 @@ export const connectDB = async () => {
 };
 
 export const disconnectDB = async () => {
-  // if (mongoose.connection.readyState !== 0) {
-  //   await mongoose.connection.dropDatabase();
-  //   await mongoose.connection.close();
-  // }
   await mongoose.connection.dropDatabase();
   await mongoose.connection.close();
 
   if (replSet) {
     await replSet.stop();
   }
-
-  // if (mongoServer) {
-  //   await mongoServer.stop();
-  //   mongoServer = undefined;
-  // }
 };
 export const clearDB = async () => {
   const collections = mongoose.connection.collections;
