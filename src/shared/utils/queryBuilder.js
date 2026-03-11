@@ -89,44 +89,40 @@ export const filterUserField = async (data) => {
   return userUpdateQuery;
 };
 
+const mapNestedFields = (updateQuery, prefix, value, fields) => {
+  fields.forEach((field) => {
+    if (value?.[field] !== undefined) {
+      updateQuery[`${prefix}.${field}`] = value[field];
+    }
+  });
+};
+
 export const deliveryRequestUpdateQuery = (deliveryRequestData, allowedFields) => {
   const updateQuery = {};
 
-  Object.keys(deliveryRequestData).forEach((key) => {
+  Object.entries(deliveryRequestData).forEach(([key, value]) => {
     if (!allowedFields[key]) return;
-
-    const value = deliveryRequestData[key];
 
     switch (key) {
       case 'sender':
-        if (!value) break;
-
-        if (value.id !== undefined) updateQuery['sender.id'] = value.id;
-        if (value.name !== undefined) updateQuery['sender.name'] = value.name;
-        if (value.phone !== undefined) updateQuery['sender.phone'] = value.phone;
+        mapNestedFields(updateQuery, 'sender', value, ['id', 'name', 'phone']);
         break;
 
       case 'receiver':
-        if (!value) break;
-
-        if (value.id !== undefined) updateQuery['receiver.id'] = value.id;
-        if (value.name !== undefined) updateQuery['receiver.name'] = value.name;
-        if (value.phone !== undefined) updateQuery['receiver.phone'] = value.phone;
-        if (value.address !== undefined) updateQuery['receiver.address'] = value.address;
+        mapNestedFields(updateQuery, 'receiver', value, ['id', 'name', 'phone', 'address']);
         break;
 
       case 'packageDetails':
-        if (!value) break;
-
-        if (value.weight !== undefined) updateQuery['packageDetails.weight'] = value.weight;
-        if (value.size !== undefined) updateQuery['packageDetails.size'] = value.size;
-        if (value.fragile !== undefined) updateQuery['packageDetails.fragile'] = value.fragile;
-        if (value.note !== undefined) updateQuery['packageDetails.note'] = value.note;
+        mapNestedFields(updateQuery, 'packageDetails', value, [
+          'weight',
+          'size',
+          'fragile',
+          'note',
+        ]);
         break;
 
       case 'deliveryPrice':
-        if (!value) break;
-        if (value.total !== undefined) updateQuery['deliveryPrice.total'] = value.total;
+        mapNestedFields(updateQuery, 'deliveryPrice', value, ['total']);
         break;
 
       case 'items':
