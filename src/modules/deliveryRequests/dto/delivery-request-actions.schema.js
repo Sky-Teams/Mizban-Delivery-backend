@@ -15,7 +15,6 @@ export const cancelDeliverySchema = z.object({
     cancelReason: z
       .string()
       .trim()
-      .min(1, { message: ERROR_CODES.INVALID_CANCEL_REASON })
       .max(500, { message: ERROR_CODES.INVALID_CANCEL_REASON })
       .nullish(),
   }),
