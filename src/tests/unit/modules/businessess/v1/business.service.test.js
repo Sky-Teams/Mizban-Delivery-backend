@@ -158,13 +158,13 @@ describe('Business Service', () => {
     it('throws notFound if business does not exist', async () => {
       BusinessModel.findOneAndUpdate.mockResolvedValue(null);
 
-      await expect(updateBusinessService('user1', 'missing', { type: 'shop' })).rejects.toMatchObject(
-        {
-          message: 'Business not found',
-          code: ERROR_CODES.NOT_FOUND,
-          status: 404,
-        }
-      );
+      await expect(
+        updateBusinessService('user1', 'missing', { type: 'shop' })
+      ).rejects.toMatchObject({
+        message: 'Business not found',
+        code: ERROR_CODES.NOT_FOUND,
+        status: 404,
+      });
     });
   });
 
@@ -184,7 +184,9 @@ describe('Business Service', () => {
 
       hashPassword.mockResolvedValue('hashedPassword');
       UserModel.create.mockResolvedValue([{ _id: 'user123' }]);
-      BusinessModel.create.mockResolvedValue([{ _id: 'biz1', owner: 'user123', name: 'Reyhan Restaurant' }]);
+      BusinessModel.create.mockResolvedValue([
+        { _id: 'biz1', owner: 'user123', name: 'Reyhan Restaurant' },
+      ]);
 
       const result = await addNewBusiness(businessData);
 
@@ -230,4 +232,3 @@ describe('Business Service', () => {
     });
   });
 });
-
