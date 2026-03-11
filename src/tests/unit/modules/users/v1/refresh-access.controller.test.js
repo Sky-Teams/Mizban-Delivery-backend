@@ -47,7 +47,7 @@ describe('refreshAccessToken controller', () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
-      data: { accessToken: 'new-access-token' },
+      data: { token: 'new-access-token' },
     });
   });
 

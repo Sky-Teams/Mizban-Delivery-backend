@@ -105,7 +105,7 @@ describe('POST /api/auth/login Integration', () => {
       id: user._id.toString(),
       email: 'valid@example.com',
       role: 'customer',
-      accessToken: expect.any(String),
+      token: expect.any(String),
     });
 
     const setCookie = res.headers['set-cookie'] || [];
