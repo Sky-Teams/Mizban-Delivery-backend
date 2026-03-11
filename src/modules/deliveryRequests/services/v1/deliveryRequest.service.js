@@ -114,7 +114,6 @@ export const assignDriver = async (session, deliveryRequestId, driverId) => {
     );
   }
 
-  // const driver = await DriverModel.findById(driverId);
   const driver = await getDriverStatusByDriverId(driverId);
 
   if (driver.status !== 'idle')
