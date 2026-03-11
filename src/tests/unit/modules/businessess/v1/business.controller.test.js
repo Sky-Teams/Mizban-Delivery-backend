@@ -11,13 +11,17 @@ import {
   updateBusinessService,
   updateBusiness,
 } from '#modules/businesses/index.js';
+import { getBusiness, getBusinesses } from '#modules/businesses/controllers/v1/business.controller.js';
+import {
+  getAllBusinesses,
+  getBusinessById,
+} from '#modules/businesses/services/v1/business.service.js';
 
 vi.mock('#modules/businesses/services/v1/business.service.js', () => ({
   createNewBusiness: vi.fn(),
   updateBusinessService: vi.fn(),
   addNewBusiness: vi.fn(),
   modifyExistedBusiness: vi.fn(),
-  DoesBusinessesExist: vi.fn(),
   getAllBusinesses: vi.fn(),
   getBusinessById: vi.fn(),
 }));
@@ -27,7 +31,6 @@ describe('Business Controller', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    DoesBusinessesExist.mockResolvedValue(false);
 
     req = {
       user: { _id: 'user1' },
