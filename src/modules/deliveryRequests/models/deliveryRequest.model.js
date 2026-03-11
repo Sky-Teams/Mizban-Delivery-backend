@@ -160,7 +160,6 @@ const DeliveryRequestSchema = new mongoose.Schema(
 
 DeliveryRequestSchema.index({ pickupLocation: '2dsphere' });
 DeliveryRequestSchema.index({ dropoffLocation: '2dsphere' });
-DeliveryRequestSchema.index({ 'receiver.location': '2dsphere' });
 DeliveryRequestSchema.index({ driverId: 1 });
 DeliveryRequestSchema.index({ status: 1 });
 
