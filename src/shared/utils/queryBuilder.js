@@ -1,3 +1,4 @@
+import { hashPassword } from './jwt.js';
 import { calculateItemsTotal } from './math.helper.js';
 
 export const driverQueryBuilder = (searchQuery) => {
