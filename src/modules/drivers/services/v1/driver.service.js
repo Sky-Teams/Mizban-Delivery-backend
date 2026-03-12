@@ -10,7 +10,7 @@ import { hashPassword } from '#shared/utils/jwt.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
 
-//#region Admin Services
+//#region Services
 
 /** Fetch all Drivers with pagination functionality */
 export const fetchDrivers = async (limit = 8, page = 1, searchQuery = {}) => {
