@@ -62,13 +62,13 @@ export const ERROR_MESSAGES = {
 
   [ERROR_CODES.PASSWORD_CHANGED]: {
     en: 'Password has been changed',
-    fa: 'رمز عبور تغییر کرده است',
+    fa: 'رمز عبور تغییر کرده است. لطفا دوباره وارد شوید.',
     ps: 'پټنوم بدل شوی دی',
   },
 
   [ERROR_CODES.NO_FIELDS_PROVIDED]: {
     en: 'No fields provided for update',
-    fa: 'هیچ فیلدی برای به‌روزرسانی ارائه نشده',
+    fa: ' هیچ فیلدی برای به‌روزرسانی ارائه نشده است.',
     ps: 'د تازه کولو لپاره هېڅ فیلډ نه دی ورکړل شوی',
   },
 
@@ -92,7 +92,7 @@ export const ERROR_MESSAGES = {
 
   [ERROR_CODES.PREP_TIME_MUST_BE_POSITIVE]: {
     en: 'Preparation time must be positive',
-    fa: 'زمان آماده‌سازی باید مثبت باشد',
+    fa: 'زمان آماده‌سازی باید یک عدد مثبت باشد',
     ps: 'د چمتو کولو وخت باید مثبت وي',
   },
 
@@ -164,37 +164,37 @@ export const ERROR_MESSAGES = {
 
   [ERROR_CODES.MAX_WEIGHT_MUST_BE_NUMBER]: {
     en: 'Max weight must be a number',
-    fa: 'حداکثر وزن باید عدد باشد',
+    fa: 'حداکثر وزن باید یک عدد باشد',
     ps: 'اعظمي وزن باید شمېره وي',
   },
 
   [ERROR_CODES.MAX_WEIGHT_MUST_BE_POSITIVE]: {
     en: 'Max weight must be positive',
-    fa: 'حداکثر وزن باید مثبت باشد',
+    fa: 'حداکثر وزن باید یک عدد مثبت باشد',
     ps: 'اعظمي وزن باید مثبت وي',
   },
 
   [ERROR_CODES.MAX_PACKAGES_MUST_BE_NUMBER]: {
     en: 'Max packages must be a number',
-    fa: 'حداکثر بسته‌ها باید عدد باشد',
+    fa: 'حداکثر بسته‌ها باید یک عدد باشد',
     ps: 'اعظمي کڅوړې باید شمېره وي',
   },
 
   [ERROR_CODES.MAX_PACKAGES_MUST_BE_INTEGER]: {
     en: 'Max packages must be an integer',
-    fa: 'حداکثر بسته‌ها باید عدد صحیح باشد',
-    ps: 'اعظمي کڅوړې باید صحیح عدد وي',
+    fa: 'حداکثر بسته‌ها باید یک عدد تام باشد',
+    ps: 'اعظمي کڅوړې باید تام عدد وي',
   },
 
   [ERROR_CODES.MAX_PACKAGES_MUST_BE_POSITIVE]: {
     en: 'Max packages must be positive',
-    fa: 'حداکثر بسته‌ها باید مثبت باشد',
+    fa: 'حداکثر بسته‌ها باید یک عدد مثبت باشد',
     ps: 'اعظمي کڅوړې باید مثبت وي',
   },
 
   [ERROR_CODES.INVALID_USER_ID]: {
     en: 'Invalid user ID',
-    fa: 'شناسه کاربر نامعتبر است',
+    fa: 'آیدی کاربر نامعتبر است',
     ps: 'د کارونکي پېژند ناسم دی',
   },
 
@@ -236,25 +236,25 @@ export const ERROR_MESSAGES = {
 
   [ERROR_CODES.LNG_OUT_OF_RANGE]: {
     en: 'Longitude is out of range',
-    fa: 'طول جغرافیایی خارج از محدوده است',
+    fa: 'طول البلد جغرافیایی خارج از محدوده است',
     ps: 'طول البلد له حد څخه بهر دی',
   },
 
   [ERROR_CODES.LAT_OUT_OF_RANGE]: {
     en: 'Latitude is out of range',
-    fa: 'عرض جغرافیایی خارج از محدوده است',
+    fa: 'عرض البلد جغرافیایی خارج از محدوده است',
     ps: 'عرض البلد له حد څخه بهر دی',
   },
 
   [ERROR_CODES.PREP_TIME_MUST_BE_INTEGER]: {
     en: 'Preparation time must be an integer',
-    fa: 'زمان آماده‌سازی باید عدد صحیح باشد',
+    fa: 'زمان آماده‌سازی باید یک عدد صحیح باشد',
     ps: 'د چمتو کولو وخت باید صحیح عدد وي',
   },
 
   [ERROR_CODES.INVALID_COORDINATES]: {
     en: 'Invalid coordinates',
-    fa: 'مختصات نامعتبر است',
+    fa: 'مختصات جغرافیایی نامعتبر است',
     ps: 'مختصات ناسم دي',
   },
 
@@ -266,7 +266,7 @@ export const ERROR_MESSAGES = {
 
   [ERROR_CODES.INVALID_ID]: {
     en: 'Invalid ID',
-    fa: 'شناسه نامعتبر است',
+    fa: 'آیدی نامعتبر است',
     ps: 'پېژند ناسم دی',
   },
 
@@ -284,7 +284,7 @@ export const ERROR_MESSAGES = {
 
   [ERROR_CODES.END_TIME_MUST_BE_GREATER]: {
     en: 'End time must be greater than start time',
-    fa: 'زمان پایان باید بزرگتر از زمان شروع باشد',
+    fa: 'زمان ختم وقت کاری باید بزرگتر از زمان شروع باشد',
     ps: 'د پای وخت باید د پیل وخت څخه لوی وي',
   },
 
