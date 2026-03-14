@@ -10,7 +10,7 @@ import { adminDriverRoutes, driverRoutes } from '#modules/drivers/index.js';
 import { notificationRoutes } from '#modules/notifications/index.js';
 import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { adminBusinessCustomerRoutes } from '#modules/businessCustomers/index.js';
-import { adminDeliveryRequestRoutes } from '#modules/deliveryRequests/index.js';
+import { orderRoutes } from '#modules/orders/index.js';
 
 const app = express();
 
@@ -38,14 +38,7 @@ app.use('/api/drivers', authMiddleware, driverRoutes);
 app.use('/api/notifications', authMiddleware, notificationRoutes);
 app.use('/api/businesses', authMiddleware, businessRoutes);
 
-// Admin routes
-
-app.use(
-  '/api/admin/delivery-request',
-  authMiddleware,
-  authorizeRole('admin'),
-  adminDeliveryRequestRoutes
-);
+app.use('/api/orders', authMiddleware, authorizeRole('admin'), orderRoutes);
 
 app.use('/api/admin/drivers', authMiddleware, authorizeRole('admin'), adminDriverRoutes);
 app.use(
