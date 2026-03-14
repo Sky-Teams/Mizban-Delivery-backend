@@ -27,7 +27,6 @@ export const disconnectDB = async () => {
     await replSet.stop();
   }
 };
-
 export const clearDB = async () => {
   const collections = mongoose.connection.collections;
 
@@ -50,7 +49,7 @@ export const createFakeUserWithToken = async (role = 'customer') => {
     expiresIn: '1h',
   });
 
-  return { testUserId, token };
+  return { testUserId, token, user };
 };
 
 export const createFakeDriver = async () => {
