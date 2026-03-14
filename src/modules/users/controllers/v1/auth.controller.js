@@ -1,16 +1,14 @@
-import { cookieOptions, hashToken } from '#shared/utils/jwt.js';
+import { cookieOptions } from '#shared/utils/jwt.js';
 import { ensureDeviceId, getDeviceId } from '#shared/utils/auth.helper.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError } from '#shared/errors/error.js';
 import {
   forgotPasswordService,
-  getUserByEmail,
   loginService,
   refreshService,
+  resetPasswordService,
 } from '../../services/v1/auth.service.js';
 import { doesUserExist, registerUser } from '../../services/v1/auth.service.js';
-import { UserModel } from '#modules/users/models/user.model.js';
-import bcrypt from 'bcryptjs';
 
 export const register = async (req, res) => {
   const data = req.body;
@@ -71,25 +69,7 @@ export const resetPassword = async (req, res) => {
   const { resetToken } = req.params;
   const { newPassword, confirmPassword } = req.body;
 
-  const user = await UserModel.findOne({
-    passwordResetToken: hashToken(resetToken),
-    passwordResetExpires: { $gt: new Date() },
-  });
-
-  if (!user) throw new AppError('Invalid or expired token', 400, ERROR_CODES.INVALID_TOKEN);
-
-  if (newPassword !== confirmPassword)
-    throw new AppError('Password not match', 400, ERROR_CODES.PASSWORD_NOT_MATCHING);
-
-  const newPasswordHashed = await bcrypt.hash(newPassword, 12);
-
-  await user
-    .set({
-      password: newPasswordHashed,
-      passwordResetToken: null,
-      passwordResetExpires: null,
-    })
-    .save();
+  await resetPasswordService({ resetToken, newPassword, confirmPassword });
 
   res.status(200).json({
     success: true,

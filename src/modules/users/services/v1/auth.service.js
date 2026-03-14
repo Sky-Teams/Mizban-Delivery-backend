@@ -90,14 +90,26 @@ const rotateRefreshToken = async (currentTokenId) => {
   return newRefreshToken;
 };
 
+// Forgot password helpers
 const buildResetPasswordUrl = (resetToken) => {
-  const baseUrl =
-    process.env.RESET_PASSWORD_URL_BASE || 'http://localhost:3000/api/auth/reset-password';
+  const baseUrl = 'http://localhost:3500/api/auth/reset-password';
   return `${baseUrl}/${resetToken}`;
+};
+
+const findUserByResetToken = async (resetToken) => {
+  const user = await UserModel.findOne({
+    passwordResetToken: hashToken(resetToken),
+    passwordResetExpires: { $gt: new Date() },
+  });
+
+  if (!user) throw new AppError('Invalid or expired token', 400, ERROR_CODES.INVALID_TOKEN);
+
+  return user;
 };
 
 //!  Services
 
+// Register
 export const registerUser = async (data) => {
   const { email, name, phone, password } = data;
 
@@ -116,6 +128,7 @@ export const registerUser = async (data) => {
   };
 };
 
+// Login
 export const loginService = async ({ email, password }, deviceId) => {
   const user = await getUserByEmail(email);
 
@@ -147,6 +160,7 @@ export const loginService = async ({ email, password }, deviceId) => {
   };
 };
 
+// Refresh Token
 export const refreshService = async ({ refreshToken, deviceId }) => {
   const currentToken = await getStoredRefreshToken({ refreshToken, deviceId });
 
@@ -160,6 +174,7 @@ export const refreshService = async ({ refreshToken, deviceId }) => {
   };
 };
 
+// Forgot Password
 export const forgotPasswordService = async ({ email }) => {
   const user = await getUserByEmail(email);
 
@@ -175,4 +190,25 @@ export const forgotPasswordService = async ({ email }) => {
   });
 
   return { resetUrl };
+};
+
+// Reset Password
+export const resetPasswordService = async (resetToken, newPassword, confirmPassword) => {
+  const user = await findUserByResetToken(resetToken);
+
+  if (newPassword !== confirmPassword)
+    throw new AppError('Password not match', 400, ERROR_CODES.PASSWORD_NOT_MATCHING);
+
+  const newPasswordHashed = await bcrypt.hash(newPassword, 12);
+
+  user.set({
+    password: newPasswordHashed,
+    passwordResetToken: null,
+    passwordResetExpires: null,
+    changedPasswordAt: new Date(Date.now()),
+  });
+
+  await user.save();
+
+  await RefreshTokenModel.deleteMany({ user: user._id });
 };
