@@ -92,7 +92,8 @@ const rotateRefreshToken = async (currentTokenId) => {
 
 // Forgot password helpers
 const buildResetPasswordUrl = (resetToken) => {
-  const baseUrl = 'http://localhost:3500/api/auth/reset-password';
+  const baseUrl =
+    process.env.RESET_PASSWORD_URL_BASE || 'http://localhost:3000/api/auth/reset-password';
   return `${baseUrl}/${resetToken}`;
 };
 
@@ -193,7 +194,7 @@ export const forgotPasswordService = async ({ email }) => {
 };
 
 // Reset Password
-export const resetPasswordService = async (resetToken, newPassword, confirmPassword) => {
+export const resetPasswordService = async ({ resetToken, newPassword, confirmPassword }) => {
   const user = await findUserByResetToken(resetToken);
 
   if (newPassword !== confirmPassword)
@@ -205,7 +206,8 @@ export const resetPasswordService = async (resetToken, newPassword, confirmPassw
     password: newPasswordHashed,
     passwordResetToken: null,
     passwordResetExpires: null,
-    changedPasswordAt: new Date(Date.now()),
+    // Subtract 1s to avoid edge-cases where JWT `iat` equals this exact millisecond window
+    changedPasswordAt: new Date(Date.now() - 1000),
   });
 
   await user.save();
