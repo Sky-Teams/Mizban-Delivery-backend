@@ -38,6 +38,7 @@ app.use('/api/notifications', authMiddleware, notificationRoutes);
 app.use('/api/businesses', authMiddleware, businessRoutes);
 
 // Admin routes
+app.use('/api/admin/businesses', authMiddleware, authorizeRole('admin'), adminBusinessRoutes);
 app.use('/api/admin/drivers', authMiddleware, authorizeRole('admin'), adminDriverRoutes);
 app.use(
   '/api/admin/business-customers',
