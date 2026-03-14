@@ -1,20 +1,26 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  BusinessModel,
-  updateBusinessService,
-  createNewBusiness,
-  addNewBusiness,
-  modifyExistedBusiness,
-} from '#modules/businesses/index.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import mongoose from 'mongoose';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { hashPassword } from '#shared/utils/jwt.js';
 import { UserModel } from '#modules/users/index.js';
-import mongoose from 'mongoose';
+import { BusinessModel } from '#modules/businesses/models/business.model.js';
+import { filterUserField } from '#shared/utils/queryBuilder.js';
+import {
+  addNewBusiness,
+  createNewBusiness,
+  getAllBusinesses,
+  getBusinessById,
+  modifyExistedBusiness,
+  updateBusinessService,
+} from '#modules/businesses/services/v1/business.service.js';
 
 vi.mock('#modules/businesses/models/business.model.js', () => ({
   BusinessModel: {
+    exists: vi.fn(),
     create: vi.fn(),
+    find: vi.fn(),
     findById: vi.fn(),
+    countDocuments: vi.fn(),
     findByIdAndUpdate: vi.fn(),
     findOneAndUpdate: vi.fn(),
   },
@@ -31,7 +37,10 @@ vi.mock('#shared/utils/jwt.js', () => ({
   hashPassword: vi.fn(),
 }));
 
-// ------------------- Mock Mongoose session -------------------
+vi.mock('#shared/utils/queryBuilder.js', () => ({
+  filterUserField: vi.fn(),
+}));
+
 const fakeSession = {
   startTransaction: vi.fn(),
   commitTransaction: vi.fn(),
@@ -46,60 +55,85 @@ describe('Business Service', () => {
     vi.clearAllMocks();
   });
 
-  describe('CreateNewBusiness', () => {
-    const userId = 'user1';
-
-    const businessData = {
-      name: 'Reyhan Restaurant',
-      type: 'restaurant',
-      addressText: 'Afghanistan, Herat',
-      location: {
-        type: 'Point',
-        coordinates: [62.3, 32],
-      },
-      phone: '0093781234567',
-      prepTimeAvgMinutes: 30,
-    };
-
-    it('Should create new business', async () => {
-      const mockBusiness = {
-        _id: '1',
-        owner: 'user1',
+  describe('createNewBusiness', () => {
+    it('creates a new business', async () => {
+      const userId = 'user1';
+      const businessData = {
         name: 'Reyhan Restaurant',
         type: 'restaurant',
-        phone: '0093781234567',
         addressText: 'Afghanistan, Herat',
-        location: {
-          type: 'Point',
-          coordinates: [62.2, 32],
-        },
+        location: { type: 'Point', coordinates: [62.2, 34.35] },
+        phone: '0093781234567',
         prepTimeAvgMinutes: 30,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       };
 
+      const mockBusiness = { _id: '1', owner: userId, ...businessData };
       BusinessModel.create.mockResolvedValue(mockBusiness);
 
       const result = await createNewBusiness(userId, businessData);
+
       expect(result).toEqual(mockBusiness);
       expect(BusinessModel.create).toHaveBeenCalledWith({ ...businessData, owner: userId });
     });
 
-    it('should propagate error if BusinessModel.create fails', async () => {
-      const error = new Error('DB failed');
-      BusinessModel.create.mockRejectedValue(error);
+    it('propagates errors from BusinessModel.create', async () => {
+      BusinessModel.create.mockRejectedValue(new Error('DB failed'));
 
-      await expect(createNewBusiness(userId, businessData)).rejects.toThrow('DB failed');
+      await expect(createNewBusiness('user1', { name: 'x' })).rejects.toThrow('DB failed');
     });
   });
 
-  describe('Partial Update', () => {
-    it('should update business successfully (partial)', async () => {
+  describe('getAllBusinesses', () => {
+    it('returns paginated businesses and totals', async () => {
+      const businesses = [{ _id: '1', name: 'Business A' }];
+      const lean = vi.fn().mockResolvedValue(businesses);
+      const populate = vi.fn().mockReturnValue({ lean });
+      const limit = vi.fn().mockReturnValue({ populate });
+      const skip = vi.fn().mockReturnValue({ limit });
+
+      BusinessModel.find.mockReturnValue({ skip });
+      BusinessModel.countDocuments.mockResolvedValue(1);
+
+      const result = await getAllBusinesses();
+
+      expect(BusinessModel.find).toHaveBeenCalledWith({});
+      expect(skip).toHaveBeenCalledWith(0);
+      expect(limit).toHaveBeenCalledWith(8);
+      expect(populate).toHaveBeenCalledWith('owner', 'name email');
+      expect(BusinessModel.countDocuments).toHaveBeenCalledWith({});
+      expect(result).toEqual({ businesses, totalBusinesses: 1, totalPages: 1 });
+    });
+  });
+
+  describe('getBusinessById', () => {
+    it('returns a business by id', async () => {
+      const business = { _id: 'business-id', name: 'Business One' };
+      const populate = vi.fn().mockResolvedValue(business);
+      BusinessModel.findById.mockReturnValue({ populate });
+
+      const result = await getBusinessById('business-id');
+
+      expect(BusinessModel.findById).toHaveBeenCalledWith('business-id');
+      expect(populate).toHaveBeenCalledWith('owner', 'name email');
+      expect(result).toEqual(business);
+    });
+
+    it('returns null when business is not found', async () => {
+      const populate = vi.fn().mockResolvedValue(null);
+      BusinessModel.findById.mockReturnValue({ populate });
+
+      const result = await getBusinessById('missing-id');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('updateBusinessService', () => {
+    it('updates business successfully (partial)', async () => {
       const userId = 'user1';
       const businessId = '1';
       const businessData = { name: 'Mizban Shop', type: 'other' };
-      const mockBusiness = { _id: '1', owner: 'user1', name: 'Mizban Shop', type: 'other' };
+      const mockBusiness = { _id: businessId, owner: userId, ...businessData };
 
       BusinessModel.findOneAndUpdate.mockResolvedValue(mockBusiness);
 
@@ -108,31 +142,25 @@ describe('Business Service', () => {
       expect(result).toEqual(mockBusiness);
       expect(BusinessModel.findOneAndUpdate).toHaveBeenCalledWith(
         { _id: businessId, owner: userId },
-        { $set: businessData },
+        { $set: { name: 'Mizban Shop', type: 'other' } },
         { new: true, runValidators: true }
       );
     });
 
-    it('should throw error if no fields are provided', async () => {
-      const userId = 'user1';
-      const businessId = '2';
-      const businessData = {};
-
-      await expect(updateBusinessService(userId, businessId, businessData)).rejects.toMatchObject({
+    it('throws error if no fields are provided', async () => {
+      await expect(updateBusinessService('user1', '1', {})).rejects.toMatchObject({
         message: 'No fields provided for update',
         code: ERROR_CODES.NO_FIELDS_PROVIDED,
         status: 400,
       });
     });
 
-    it('should throw error if business not found', async () => {
-      const userId = 'user3';
-      const businessId = '1';
-      const businessData = { type: 'shop' };
-
+    it('throws notFound if business does not exist', async () => {
       BusinessModel.findOneAndUpdate.mockResolvedValue(null);
 
-      await expect(updateBusinessService(userId, businessId, businessData)).rejects.toMatchObject({
+      await expect(
+        updateBusinessService('user1', 'missing', { type: 'shop' })
+      ).rejects.toMatchObject({
         message: 'Business not found',
         code: ERROR_CODES.NOT_FOUND,
         status: 404,
@@ -140,95 +168,67 @@ describe('Business Service', () => {
     });
   });
 
-  describe('Admin Service', () => {
-    describe('addNewBusiness', () => {
-      it('should create a business and commit transaction', async () => {
-        const businessData = {
-          username: 'test',
-          email: 'test@example.com',
-          userPhoneNumber: '0781234567',
-          name: 'Reyhan Restaurant',
-          type: 'restaurant',
-          addressText: 'Afghanistan, Herat',
-          location: {
-            type: 'Point',
-            coordinates: [62.3, 32],
-          },
-          phone: '0093781234567',
-          prepTimeAvgMinutes: 30,
-        };
+  describe('Admin services', () => {
+    it('addNewBusiness creates business and commits transaction', async () => {
+      const businessData = {
+        username: 'test',
+        email: 'test@example.com',
+        userPhoneNumber: '0781234567',
+        name: 'Reyhan Restaurant',
+        type: 'restaurant',
+        addressText: 'Afghanistan, Herat',
+        location: { type: 'Point', coordinates: [62.2, 34.35] },
+        phone: '0093781234567',
+        prepTimeAvgMinutes: 30,
+      };
 
-        const mockBusiness = {
-          _id: '1',
-          owner: 'user123',
-          username: 'test',
-          email: 'test@example.com',
-          userPhoneNumber: '0781234567',
-          name: 'Reyhan Restaurant',
-          type: 'restaurant',
-          addressText: 'Afghanistan, Herat',
-          location: {
-            type: 'Point',
-            coordinates: [62.3, 32],
-          },
-          phone: '0093781234567',
-          prepTimeAvgMinutes: 30,
-          isActive: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
+      hashPassword.mockResolvedValue('hashedPassword');
+      UserModel.create.mockResolvedValue([{ _id: 'user123' }]);
+      BusinessModel.create.mockResolvedValue([
+        { _id: 'biz1', owner: 'user123', name: 'Reyhan Restaurant' },
+      ]);
 
-        hashPassword.mockResolvedValue('hashedPassword');
-        UserModel.create.mockResolvedValue([{ _id: 'user123' }]);
-        BusinessModel.create.mockResolvedValue([
-          {
-            ...mockBusiness,
-            toObject: () => mockBusiness,
-          },
-        ]);
+      const result = await addNewBusiness(businessData);
 
-        const result = await addNewBusiness(businessData);
-
-        expect(result.owner).toBe('user123');
-        expect(result.username).toBe('test')
-        expect(result.type).toBe('restaurant')
-        expect(fakeSession.startTransaction).toHaveBeenCalled();
-        expect(fakeSession.commitTransaction).toHaveBeenCalled();
-        expect(fakeSession.endSession).toHaveBeenCalled();
-      });
+      expect(hashPassword).toHaveBeenCalledWith('business123');
+      expect(UserModel.create).toHaveBeenCalled();
+      expect(BusinessModel.create).toHaveBeenCalled();
+      expect(result.owner).toBe('user123');
+      expect(fakeSession.startTransaction).toHaveBeenCalled();
+      expect(fakeSession.commitTransaction).toHaveBeenCalled();
+      expect(fakeSession.endSession).toHaveBeenCalled();
     });
 
-    describe('modifyExistedBusiness', () => {
-      it('should update business and user and commit', async () => {
-        const businessData = {
-          userId: 'user123',
-          type: 'shop',
-          username: 'Updated',
-          email: 'test@example.com',
-        };
+    it('modifyExistedBusiness updates business/user and commits transaction', async () => {
+      const businessData = {
+        userId: 'user123',
+        type: 'shop',
+        username: 'Updated',
+        email: 'test@example.com',
+      };
 
-        const updatedBusinessMock = {
-          owner: 'user123',
-          toObject: () => ({ _id: 'business1', type: 'shop' }),
-        };
-        const updatedUserMock = {
-          name: 'Updated',
-          email: 'test@example.com',
-          userPhoneNumber: '123',
-        };
-
-        BusinessModel.findByIdAndUpdate.mockResolvedValue(updatedBusinessMock);
-        UserModel.findOneAndUpdate.mockResolvedValue(updatedUserMock);
-
-        const result = await modifyExistedBusiness('business1', businessData);
-
-        expect(result.owner).toBe('user123');
-        expect(result.type).toBe('shop');
-        expect(result.username).toBe('Updated');
-        expect(result.email).toBe('test@example.com');
-        expect(fakeSession.commitTransaction).toHaveBeenCalled();
-        expect(fakeSession.endSession).toHaveBeenCalled();
+      filterUserField.mockResolvedValue({ name: 'Updated', email: 'test@example.com' });
+      BusinessModel.findByIdAndUpdate.mockResolvedValue({
+        owner: 'user123',
+        toObject: () => ({ _id: 'biz1', type: 'shop' }),
       });
+      UserModel.findOneAndUpdate.mockResolvedValue({
+        name: 'Updated',
+        email: 'test@example.com',
+        phone: '123',
+      });
+
+      const result = await modifyExistedBusiness('biz1', businessData);
+
+      expect(result).toMatchObject({
+        owner: 'user123',
+        type: 'shop',
+        username: 'Updated',
+        email: 'test@example.com',
+        userPhoneNumber: '123',
+      });
+      expect(fakeSession.commitTransaction).toHaveBeenCalled();
+      expect(fakeSession.endSession).toHaveBeenCalled();
     });
   });
 });

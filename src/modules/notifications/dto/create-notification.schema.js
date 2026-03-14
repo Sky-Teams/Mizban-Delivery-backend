@@ -16,7 +16,7 @@ export const createNotificationSchema = z.object({
     .optional(),
   title: z
     .string({
-      required_error: ERROR_CODES.TITLE_REQUIRED,
+      message: ERROR_CODES.TITLE_REQUIRED,
     })
     .min(1, { message: ERROR_CODES.TITLE_REQUIRED })
     .max(100, { message: ERROR_CODES.TITLE_TOO_LONG }),

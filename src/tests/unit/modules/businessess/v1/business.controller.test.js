@@ -11,12 +11,19 @@ import {
   updateBusinessService,
   updateBusiness,
 } from '#modules/businesses/index.js';
+import { getBusiness, getBusinesses } from '#modules/businesses/controllers/v1/business.controller.js';
+import {
+  getAllBusinesses,
+  getBusinessById,
+} from '#modules/businesses/services/v1/business.service.js';
 
 vi.mock('#modules/businesses/services/v1/business.service.js', () => ({
   createNewBusiness: vi.fn(),
   updateBusinessService: vi.fn(),
   addNewBusiness: vi.fn(),
   modifyExistedBusiness: vi.fn(),
+  getAllBusinesses: vi.fn(),
+  getBusinessById: vi.fn(),
 }));
 
 describe('Business Controller', () => {
@@ -24,6 +31,7 @@ describe('Business Controller', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+
     req = {
       user: { _id: 'user1' },
       body: {
@@ -45,7 +53,6 @@ describe('Business Controller', () => {
   });
 
   describe('addBusiness - admin', () => {
-
     it('should create business and success response', async () => {
       const mockBusiness = {
         _id: 'businessId',
@@ -76,7 +83,6 @@ describe('Business Controller', () => {
         data: mockBusiness,
       });
     });
-
   });
 
   describe('modifyBusiness - admin', () => {
@@ -199,5 +205,67 @@ describe('Business Controller', () => {
         code: ERROR_CODES.NO_FIELDS_PROVIDED,
       });
     });
+  });
+});
+
+describe('Controller Business - get businesses', () => {
+  let req, res;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    req = {
+      user: { _id: 'user1' },
+      query: {},
+      params: { id: '507f191e810c19729de860ea' },
+    };
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+  });
+
+  it('should return all businesses', async () => {
+    const businesses = [
+      { _id: '1', name: 'Reyhan Restaurant' },
+      { _id: '2', name: 'Mizban Shop' },
+    ];
+    getAllBusinesses.mockResolvedValue({ businesses, totalBusinesses: 2, totalPages: 1 });
+
+    await getBusinesses(req, res);
+
+    expect(getAllBusinesses).toHaveBeenCalledTimes(1);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: businesses,
+      totalBusinesses: 2,
+      totalPages: 1,
+    });
+  });
+
+  it('should throw unauthorized error for getBusinesses when user is missing', async () => {
+    req.user = null;
+
+    await expect(getBusinesses(req, res)).rejects.toThrow('User is not authorized');
+  });
+
+  it('should return business by id', async () => {
+    const business = { _id: req.params.id, name: 'Reyhan Restaurant' };
+    getBusinessById.mockResolvedValue(business);
+
+    await getBusiness(req, res);
+
+    expect(getBusinessById).toHaveBeenCalledWith(req.params.id);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: business,
+    });
+  });
+
+  it('should throw not found when business does not exist', async () => {
+    getBusinessById.mockResolvedValue(null);
+
+    await expect(getBusiness(req, res)).rejects.toThrow('Business not found');
   });
 });

@@ -1,3 +1,6 @@
+import { hashPassword } from './jwt.js';
+import { calculateItemsTotal } from './math.helper.js';
+
 export const driverQueryBuilder = (searchQuery) => {
   const query = {};
   if (searchQuery.vehicleType) query.vehicleType = searchQuery.vehicleType;
@@ -85,4 +88,66 @@ export const filterUserField = async (data) => {
     }
   }
   return userUpdateQuery;
+};
+
+const mapNestedFields = (updateQuery, prefix, value, fields) => {
+  fields.forEach((field) => {
+    if (value?.[field] !== undefined) {
+      updateQuery[`${prefix}.${field}`] = value[field];
+    }
+  });
+};
+
+export const deliveryRequestUpdateQuery = (deliveryRequestData, allowedFields) => {
+  const updateQuery = {};
+
+  Object.entries(deliveryRequestData).forEach(([key, value]) => {
+    if (!allowedFields[key]) return;
+
+    switch (key) {
+      case 'sender':
+        mapNestedFields(updateQuery, 'sender', value, ['id', 'name', 'phone']);
+        break;
+
+      case 'receiver':
+        mapNestedFields(updateQuery, 'receiver', value, ['id', 'name', 'phone', 'address']);
+        break;
+
+      case 'packageDetails':
+        mapNestedFields(updateQuery, 'packageDetails', value, [
+          'weight',
+          'size',
+          'fragile',
+          'note',
+        ]);
+        break;
+
+      case 'deliveryPrice':
+        mapNestedFields(updateQuery, 'deliveryPrice', value, ['total']);
+        break;
+
+      case 'items':
+        if (Array.isArray(value)) {
+          updateQuery.items = calculateItemsTotal(value);
+        }
+        break;
+
+      case 'pickupLocation':
+        if (value?.coordinates !== undefined) {
+          updateQuery['pickupLocation.coordinates'] = value.coordinates;
+        }
+        break;
+
+      case 'dropoffLocation':
+        if (value?.coordinates !== undefined) {
+          updateQuery['dropoffLocation.coordinates'] = value.coordinates;
+        }
+        break;
+
+      default:
+        updateQuery[key] = value;
+    }
+  });
+
+  return updateQuery;
 };
