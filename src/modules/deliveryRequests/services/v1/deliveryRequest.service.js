@@ -36,6 +36,7 @@ export const createDeliveryRequest = async (deliveryRequestData) => {
   const amountToCollect = Number(deliveryRequestData.amountToCollect || 0);
   const deliveryTotal = Number(deliveryRequestData.deliveryPrice?.total || 0);
 
+  // We can add discount in future, because discount is not sent from frontend
   const finalPrice = amountToCollect + deliveryTotal;
 
   return await DeliveryRequestModel.create({

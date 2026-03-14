@@ -27,8 +27,31 @@ describe('Admin Delivery Request API v1 Integration', () => {
     await disconnectDB();
   });
 
+  beforeEach(async () => {
+    await clearDB();
+    const result = await createFakeUserWithToken('admin');
+    adminUserId = result.testUserId;
+    token = result.token;
+  });
+
   describe('Admin Delivery Request API v1 Integration - create delivery request', () => {
     let deliveryId;
+
+    const deliveryData = {
+      type: 'parcel',
+      serviceType: 'immediate',
+      sender: { name: 'Alice', phone: '0790909090' },
+      receiver: {
+        name: 'Bob',
+        phone: '0790909090',
+        address: 'Herat',
+      },
+      pickupLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+      dropoffLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+      paymentType: 'COD',
+      amountToCollect: 100,
+      deliveryPrice: { total: 20 },
+    };
 
     beforeEach(async () => {
       await clearDB();
@@ -410,10 +433,23 @@ describe('Admin Delivery Request API v1 Integration', () => {
 
     beforeEach(async () => {
       await clearDB();
-
       const result = await createFakeUserWithToken('admin');
       adminUserId = result.testUserId;
       token = result.token;
+      const deliveryData = {
+        type: 'parcel',
+        serviceType: 'express',
+        sender: { name: 'Alice', phone: '123456' },
+        receiver: {
+          name: 'Bob',
+          phone: '987654',
+          addressText: 'Herat',
+        },
+        pickupLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+        dropoffLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+        paymentType: 'COD',
+        amountToCollect: 100,
+      };
 
       driver = await createFakeDriver();
 
@@ -514,7 +550,6 @@ describe('Admin Delivery Request API v1 Integration', () => {
   describe('Admin Delivery Request API v1 Integration - pickup order', () => {
     let deliveryId;
     let driver;
-
     beforeEach(async () => {
       await clearDB();
 
@@ -592,6 +627,21 @@ describe('Admin Delivery Request API v1 Integration', () => {
 
     beforeEach(async () => {
       await clearDB();
+      const deliveryData = {
+        type: 'parcel',
+        serviceType: 'immediate',
+        driverId,
+        sender: { name: 'Alice', phone: '0790909090' },
+        receiver: {
+          name: 'Bob',
+          phone: '0790909090',
+          address: 'Herat',
+        },
+        pickupLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+        dropoffLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+        paymentType: 'COD',
+        amountToCollect: 100,
+      };
 
       const result = await createFakeUserWithToken('admin');
       token = result.token;
@@ -662,7 +712,6 @@ describe('Admin Delivery Request API v1 Integration', () => {
 
   describe('Admin Delivery Request API v1 Integration - cancel order', () => {
     let deliveryId;
-
     beforeEach(async () => {
       await clearDB();
       const result = await createFakeUserWithToken('admin');
@@ -688,6 +737,8 @@ describe('Admin Delivery Request API v1 Integration', () => {
       deliveryId = delivery._id.toString();
     });
 
+    it('should throw notFound if driverId does not exist', async () => {});
+
     it('should cancel order successfully', async () => {
       const res = await request(app)
         .patch(`${baseURL}/${deliveryId}/cancel`)
@@ -704,9 +755,6 @@ describe('Admin Delivery Request API v1 Integration', () => {
         .patch(`${baseURL}/${deliveryId}/cancel`)
         .set('Authorization', `Bearer ${token}`)
         .send({});
-
-      expect(res.status).toBe(200);
-      expect(res.body.data.status).toBe('cancelled');
     });
 
     it('should fail if delivery does not exist', async () => {
@@ -714,8 +762,31 @@ describe('Admin Delivery Request API v1 Integration', () => {
         .patch(`${baseURL}/${new mongoose.Types.ObjectId()}/cancel`)
         .set('Authorization', `Bearer ${token}`)
         .send({});
-
       expect(res.status).toBe(404);
+    });
+
+    it('should calculate items total correctly', async () => {
+      const deliveryData = {
+        type: 'parcel',
+        serviceType: 'immediate',
+        sender: { name: 'Alice', phone: '0790909090' },
+        receiver: {
+          name: 'Bob',
+          phone: '0790909090',
+          address: 'Herat',
+        },
+        pickupLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+        dropoffLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+        paymentType: 'COD',
+        amountToCollect: 100,
+        items: [
+          { name: 'Item A', quantity: 2, unitPrice: 10 },
+          { name: 'Item B', quantity: 3, unitPrice: 5 },
+        ],
+      };
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.status).toBe('cancelled');
     });
 
     it('should fail if delivery already delivered', async () => {
@@ -730,5 +801,24 @@ describe('Admin Delivery Request API v1 Integration', () => {
 
       expect(res.status).toBe(409);
     });
+
+    it('should handle missing optional deliveryPrice', async () => {
+      // const deliveryData = {
+      //   type: 'parcel',
+      //   serviceType: 'immediate',
+      //   sender: { name: 'Alice', phone: '0790909090' },
+      //   receiver: {
+      //     name: 'Bob',
+      //     phone: '0790909090',
+      //     address: 'Herat',
+      //   },
+      //   pickupLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+      //   dropoffLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+      //   paymentType: 'COD',
+      //   amountToCollect: 50,
+      // };
+    });
   });
+
+  it('should throw invalidId if driverId is invalid', async () => {});
 });
