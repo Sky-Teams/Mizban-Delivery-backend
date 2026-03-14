@@ -140,6 +140,32 @@ export const createNewBusiness = async (userId, businessData) => {
   return newBusiness;
 };
 
+export const getAllBusinesses = async (limit = 8, page = 1, searchQuery = {}) => {
+  const skip = (page - 1) * limit;
+
+  const query = {};
+
+  if (searchQuery.searchTerm) {
+    query.name = { $regex: searchQuery.searchTerm, $options: 'i' };
+  }
+
+  const businesses = await BusinessModel.find(query)
+    .skip(skip)
+    .limit(limit)
+    .populate('owner', 'name email')
+    .lean();
+
+  const totalBusinesses = await BusinessModel.countDocuments(query);
+
+  return { businesses, totalBusinesses, totalPages: Math.ceil(totalBusinesses / limit) };
+};
+
+export const getBusinessById = async (businessId) => {
+  const business = await BusinessModel.findById(businessId).populate('owner', 'name email');
+
+  return business;
+};
+
 //Partial Update (Business)
 export const updateBusinessService = async (userId, businessId, businessData) => {
   const allowedFieldsToUpdate = [
