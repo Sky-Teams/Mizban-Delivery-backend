@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { UserModel } from '../../models/user.model.js';
 import { RefreshTokenModel } from '../../models/refreshToken.model.js';
-import { agenda } from '../../../../config/agenda.js';
+import { agenda } from '#root/src/config/agenda.js';
 import {
   generateAccessToken,
   generateRefreshToken,
