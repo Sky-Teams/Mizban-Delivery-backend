@@ -8,11 +8,11 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
-    "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
-    "dev:all": "concurrently \"npm run dev\" \"npm run worker:dev\"",
-    "worker": "node src/workers.js",
+    "dev": "concurrently \"npm run dev:api\" \"npm run worker:dev\"",
+    "dev:api": "nodemon src/server.js",
+    "start:api": "node src/server.js",
     "worker:dev": "nodemon src/workers.js",
+    "worker": "node src/workers.js",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint src/**/*.js --fix",
     "format": "prettier --write src/**/*.js",
