@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { UserModel } from '../../models/user.model.js';
 import { RefreshTokenModel } from '../../models/refreshToken.model.js';
+import { agenda } from '../../../../config/agenda.js';
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -21,7 +22,7 @@ export const doesUserExist = async (fields) => {
 };
 
 // Login helpers
-const getUserByEmail = async (email) => {
+export const getUserByEmail = async (email) => {
   const user = await UserModel.findOne({ email });
   if (!user) {
     throw new AppError('Invalid email or password', 401, ERROR_CODES.INVALID_CREDENTIAL);
@@ -89,6 +90,12 @@ const rotateRefreshToken = async (currentTokenId) => {
   return newRefreshToken;
 };
 
+const buildResetPasswordUrl = (resetToken) => {
+  const baseUrl =
+    process.env.RESET_PASSWORD_URL_BASE || 'http://localhost:3000/api/auth/reset-password';
+  return `${baseUrl}/${resetToken}`;
+};
+
 //!  Services
 
 export const registerUser = async (data) => {
@@ -151,4 +158,21 @@ export const refreshService = async ({ refreshToken, deviceId }) => {
     accessToken: generateAccessToken(user),
     refreshToken: rotatedRefreshToken,
   };
+};
+
+export const forgotPasswordService = async ({ email }) => {
+  const user = await getUserByEmail(email);
+
+  const resetToken = user.createPasswordResetToken();
+  await user.save({ validateBeforeSave: false });
+
+  const resetUrl = buildResetPasswordUrl(resetToken);
+
+  await agenda.now('send-reset-password-email', {
+    email: user.email,
+    username: user.name,
+    resetUrl,
+  });
+
+  return { resetUrl };
 };

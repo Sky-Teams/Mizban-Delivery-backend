@@ -1,12 +1,16 @@
 import { cookieOptions, hashToken } from '#shared/utils/jwt.js';
 import { ensureDeviceId, getDeviceId } from '#shared/utils/auth.helper.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
-import { AppError, notFound } from '#shared/errors/error.js';
-import { getUserByEmail, loginService, refreshService } from '../../services/v1/auth.service.js';
+import { AppError } from '#shared/errors/error.js';
+import {
+  forgotPasswordService,
+  getUserByEmail,
+  loginService,
+  refreshService,
+} from '../../services/v1/auth.service.js';
 import { doesUserExist, registerUser } from '../../services/v1/auth.service.js';
 import { UserModel } from '#modules/users/models/user.model.js';
 import bcrypt from 'bcryptjs';
-import { agenda } from '../../../../config/agenda.js';
 
 export const register = async (req, res) => {
   const data = req.body;
@@ -55,20 +59,7 @@ export const refreshAccessToken = async (req, res) => {
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
-  const user = await getUserByEmail(email);
-  if (!user) throw notFound('User');
-
-  const resetToken = user.createPasswordResetToken();
-
-  await user.save({ validateBeforeSave: false });
-
-  const resetUrl = `http://localhost:3000/api/auth/reset-password/${resetToken}`;
-
-  await agenda.now('send-reset-password-email', {
-    email: user.email,
-    username: user.name,
-    resetUrl,
-  });
+  await forgotPasswordService({ email });
 
   res.status(200).json({
     success: true,
