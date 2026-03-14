@@ -11,6 +11,7 @@ export {
   addNewDriver,
   fetchDriverByDriverId,
   fetchDrivers,
+  getDriverStatusByDriverId,
 } from './services/v1/driver.service.js';
 export {
   createDriver,

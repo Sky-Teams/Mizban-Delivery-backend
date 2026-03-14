@@ -41,6 +41,13 @@ export const fetchDriverByDriverId = async (driverId) => {
   return drivers;
 };
 
+// Return only Driver status
+export const getDriverStatusByDriverId = async (driverId) => {
+  const driver = await DriverModel.findById(driverId).select('status');
+  if (!driver) throw notFound('Driver');
+  return driver;
+};
+
 /** Create a new driver in system through admin*/
 const addDriver = async (session, driverData) => {
   const {
