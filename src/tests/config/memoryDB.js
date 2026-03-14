@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import jwt from 'jsonwebtoken';
 import { UserModel } from '#modules/users/index.js';
+import { DriverModel } from '#modules/drivers/index.js';
 
 let replSet;
 
@@ -49,4 +50,31 @@ export const createFakeUserWithToken = async (role = 'customer') => {
   });
 
   return { testUserId, token, user };
+};
+
+export const createFakeDriver = async () => {
+  const user = await UserModel.create({
+    name: 'Driver',
+    email: 'driver@example.com',
+    password: 'hashedpassword123',
+    role: 'driver',
+  });
+
+  const newDriver = await DriverModel.create({
+    user: user._id,
+    vehicleType: 'car',
+    status: 'idle',
+    currentLocation: { coordinates: [55, 55] },
+    vehicleRegistrationNumber: 'ADM-123',
+    capacity: {
+      maxWeightKg: 100,
+      maxPackages: 5,
+    },
+    timeAvailability: {
+      start: '08:00',
+      end: '18:00',
+    },
+  });
+
+  return newDriver;
 };

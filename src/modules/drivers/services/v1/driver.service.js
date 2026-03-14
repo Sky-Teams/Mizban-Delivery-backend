@@ -149,6 +149,12 @@ export const addNewDriver = withTransaction(addDriver);
 
 //#region User Services => For now we dont need these services, in future we can use them
 
+/** Check if the driver exist by driverId. Return true or false */
+export const doesDriverExistByDriverId = async (driverId) => {
+  const exist = await DriverModel.exists({ _id: driverId });
+  return !!exist;
+};
+
 /** Check if the driver exist by userId. Return true or false. */
 export const doesDriverExist = async (userId) => {
   const exist = await DriverModel.exists({ user: userId });
