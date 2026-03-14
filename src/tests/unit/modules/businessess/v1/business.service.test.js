@@ -1,17 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import mongoose from 'mongoose';
-import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { hashPassword } from '#shared/utils/jwt.js';
 import { UserModel } from '#modules/users/index.js';
 import { BusinessModel } from '#modules/businesses/models/business.model.js';
 import { filterUserField } from '#shared/utils/queryBuilder.js';
 import {
   addNewBusiness,
-  createNewBusiness,
   getAllBusinesses,
   getBusinessById,
   modifyExistedBusiness,
-  updateBusinessService,
 } from '#modules/businesses/services/v1/business.service.js';
 
 vi.mock('#modules/businesses/models/business.model.js', () => ({
@@ -29,7 +26,7 @@ vi.mock('#modules/businesses/models/business.model.js', () => ({
 vi.mock('#modules/users/models/user.model.js', () => ({
   UserModel: {
     create: vi.fn(),
-    findOneAndUpdate: vi.fn(),
+    findByIdAndUpdate: vi.fn(),
   },
 }));
 
@@ -53,34 +50,6 @@ vi.spyOn(mongoose, 'startSession').mockResolvedValue(fakeSession);
 describe('Business Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  describe('createNewBusiness', () => {
-    it('creates a new business', async () => {
-      const userId = 'user1';
-      const businessData = {
-        name: 'Reyhan Restaurant',
-        type: 'restaurant',
-        addressText: 'Afghanistan, Herat',
-        location: { type: 'Point', coordinates: [62.2, 34.35] },
-        phone: '0093781234567',
-        prepTimeAvgMinutes: 30,
-      };
-
-      const mockBusiness = { _id: '1', owner: userId, ...businessData };
-      BusinessModel.create.mockResolvedValue(mockBusiness);
-
-      const result = await createNewBusiness(userId, businessData);
-
-      expect(result).toEqual(mockBusiness);
-      expect(BusinessModel.create).toHaveBeenCalledWith({ ...businessData, owner: userId });
-    });
-
-    it('propagates errors from BusinessModel.create', async () => {
-      BusinessModel.create.mockRejectedValue(new Error('DB failed'));
-
-      await expect(createNewBusiness('user1', { name: 'x' })).rejects.toThrow('DB failed');
-    });
   });
 
   describe('getAllBusinesses', () => {
@@ -128,46 +97,6 @@ describe('Business Service', () => {
     });
   });
 
-  describe('updateBusinessService', () => {
-    it('updates business successfully (partial)', async () => {
-      const userId = 'user1';
-      const businessId = '1';
-      const businessData = { name: 'Mizban Shop', type: 'other' };
-      const mockBusiness = { _id: businessId, owner: userId, ...businessData };
-
-      BusinessModel.findOneAndUpdate.mockResolvedValue(mockBusiness);
-
-      const result = await updateBusinessService(userId, businessId, businessData);
-
-      expect(result).toEqual(mockBusiness);
-      expect(BusinessModel.findOneAndUpdate).toHaveBeenCalledWith(
-        { _id: businessId, owner: userId },
-        { $set: { name: 'Mizban Shop', type: 'other' } },
-        { new: true, runValidators: true }
-      );
-    });
-
-    it('throws error if no fields are provided', async () => {
-      await expect(updateBusinessService('user1', '1', {})).rejects.toMatchObject({
-        message: 'No fields provided for update',
-        code: ERROR_CODES.NO_FIELDS_PROVIDED,
-        status: 400,
-      });
-    });
-
-    it('throws notFound if business does not exist', async () => {
-      BusinessModel.findOneAndUpdate.mockResolvedValue(null);
-
-      await expect(
-        updateBusinessService('user1', 'missing', { type: 'shop' })
-      ).rejects.toMatchObject({
-        message: 'Business not found',
-        code: ERROR_CODES.NOT_FOUND,
-        status: 404,
-      });
-    });
-  });
-
   describe('Admin services', () => {
     it('addNewBusiness creates business and commits transaction', async () => {
       const businessData = {
@@ -201,18 +130,20 @@ describe('Business Service', () => {
 
     it('modifyExistedBusiness updates business/user and commits transaction', async () => {
       const businessData = {
-        userId: 'user123',
         type: 'shop',
         username: 'Updated',
         email: 'test@example.com',
       };
 
       filterUserField.mockResolvedValue({ name: 'Updated', email: 'test@example.com' });
+
+      const session = vi.fn().mockResolvedValue({ _id: 'biz1', owner: 'user123' });
+      BusinessModel.findById.mockReturnValue({ session });
       BusinessModel.findByIdAndUpdate.mockResolvedValue({
         owner: 'user123',
         toObject: () => ({ _id: 'biz1', type: 'shop' }),
       });
-      UserModel.findOneAndUpdate.mockResolvedValue({
+      UserModel.findByIdAndUpdate.mockResolvedValue({
         name: 'Updated',
         email: 'test@example.com',
         phone: '123',

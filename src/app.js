@@ -3,7 +3,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
-import { adminBusinessRoutes, businessRoutes } from '#modules/businesses/index.js';
+import { businessRoutes } from '#modules/businesses/index.js';
 import { authRoutes } from '#modules/users/index.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import { adminDriverRoutes, driverRoutes } from '#modules/drivers/index.js';
@@ -36,7 +36,7 @@ app.use('/api/auth', authRoutes);
 
 app.use('/api/drivers', authMiddleware, driverRoutes);
 app.use('/api/notifications', authMiddleware, notificationRoutes);
-app.use('/api/businesses', authMiddleware, businessRoutes);
+app.use('/api/businesses', authMiddleware, authorizeRole('admin'), businessRoutes);
 
 // Admin routes
 
@@ -54,7 +54,6 @@ app.use(
   authorizeRole('admin'),
   adminBusinessCustomerRoutes
 );
-app.use('/api/admin/businesses', authMiddleware, authorizeRole('admin'), adminBusinessRoutes);
 //#endregion
 
 //#region Not found (404) middleware

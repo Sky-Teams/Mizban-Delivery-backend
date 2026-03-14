@@ -1,4 +1,4 @@
-import { AppError, noFieldsProvidedForUpdate, notFound } from '#shared/errors/error.js';
+import { AppError, notFound } from '#shared/errors/error.js';
 import { BusinessModel } from '../../models/business.model.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { UserModel } from '#modules/users/index.js';
@@ -56,6 +56,7 @@ export const modifyExistedBusiness = withTransaction(async (session, businessId,
     ...(email && { email }),
     ...(userPhoneNumber && { phone: userPhoneNumber }),
   };
+
   const userUpdateFields = await filterUserField(userData);
 
   const allowedFieldsToUpdate = [
@@ -86,9 +87,12 @@ export const modifyExistedBusiness = withTransaction(async (session, businessId,
     throw new AppError('No fields provided for update', 400, ERROR_CODES.NO_FIELDS_PROVIDED);
   }
 
+  const business = await BusinessModel.findById(businessId).session(session);
+  if (!business) throw notFound('Business');
+
   const updateUser = Object.keys(userUpdateFields).length
-    ? await UserModel.findOneAndUpdate(
-        { _id: businessData.userId },
+    ? await UserModel.findByIdAndUpdate(
+        business.owner,
         { $set: userUpdateFields },
         { runValidators: true, session, returnDocument: 'after' }
       )
@@ -105,40 +109,16 @@ export const modifyExistedBusiness = withTransaction(async (session, businessId,
   if (Object.keys(userUpdateFields).length && !updateUser) throw notFound('User');
   if (Object.keys(businessUpdateFields).length && !updateBusiness) throw notFound('Business');
 
+  const mergedBusiness = updateBusiness ?? business;
+
   return {
-    ...(updateBusiness ? updateBusiness.toObject() : {}),
+    ...(mergedBusiness ? mergedBusiness.toObject() : {}),
     ...(updateUser
       ? { username: updateUser.name, email: updateUser.email, userPhoneNumber: updateUser.phone }
       : {}),
-    owner: updateBusiness?.owner,
+    owner: mergedBusiness?.owner,
   };
 });
-
-//endregion
-
-//Create new Business
-export const createNewBusiness = async (userId, businessData) => {
-  const {
-    name,
-    type: businessType,
-    phone,
-    addressText,
-    prepTimeAvgMinutes,
-    location,
-  } = businessData;
-
-  const newBusiness = await BusinessModel.create({
-    name,
-    type: businessType,
-    phone,
-    addressText,
-    prepTimeAvgMinutes,
-    location,
-    owner: userId,
-  });
-
-  return newBusiness;
-};
 
 export const getAllBusinesses = async (limit = 8, page = 1, searchQuery = {}) => {
   const skip = (page - 1) * limit;
@@ -166,37 +146,4 @@ export const getBusinessById = async (businessId) => {
   return business;
 };
 
-//Partial Update (Business)
-export const updateBusinessService = async (userId, businessId, businessData) => {
-  const allowedFieldsToUpdate = [
-    'name',
-    'type',
-    'addressText',
-    'phone',
-    'prepTimeAvgMinutes',
-    'location',
-  ];
-
-  const updates = {};
-  for (const key of Object.keys(businessData)) {
-    if (allowedFieldsToUpdate.includes(key) && key !== 'location') {
-      updates[key] = businessData[key];
-    }
-  }
-
-  if (businessData.location?.coordinates !== undefined) {
-    updates['location.coordinates'] = businessData.location.coordinates;
-  }
-
-  if (Object.keys(updates).length === 0) throw noFieldsProvidedForUpdate();
-
-  const updateBusiness = await BusinessModel.findOneAndUpdate(
-    { _id: businessId, owner: userId },
-    { $set: updates },
-    { new: true, runValidators: true }
-  );
-
-  if (!updateBusiness) throw notFound('Business');
-
-  return updateBusiness;
-};
+//endregion
