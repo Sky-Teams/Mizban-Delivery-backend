@@ -9,7 +9,7 @@ import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import { adminDriverRoutes, driverRoutes } from '#modules/drivers/index.js';
 import { notificationRoutes } from '#modules/notifications/index.js';
 import { authorizeRole } from '#shared/middleware/authorizeRole.js';
-import { adminBusinessCustomerRoutes } from '#modules/businessCustomers/index.js';
+import { businessCustomerRoutes } from '#modules/businessCustomers/index.js';
 import { adminDeliveryRequestRoutes } from '#modules/deliveryRequests/index.js';
 
 const app = express();
@@ -37,7 +37,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/drivers', authMiddleware, driverRoutes);
 app.use('/api/notifications', authMiddleware, notificationRoutes);
 app.use('/api/businesses', authMiddleware, businessRoutes);
-
+app.use('/api/business-customers', authMiddleware, authorizeRole('admin'), businessCustomerRoutes);
 // Admin routes
 
 app.use(
@@ -48,12 +48,7 @@ app.use(
 );
 
 app.use('/api/admin/drivers', authMiddleware, authorizeRole('admin'), adminDriverRoutes);
-app.use(
-  '/api/admin/business-customers',
-  authMiddleware,
-  authorizeRole('admin'),
-  adminBusinessCustomerRoutes
-);
+
 app.use('/api/admin/businesses', authMiddleware, authorizeRole('admin'), adminBusinessRoutes);
 //#endregion
 
