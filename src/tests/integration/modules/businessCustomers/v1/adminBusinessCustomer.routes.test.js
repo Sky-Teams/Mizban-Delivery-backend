@@ -10,6 +10,7 @@ import {
 import { businessCustomerModel } from '#modules/businessCustomers/models/businessCustomer.model.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import mongoose from 'mongoose';
+import { getWithAuth } from '#tests/utils/testHelpers.js';
 
 const baseURL = '/api/admin/business-customers';
 let token;
@@ -121,14 +122,14 @@ describe('Admin BusinessCustomer API Integration', () => {
     });
 
     it('should throw unauthorized error if user is missing', async () => {
-      const res = await request(app).get(baseURL);
+      const res = await getWithAuth(app, baseURL);
 
       expect(res.status).toBe(401);
       expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
     });
 
     it('should return business customers lists', async () => {
-      const res = await request(app).get(baseURL).set('Authorization', `Bearer ${token}`);
+      const res = await getWithAuth(app, baseURL, token);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

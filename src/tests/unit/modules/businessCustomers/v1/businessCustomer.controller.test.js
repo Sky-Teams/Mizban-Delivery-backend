@@ -8,6 +8,7 @@ import {
 } from '#modules/businessCustomers/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError } from '#shared/errors/error.js';
+import { isValidApiRequest } from 'vitest/node';
 
 vi.mock('#modules/businessCustomers/services/v1/businessCustomer.service.js', () => ({
   createNewBusinessCustomer: vi.fn(),
@@ -95,7 +96,7 @@ describe('getAllBusinessCustomer', () => {
     vi.clearAllMocks();
     req = {
       user: { _id: 'user123' },
-      query: { page: 1, limit: 5, sort: 'newest' },
+      query: { page: 1, limit: 5, sort: 'latest' },
     };
     res = {
       status: vi.fn().mockReturnThis(),
@@ -109,7 +110,7 @@ describe('getAllBusinessCustomer', () => {
     await expect(getBusinessCustomers(req, res)).rejects.toThrow(AppError);
   });
 
-  it('should return business customers lists sorted by newest', async () => {
+  it('should return business customers lists sorted by latest', async () => {
     const mockBusinessCustomer = {
       businessCustomers: [
         { _id: '3', createdAt: '2026-03-05' },
@@ -124,7 +125,7 @@ describe('getAllBusinessCustomer', () => {
 
     await getBusinessCustomers(req, res);
 
-    expect(getAllBusinessCustomer).toHaveBeenCalledWith(1, 5, 'newest');
+    expect(getAllBusinessCustomer).toHaveBeenCalledWith(1, 5, { sort: 'latest' });
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -153,12 +154,41 @@ describe('getAllBusinessCustomer', () => {
 
     await getBusinessCustomers(req, res);
 
-    expect(getAllBusinessCustomer).toHaveBeenCalledWith(1, 5, 'top');
+    expect(getAllBusinessCustomer).toHaveBeenCalledWith(1, 5, { sort: 'top' });
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       data: mockBusinessCustomer.businessCustomers,
       totalPage: 2,
+      totalBusinessCustomers: 10,
+    });
+  });
+
+  it('should return business customers lists isActive = true', async () => {
+    req = {
+      user: { _id: 'user123' },
+      query: { page: 1, limit: 2, isActive: true },
+    };
+    const mockBusinessCustomer = {
+      businessCustomers: [
+        { _id: '1', isActive: true },
+        { _id: '2', isActive: true },
+        { _id: '3', isActive: true },
+      ],
+      totalBusinessCustomers: 10,
+      totalPage: 5,
+    };
+
+    getAllBusinessCustomer.mockResolvedValue(mockBusinessCustomer);
+
+    await getBusinessCustomers(req, res);
+
+    expect(getAllBusinessCustomer).toHaveBeenCalledWith(1, 2, { isActive: true });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockBusinessCustomer.businessCustomers,
+      totalPage: 5,
       totalBusinessCustomers: 10,
     });
   });

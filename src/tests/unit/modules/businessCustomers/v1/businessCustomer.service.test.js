@@ -90,7 +90,7 @@ describe('BusinessCustomer Service', () => {
   });
 
   describe('getAllBusinessCustomer', () => {
-    it('should return business customers lists sorted by newest', async () => {
+    it('should return business customers lists sorted by lates', async () => {
       const mockBusinessCustomer = [{ _id: '3' }, { _id: '2' }, { _id: '1' }];
       businessCustomerModel.countDocuments.mockResolvedValue(10);
       businessCustomerModel.find.mockReturnValue({
@@ -108,6 +108,7 @@ describe('BusinessCustomer Service', () => {
         totalPage: 3,
       });
     });
+    
     it('should return business customers lists sorted by totalOrders ', async () => {
       const mockBusinessCustomer = [
         { _id: '4', totalOrders: 10 },
@@ -123,7 +124,7 @@ describe('BusinessCustomer Service', () => {
         lean: vi.fn().mockResolvedValue(mockBusinessCustomer),
       });
 
-      const result = await getAllBusinessCustomer(1, 5, 'top');
+      const result = await getAllBusinessCustomer(1, 5, { sort: 'top' });
 
       expect(result).toEqual({
         businessCustomers: mockBusinessCustomer,
