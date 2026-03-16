@@ -3,6 +3,7 @@ export { default as adminDriverRoutes } from './routes/v1/adminDriver.routes.js'
 export { DriverModel } from './models/driver.model.js';
 export {
   doesDriverExist,
+  doesDriverExistByDriverId,
   createNewDriver,
   updateExistedDriver,
   getDriverInfoByUserId,
@@ -10,6 +11,7 @@ export {
   addNewDriver,
   fetchDriverByDriverId,
   fetchDrivers,
+  getDriverStatusByDriverId,
 } from './services/v1/driver.service.js';
 export {
   createDriver,

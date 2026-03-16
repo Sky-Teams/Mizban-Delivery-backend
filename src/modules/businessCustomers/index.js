@@ -4,8 +4,11 @@ export {
   doesBusinessCustomerExist,
   createNewBusinessCustomer,
   getAllBusinessCustomer,
+  findBusinessCustomerById,
+  updateExistedBusinessCustomer,
 } from './services/v1/businessCustomer.service.js';
 export {
   createBusinessCustomer,
   getBusinessCustomers,
+  updateBusinessCustomer,
 } from './controllers/v1/businessCustomer.controller.js';

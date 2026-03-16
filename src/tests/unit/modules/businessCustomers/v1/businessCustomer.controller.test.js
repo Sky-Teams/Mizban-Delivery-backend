@@ -1,19 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createBusinessCustomer,
+  updateBusinessCustomer,
   createNewBusinessCustomer,
   doesBusinessCustomerExist,
   getAllBusinessCustomer,
   getBusinessCustomers,
+  findBusinessCustomerById,
+  updateExistedBusinessCustomer,
 } from '#modules/businessCustomers/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError } from '#shared/errors/error.js';
-import { isValidApiRequest } from 'vitest/node';
 
 vi.mock('#modules/businessCustomers/services/v1/businessCustomer.service.js', () => ({
   createNewBusinessCustomer: vi.fn(),
   doesBusinessCustomerExist: vi.fn(),
   getAllBusinessCustomer: vi.fn(),
+  findBusinessCustomerById: vi.fn(),
+  updateExistedBusinessCustomer: vi.fn(),
 }));
 
 describe('BusinessCustomer controller - createBusinessCustomer', () => {
@@ -88,6 +92,85 @@ describe('BusinessCustomer controller - createBusinessCustomer', () => {
   });
 });
 
+describe('BusinessCustomer controller - updateBusinessCustomer', () => {
+  let req;
+  let res;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // req = {
+    //   user: { _id: 'user123' },
+    //   query: { page: 1, limit: 5, sort: 'latest' },
+    // };
+    req = {
+      user: { _id: 'business1' },
+      params: { id: 'customer1' },
+      body: {
+        name: 'Updated Name',
+        notes: 'updated note',
+        isActive: false,
+      },
+    };
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+  });
+
+  it('throws unauthorized error when req.user is missing', async () => {
+    req.user = null;
+
+    await expect(updateBusinessCustomer(req, res)).rejects.toMatchObject({
+      code: ERROR_CODES.UNAUTHORIZED,
+      message: 'User is not authorized',
+    });
+  });
+
+  it('updates business customer and returns 200', async () => {
+    const updated = {
+      _id: 'customer1',
+      business: 'business1',
+      ...req.body,
+    };
+    findBusinessCustomerById.mockResolvedValue({ _id: 'customer1', business: 'business1' });
+    updateExistedBusinessCustomer.mockResolvedValue(updated);
+
+    await updateBusinessCustomer(req, res);
+
+    expect(findBusinessCustomerById).toHaveBeenCalledWith('customer1');
+    expect(updateExistedBusinessCustomer).toHaveBeenCalledWith('customer1', 'business1', req.body);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: updated,
+    });
+  });
+
+  it('throws NOT_FOUND when customer does not exist', async () => {
+    findBusinessCustomerById.mockResolvedValue(null);
+
+    await expect(updateBusinessCustomer(req, res)).rejects.toMatchObject({
+      code: ERROR_CODES.NOT_FOUND,
+      message: 'Customer not found',
+    });
+
+    expect(updateExistedBusinessCustomer).not.toHaveBeenCalled();
+  });
+
+  it('propagates error from service layer', async () => {
+    const error = new AppError('BusinessCustomer not found', 404, ERROR_CODES.NOT_FOUND);
+    findBusinessCustomerById.mockResolvedValue({ _id: 'customer1', business: 'business1' });
+    updateExistedBusinessCustomer.mockRejectedValue(error);
+
+    await expect(updateBusinessCustomer(req, res)).rejects.toThrow(AppError);
+    await expect(updateBusinessCustomer(req, res)).rejects.toMatchObject({
+      message: 'BusinessCustomer not found',
+      code: ERROR_CODES.NOT_FOUND,
+    });
+  });
+});
+
 describe('getAllBusinessCustomer', () => {
   let req;
   let res;
@@ -98,6 +181,7 @@ describe('getAllBusinessCustomer', () => {
       user: { _id: 'user123' },
       query: { page: 1, limit: 5, sort: 'latest' },
     };
+
     res = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn(),
