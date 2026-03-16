@@ -33,11 +33,18 @@ export const createBusinessCustomer = async (req, res) => {
 export const getBusinessCustomers = async (req, res) => {
   if (!req.user) throw unauthorized();
 
-  const { page, limit, sort } = req.query;
+  const { page, limit } = req.query;
+  const searchQuery = {
+    searchTerm: req.query.searchTerm,
+    sort: req.query.sort,
+    business: req.query.businessId,
+    isActive: req.query.isActive,
+  };
+
   const { businessCustomers, totalBusinessCustomers, totalPage } = await getAllBusinessCustomer(
     page,
     limit,
-    sort
+    searchQuery
   );
 
   res.status(200).json({
