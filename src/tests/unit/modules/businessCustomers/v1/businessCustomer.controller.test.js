@@ -98,10 +98,7 @@ describe('BusinessCustomer controller - updateBusinessCustomer', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // req = {
-    //   user: { _id: 'user123' },
-    //   query: { page: 1, limit: 5, sort: 'latest' },
-    // };
+  
     req = {
       user: { _id: 'business1' },
       params: { id: 'customer1' },
