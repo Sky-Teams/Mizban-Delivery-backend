@@ -163,4 +163,4 @@ OrderSchema.index({ dropoffLocation: '2dsphere' });
 OrderSchema.index({ driverId: 1 });
 OrderSchema.index({ status: 1 });
 
-export const OrderModel = mongoose.model('DeliveryRequest', OrderSchema);
+export const OrderModel = mongoose.model('Orders', OrderSchema);
