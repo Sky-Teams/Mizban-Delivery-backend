@@ -5,19 +5,19 @@ import z from 'zod';
 const queryValidator = z.object({
   query: z.object({
     page: z.coerce
-      .number({ message: ERROR_CODES.MUST_BE_INTEGER })
-      .int({ message: ERROR_CODES.MUST_BE_INTEGER })
-      .positive({ message: ERROR_CODES.MUST_BE_POSITIVE })
+      .number({ message: ERROR_CODES.PAGE_PARAMETER_MUST_BE_INTEGER })
+      .int({ message: ERROR_CODES.PAGE_PARAMETER_MUST_BE_INTEGER })
+      .positive({ message: ERROR_CODES.PAGE_PARAMETER_MUST_BE_POSITIVE })
       .optional(),
     limit: z.coerce
-      .number({ message: ERROR_CODES.MUST_BE_INTEGER })
-      .int({ message: ERROR_CODES.MUST_BE_INTEGER })
-      .positive({ message: ERROR_CODES.MUST_BE_POSITIVE })
+      .number({ message: ERROR_CODES.LIMIT_PARAMETER_MUST_BE_INTEGER })
+      .int({ message: ERROR_CODES.LIMIT_PARAMETER_MUST_BE_INTEGER })
+      .positive({ message: ERROR_CODES.LIMIT_PARAMETER_MUST_BE_POSITIVE })
       .optional(),
     isActive: z
       .preprocess(
         (val) => (val === 'false' ? false : val === 'true' ? false : val),
-        z.boolean({ message: ERROR_CODES.INVALID_BOOLEAN })
+        z.boolean({ message: ERROR_CODES.INVALID_BOOLEAN_TYPE })
       )
       .optional(),
     sort: z
