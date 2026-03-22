@@ -293,4 +293,201 @@ export const ERROR_MESSAGES = {
     fa: 'متن آدرس خیلی کوتاه است',
     ps: 'د پته متن ډېر لنډ دی',
   },
+  [ERROR_CODES.INVALID_ITEM_QUANTITY]: {
+    en: 'Invalid item quantity',
+    fa: 'تعداد آیتم نامعتبر است',
+    ps: 'د توکي شمېر ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_ITEM_UNIT_PRICE]: {
+    en: 'Invalid item unit price',
+    fa: 'قیمت واحد آیتم نامعتبر است',
+    ps: 'د توکي واحد قیمت ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_DELIVERY_TYPE]: {
+    en: 'Invalid delivery type',
+    fa: 'نوع تحویل نامعتبر است',
+    ps: 'د تحویلي ډول ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_SERVICE_TYPE]: {
+    en: 'Invalid service type',
+    fa: 'نوع سرویس نامعتبر است',
+    ps: 'د خدمت ډول ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_PRIORITY]: {
+    en: 'Invalid priority',
+    fa: 'اولویت نامعتبر است',
+    ps: 'لومړیتوب ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_PACKAGE_SIZE]: {
+    en: 'Invalid package size',
+    fa: 'اندازه بسته نامعتبر است',
+    ps: 'د کڅوړې اندازه ناسمه ده',
+  },
+
+  [ERROR_CODES.INVALID_SERVICE_LEVEL]: {
+    en: 'Invalid service level',
+    fa: 'سطح سرویس نامعتبر است',
+    ps: 'د خدمت کچه ناسمه ده',
+  },
+
+  [ERROR_CODES.INVALID_PAYMENT_TYPE]: {
+    en: 'Invalid payment type',
+    fa: 'نوع پرداخت نامعتبر است',
+    ps: 'د تادیې ډول ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_PAYMENT_STATUS]: {
+    en: 'Invalid payment status',
+    fa: 'وضعیت پرداخت نامعتبر است',
+    ps: 'د تادیې حالت ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_PACKAGE_WEIGHT]: {
+    en: 'Invalid package weight',
+    fa: 'وزن بسته نامعتبر است',
+    ps: 'د کڅوړې وزن ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_ESTIMATED_PREP_TIME]: {
+    en: 'Invalid estimated preparation time',
+    fa: 'زمان تخمینی آماده‌سازی نامعتبر است',
+    ps: 'د اټکلي چمتو کولو وخت ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_AMOUNT_TO_COLLECT]: {
+    en: 'Invalid amount to collect',
+    fa: 'مبلغ قابل دریافت نامعتبر است',
+    ps: 'د راټولولو اندازه ناسمه ده',
+  },
+
+  [ERROR_CODES.INVALID_DELIVERY_PRICE]: {
+    en: 'Invalid delivery price',
+    fa: 'قیمت تحویل نامعتبر است',
+    ps: 'د تحویلي قیمت ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_SENDER_NAME]: {
+    en: 'Invalid sender name',
+    fa: 'نام فرستنده نامعتبر است',
+    ps: 'د لېږونکي نوم ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_SENDER_PHONE]: {
+    en: 'Invalid sender phone',
+    fa: 'شماره تلفن فرستنده نامعتبر است',
+    ps: 'د لېږونکي د ټیلیفون شمېره ناسمه ده',
+  },
+
+  [ERROR_CODES.INVALID_RECEIVER_NAME]: {
+    en: 'Invalid receiver name',
+    fa: 'نام گیرنده نامعتبر است',
+    ps: 'د ترلاسه کوونکي نوم ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_RECEIVER_PHONE]: {
+    en: 'Invalid receiver phone',
+    fa: 'شماره تلفن گیرنده نامعتبر است',
+    ps: 'د ترلاسه کوونکي د ټیلیفون شمېره ناسمه ده',
+  },
+
+  [ERROR_CODES.INVALID_RECEIVER_ADDRESS]: {
+    en: 'Invalid receiver address',
+    fa: 'آدرس گیرنده نامعتبر است',
+    ps: 'د ترلاسه کوونکي پته ناسمه ده',
+  },
+
+  [ERROR_CODES.INVALID_RECEIVER_COORDINATES]: {
+    en: 'Invalid receiver coordinates',
+    fa: 'مختصات گیرنده نامعتبر است',
+    ps: 'د ترلاسه کوونکي مختصات ناسم دي',
+  },
+
+  [ERROR_CODES.INVALID_PICKUP_COORDINATES]: {
+    en: 'Invalid pickup coordinates',
+    fa: 'مختصات محل دریافت نامعتبر است',
+    ps: 'د اخیستلو ځای مختصات ناسم دي',
+  },
+
+  [ERROR_CODES.INVALID_DROPOFF_COORDINATES]: {
+    en: 'Invalid dropoff coordinates',
+    fa: 'مختصات محل تحویل نامعتبر است',
+    ps: 'د سپارلو ځای مختصات ناسم دي',
+  },
+
+  [ERROR_CODES.INVALID_DRIVER_ID]: {
+    en: 'Invalid driver ID',
+    fa: 'آیدی راننده نامعتبر است',
+    ps: 'د چلوونکي پېژند ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_RECEIVER_ID]: {
+    en: 'Invalid receiver ID',
+    fa: 'آیدی گیرنده نامعتبر است',
+    ps: 'د ترلاسه کوونکي پېژند ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_SENDER_ID]: {
+    en: 'Invalid sender ID',
+    fa: 'آیدی فرستنده نامعتبر است',
+    ps: 'د لېږونکي پېژند ناسم دی',
+  },
+
+  [ERROR_CODES.BUSINESS_ALREADY_EXIST]: {
+    en: 'Business already exists',
+    fa: 'کسب‌وکار از قبل وجود دارد',
+    ps: 'سوداګري مخکې موجوده ده',
+  },
+
+  [ERROR_CODES.UPDATE_NOT_AVAILABLE]: {
+    en: 'Update not available',
+    fa: 'به‌روزرسانی در دسترس نیست',
+    ps: 'تازه کول شتون نه لري',
+  },
+
+  [ERROR_CODES.DRIVER_ASSIGNMENT_NOT_ALLOWED]: {
+    en: 'Driver assignment is not allowed',
+    fa: 'اختصاص راننده مجاز نیست',
+    ps: 'د چلوونکي ټاکل اجازه نه لري',
+  },
+
+  [ERROR_CODES.DRIVER_NOT_IDLE]: {
+    en: 'Driver is not idle',
+    fa: 'راننده در حالت آماده نیست',
+    ps: 'چلوونکی خالي نه دی',
+  },
+
+  [ERROR_CODES.PICKUP_NOT_ALLOWED]: {
+    en: 'Pickup not allowed',
+    fa: 'دریافت مجاز نیست',
+    ps: 'اخیستل اجازه نه لري',
+  },
+
+  [ERROR_CODES.DELIVERY_NOT_DELIVERABLE]: {
+    en: 'Delivery is not deliverable',
+    fa: 'تحویل امکان‌پذیر نیست',
+    ps: 'تحویلي ممکنه نه ده',
+  },
+
+  [ERROR_CODES.CANCEL_NOT_ALLOWED]: {
+    en: 'Cancel not allowed',
+    fa: 'لغو مجاز نیست',
+    ps: 'لغوه اجازه نه لري',
+  },
+
+  [ERROR_CODES.INVALID_CANCEL_REASON]: {
+    en: 'Invalid cancel reason',
+    fa: 'دلیل لغو نامعتبر است',
+    ps: 'د لغوه دلیل ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_ITEM_NAME]: {
+    en: 'Invalid item name',
+    fa: 'نام آیتم نامعتبر است',
+    ps: 'د توکي نوم ناسم دی',
+  },
 };
