@@ -11,10 +11,11 @@ import { notificationRoutes } from '#modules/notifications/index.js';
 import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { adminBusinessCustomerRoutes } from '#modules/businessCustomers/index.js';
 import { routeNotFound } from '#shared/errors/error.js';
+import { adminDeliveryRequestRoutes } from '#modules/deliveryRequests/index.js';
 
 const app = express();
 
-//#region Normal Midlleware
+//#region Normal Middleware
 
 app.use(express.json());
 
@@ -39,6 +40,14 @@ app.use('/api/notifications', authMiddleware, notificationRoutes);
 app.use('/api/businesses', authMiddleware, businessRoutes);
 
 // Admin routes
+
+app.use(
+  '/api/admin/delivery-request',
+  authMiddleware,
+  authorizeRole('admin'),
+  adminDeliveryRequestRoutes
+);
+
 app.use('/api/admin/drivers', authMiddleware, authorizeRole('admin'), adminDriverRoutes);
 app.use(
   '/api/admin/business-customers',
