@@ -490,4 +490,39 @@ export const ERROR_MESSAGES = {
     fa: 'نام آیتم نامعتبر است',
     ps: 'د توکي نوم ناسم دی',
   },
+  [ERROR_CODES.PAGE_PARAMETER_MUST_BE_INTEGER]: {
+    en: 'Page parameter must be an integer',
+    fa: 'پارامتر صفحه باید یک عدد صحیح باشد',
+    ps: 'د پاڼې پارامتر باید صحیح عدد وي',
+  },
+
+  [ERROR_CODES.PAGE_PARAMETER_MUST_BE_POSITIVE]: {
+    en: 'Page parameter must be positive',
+    fa: 'پارامتر صفحه باید یک عدد مثبت باشد',
+    ps: 'د پاڼې پارامتر باید مثبت وي',
+  },
+
+  [ERROR_CODES.LIMIT_PARAMETER_MUST_BE_INTEGER]: {
+    en: 'Limit parameter must be an integer',
+    fa: 'پارامتر محدودیت باید یک عدد صحیح باشد',
+    ps: 'د محدودیت پارامتر باید صحیح عدد وي',
+  },
+
+  [ERROR_CODES.LIMIT_PARAMETER_MUST_BE_POSITIVE]: {
+    en: 'Limit parameter must be positive',
+    fa: 'پارامتر محدودیت باید یک عدد مثبت باشد',
+    ps: 'د محدودیت پارامتر باید مثبت وي',
+  },
+
+  [ERROR_CODES.INVALID_BOOLEAN_TYPE]: {
+    en: 'Invalid boolean value',
+    fa: 'مقدار بولین نامعتبر است',
+    ps: 'د بولین ارزښت ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_SORT_OPTION]: {
+    en: 'Invalid sort option',
+    fa: 'گزینه مرتب‌سازی نامعتبر است',
+    ps: 'د ترتیب انتخاب ناسم دی',
+  },
 };

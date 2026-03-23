@@ -11,7 +11,7 @@ const ItemSchema = new mongoose.Schema(
 );
 
 //TODO Most of the fields are optional, because for now we just want to be able to create a delivery request easily without any complex logic.We will extend it in future
-const DeliveryRequestSchema = new mongoose.Schema(
+const OrderSchema = new mongoose.Schema(
   {
     type: {
       type: String,
@@ -158,9 +158,9 @@ const DeliveryRequestSchema = new mongoose.Schema(
   }
 );
 
-DeliveryRequestSchema.index({ pickupLocation: '2dsphere' });
-DeliveryRequestSchema.index({ dropoffLocation: '2dsphere' });
-DeliveryRequestSchema.index({ driverId: 1 });
-DeliveryRequestSchema.index({ status: 1 });
+OrderSchema.index({ pickupLocation: '2dsphere' });
+OrderSchema.index({ dropoffLocation: '2dsphere' });
+OrderSchema.index({ driverId: 1 });
+OrderSchema.index({ status: 1 });
 
-export const DeliveryRequestModel = mongoose.model('DeliveryRequest', DeliveryRequestSchema);
+export const OrderModel = mongoose.model('Orders', OrderSchema);

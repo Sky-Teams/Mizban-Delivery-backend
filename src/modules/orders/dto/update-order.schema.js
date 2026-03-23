@@ -15,7 +15,7 @@ const serviceLevels = ['standard', 'express'];
 const paymentTypes = ['online', 'COD'];
 const paymentStatuses = ['pending', 'paid', 'failed'];
 
-const adminUpdateDeliveryRequestSchema = z.object({
+const updateOrderSchema = z.object({
   body: z.object({
     type: z
       .enum(deliveryTypes, { errorMap: () => ({ message: ERROR_CODES.INVALID_DELIVERY_TYPE }) })
@@ -167,6 +167,6 @@ const adminUpdateDeliveryRequestSchema = z.object({
   }),
 });
 
-export const adminUpdateDeliveryRequestValidator = (req) => {
-  return adminUpdateDeliveryRequestSchema.safeParse({ body: req.body });
+export const updateOrderValidator = (req) => {
+  return updateOrderSchema.safeParse({ body: req.body });
 };
