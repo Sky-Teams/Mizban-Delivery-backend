@@ -98,7 +98,7 @@ const mapNestedFields = (updateQuery, prefix, value, fields) => {
   });
 };
 
-export const deliveryRequestUpdateQuery = (deliveryRequestData, allowedFields) => {
+export const orderUpdateQuery = (deliveryRequestData, allowedFields) => {
   const updateQuery = {};
 
   Object.entries(deliveryRequestData).forEach(([key, value]) => {

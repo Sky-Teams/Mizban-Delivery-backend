@@ -1,25 +1,22 @@
 import {
   assignDriver,
   cancelOrder,
-  createDelivery,
+  createOrder,
   deliverOrder,
   pickupOrder,
-  updateDeliveryRequest,
-} from '../../controllers/v1/deliveryRequest.controller.js';
+  updateOrder,
+} from '../../controllers/v1/order.controller.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
 import express from 'express';
 import { validate } from '#shared/middleware/validate.js';
-import { adminCreateDeliveryRequestValidator } from '../../dto/admin-create-delivery-request.schema.js';
+import { createOrderValidator } from '../../dto/create-order.schema.js';
 import { mongoIdValidator } from '#shared/middleware/mongoIdValidator.js';
-import { adminUpdateDeliveryRequestValidator } from '../../dto/admin-update-delivery-request.schema.js';
-import {
-  assignDriverValidator,
-  cancelDeliveryValidator,
-} from '../../dto/delivery-request-actions.schema.js';
+import { updateOrderValidator } from '../../dto/update-order.schema.js';
+import { assignDriverValidator, cancelOrderValidator } from '../../dto/order-actions.schema.js';
 
 const router = express.Router();
 
-router.post('/', validate(adminCreateDeliveryRequestValidator), asyncHandler(createDelivery));
+router.post('/', validate(createOrderValidator), asyncHandler(createOrder));
 router.patch(
   '/:id/assign',
   validate(mongoIdValidator),
@@ -31,14 +28,14 @@ router.patch('/:id/deliver', validate(mongoIdValidator), asyncHandler(deliverOrd
 router.patch(
   '/:id/cancel',
   validate(mongoIdValidator),
-  validate(cancelDeliveryValidator),
+  validate(cancelOrderValidator),
   asyncHandler(cancelOrder)
 );
 router.put(
   '/:id',
   validate(mongoIdValidator),
-  validate(adminUpdateDeliveryRequestValidator),
-  asyncHandler(updateDeliveryRequest)
+  validate(updateOrderValidator),
+  asyncHandler(updateOrder)
 );
 
 export default router;
