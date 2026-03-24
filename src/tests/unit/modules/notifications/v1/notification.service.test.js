@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NotificationModel } from '#modules/notifications/index.js';
+import { NotificationModel, createNotificationForAdmins } from '#modules/notifications/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import {
   createNotification,
@@ -7,6 +7,7 @@ import {
   markAsRead,
   markAsUnread,
 } from '#modules/notifications/index.js';
+import { getAllAdmins } from '#modules/users/index.js';
 
 // Mock only DB layer
 vi.mock('#modules/notifications/models/notification.model.js', () => ({
@@ -17,6 +18,11 @@ vi.mock('#modules/notifications/models/notification.model.js', () => ({
   },
 }));
 
+// Mock getAllAdmins
+vi.mock('#modules/users/index.js', () => ({
+  getAllAdmins: vi.fn(),
+}));
+
 describe('Notification Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -25,7 +31,7 @@ describe('Notification Service', () => {
   describe('createNotification', () => {
     it('should create a notification successfully', async () => {
       const userId = '507f1f77bcf86cd799439011';
-      const type = 'system';
+      const type = 'SYSTEM';
       const title = 'Test Title';
       const message = 'Test Message';
 
@@ -224,6 +230,19 @@ describe('Notification Service', () => {
         code: ERROR_CODES.ALREADY_MARKED_AS_UNREAD,
         status: 400,
       });
+    });
+  });
+
+  describe('createNotificationForAdmins', () => {
+    it('should handle no admins gracefully', async () => {
+      getAllAdmins.mockResolvedValue([]);
+
+      const spy = vi.spyOn(await import('#modules/notifications/index.js'), 'createNotification');
+
+      await createNotificationForAdmins('ORDER', 'New Order', 'Order 123 created');
+
+      expect(spy).not.toHaveBeenCalled();
+      spy.mockRestore();
     });
   });
 });
