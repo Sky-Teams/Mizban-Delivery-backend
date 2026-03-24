@@ -284,7 +284,7 @@ export const ERROR_MESSAGES = {
 
   [ERROR_CODES.END_TIME_MUST_BE_GREATER]: {
     en: 'End time must be greater than start time',
-    fa: 'زمان ختم وقت کاری باید بزرگتر از زمان شروع باشد',
+    fa: 'زمان ختم باید بزرگتر از زمان شروع باشد',
     ps: 'د پای وخت باید د پیل وخت څخه لوی وي',
   },
 
