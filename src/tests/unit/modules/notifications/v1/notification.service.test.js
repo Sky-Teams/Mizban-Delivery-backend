@@ -15,6 +15,7 @@ vi.mock('#modules/notifications/models/notification.model.js', () => ({
     create: vi.fn(),
     find: vi.fn(),
     findOne: vi.fn(),
+    insertMany: vi.fn(),
   },
 }));
 
@@ -234,15 +235,29 @@ describe('Notification Service', () => {
   });
 
   describe('createNotificationForAdmins', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
     it('should handle no admins gracefully', async () => {
       getAllAdmins.mockResolvedValue([]);
 
-      const spy = vi.spyOn(await import('#modules/notifications/index.js'), 'createNotification');
+      await createNotificationForAdmins('ORDER', 'New Order', 'Order 123 created');
+
+      expect(NotificationModel.insertMany).toHaveBeenCalledWith([]);
+    });
+
+    it('should insert notifications for all admins', async () => {
+      const admins = [{ _id: '1' }, { _id: '2' }];
+      getAllAdmins.mockResolvedValue(admins);
 
       await createNotificationForAdmins('ORDER', 'New Order', 'Order 123 created');
 
-      expect(spy).not.toHaveBeenCalled();
-      spy.mockRestore();
+      expect(NotificationModel.insertMany).toHaveBeenCalledTimes(1);
+      expect(NotificationModel.insertMany).toHaveBeenCalledWith([
+        { user: '1', type: 'ORDER', title: 'New Order', message: 'Order 123 created' },
+        { user: '2', type: 'ORDER', title: 'New Order', message: 'Order 123 created' },
+      ]);
     });
   });
 });
