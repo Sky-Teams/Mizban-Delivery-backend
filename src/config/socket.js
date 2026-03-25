@@ -1,7 +1,6 @@
 import { Server } from 'socket.io';
 import { corsOptions } from './cors.js';
 import { verifyJWT } from '#shared/utils/jwt.js';
-import { getAllAdmins } from '#modules/users/index.js';
 
 export class CustomSocket {
   static #io = null;
