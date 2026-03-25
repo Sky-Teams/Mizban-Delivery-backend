@@ -5,7 +5,6 @@ import { getAllAdmins } from '#modules/users/index.js';
 
 export class CustomSocket {
   static #io = null;
-  static #onlineUsers = new Map(); // key value => userId => new Set('socket1',`socket2`);
 
   // Initialize socket server
   static initialize(server) {
@@ -17,43 +16,36 @@ export class CustomSocket {
     this.#io.on('connection', (socket) => {
       console.log('Socket connected: ', socket.id);
 
-      // Authenticate user
       const token = socket.handshake.auth?.token;
       if (!token) {
         console.log('Guest connection, no token');
-        socket.userId = null; // Optional: treat as guest
-      } else {
-        const payload = verifyJWT(token);
-        if (!payload) {
-          console.log('Invalid token, disconnecting socket', socket.id);
-          socket.disconnect();
-          return;
-        }
-
-        socket.userId = payload.id;
-
-        console.log(socket.userId);
-
-        // Add socket.id to online users map
-        if (!this.#onlineUsers.has(socket.userId)) {
-          this.#onlineUsers.set(socket.userId, new Set());
-        }
-        this.#onlineUsers.get(socket.userId).add(socket.id);
+        socket.userId = null;
+        return;
       }
 
-      // Handle disconnect
+      const payload = verifyJWT(token);
+
+      if (!payload) {
+        console.log('Invalid token, disconnecting socket', socket.id);
+        socket.disconnect();
+        return;
+      }
+
+      socket.userId = payload.id;
+      socket.role = payload.role;
+
+      socket.join(socket.userId); // Add user to a personal room
+
+      // Join admin room if role is ADMIN
+      if (socket.role === 'admin') {
+        socket.join('admins'); // This room can be used to send notifications for all admins.
+        console.log(`Admin ${socket.userId} joined admins room`);
+      }
+
+      console.log(`User ${socket.userId} joined room`);
+
       socket.on('disconnect', () => {
-        console.log('Socket disconnected:', socket.id);
-
-        if (socket.userId && this.#onlineUsers.has(socket.userId)) {
-          const userSockets = this.#onlineUsers.get(socket.userId);
-          userSockets.delete(socket.id);
-
-          // Remove userId from map if no sockets left
-          if (userSockets.size === 0) {
-            this.#onlineUsers.delete(socket.userId);
-          }
-        }
+        console.log(`Socket disconnected: ${socket.id}`);
       });
     });
   }
@@ -64,28 +56,34 @@ export class CustomSocket {
     return this.#io;
   }
 
-  // Get online users map
-  static getOnlineUsers() {
-    return this.#onlineUsers;
+  // Return number of active users in system
+  static getOnlineUserCount() {
+    if (!this.#io) throw new Error('Socket is not initialized');
+
+    const io = this.#io;
+    const rooms = io.sockets.adapter.rooms;
+    const sids = io.sockets.adapter.sids;
+
+    const onlineUsers = new Set();
+
+    for (const [roomName] of rooms) {
+      if (sids.has(roomName)) continue; // Skip rooms that are socket IDs
+
+      if (roomName === 'admins') continue; // We don't count admin because they are already in personal room like normal users
+
+      onlineUsers.add(roomName);
+    }
+
+    return onlineUsers.size;
   }
 
   static emitToUser(userId, event, payload) {
     if (!this.#io) throw new Error('Socket is not initialized');
 
-    const sockets = this.#onlineUsers.get(userId);
-    if (!sockets || sockets.size === 0) return;
-
-    for (const socketId of sockets) {
-      this.#io.to(socketId).emit(event, payload);
-    }
+    this.getIO().to(userId).emit(event, payload);
   }
 
-  static async emitToAdmins(event, payload) {
-    const admins = await getAllAdmins();
-
-    for (const admin of admins) {
-      const adminId = admin._id.toString();
-      this.emitToUser(adminId, event, payload);
-    }
+  static emitToAdmins(event, payload) {
+    this.getIO().to('admins').emit(event, payload);
   }
 }
