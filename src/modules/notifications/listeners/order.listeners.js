@@ -8,8 +8,6 @@ export const registerOrderListeners = () => {
     const payload = NotificationPayloads.orderCreated(data.orderId);
     CustomSocket.emitToAdmins('notification', payload);
 
-    console.log('Count', CustomSocket.getOnlineUserCount());
-
     await createNotificationForAdmins(payload.type, payload.title, payload.message);
   });
 };
