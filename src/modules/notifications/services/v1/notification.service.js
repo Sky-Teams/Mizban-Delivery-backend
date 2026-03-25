@@ -64,7 +64,12 @@ export const markAsUnread = async (notificationId, userId) => {
 export const createNotificationForAdmins = async (type, title, message) => {
   const admins = await getAllAdmins();
 
-  for (const admin of admins) {
-    await createNotification(admin._id.toString(), type, title, message);
-  }
+  const notifications = admins.map((admin) => ({
+    user: admin._id.toString(),
+    type,
+    title,
+    message,
+  }));
+
+  await NotificationModel.insertMany(notifications);
 };
