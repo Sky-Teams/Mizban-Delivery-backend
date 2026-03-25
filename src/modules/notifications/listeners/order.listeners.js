@@ -6,9 +6,10 @@ import { createNotificationForAdmins } from '../services/v1/notification.service
 export const registerOrderListeners = () => {
   eventBus.on('order:created', async (data) => {
     const payload = NotificationPayloads.orderCreated(data.orderId);
+    CustomSocket.emitToAdmins('notification', payload);
+
+    console.log('Count', CustomSocket.getOnlineUserCount());
 
     await createNotificationForAdmins(payload.type, payload.title, payload.message);
-
-    await CustomSocket.emitToAdmins('notification', payload);
   });
 };
