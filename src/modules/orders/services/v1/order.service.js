@@ -50,7 +50,7 @@ export const addOrder = async (orderData) => {
   // emit events
   eventBus.emit('order:created', {
     orderId: newOrder._id,
-    userId: '69b1be9bf83d53a0cdc7266b',
+    userId: '69b1be9bf83d53a0cdc7266b', // We can use the sender Id in future to send notification, for now we send admin Id (hardcoded)
     newOrder,
   });
 
