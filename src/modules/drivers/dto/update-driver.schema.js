@@ -1,14 +1,34 @@
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
-import { ensureISODate } from '#shared/utils/ensureISODate.js';
 import { ensureNumber } from '#shared/utils/ensureNumber.js';
+import { isValidPhoneNumber } from 'libphonenumber-js';
+import mongoose from 'mongoose';
 import { z } from 'zod';
 
 const vehicleTypes = ['bike', 'car', 'van'];
 const driverStatuses = ['offline', 'idle', 'assigned', 'delivering'];
+const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 const updateDriverSchema = z.object({
   body: z
     .object({
+      userId: z.string().refine((val) => !val || mongoose.Types.ObjectId.isValid(val), {
+        message: ERROR_CODES.INVALID_USER_ID,
+      }),
+      name: z.string().trim().min(3, { message: ERROR_CODES.NAME_TOO_SHORT }).optional(),
+      email: z
+        .string()
+        .email({ message: ERROR_CODES.INVALID_EMAIL })
+        .trim()
+        .toLowerCase()
+        .optional(),
+
+      phone: z
+        .string()
+        .refine((val) => !val || isValidPhoneNumber(val, 'AF'), {
+          message: ERROR_CODES.INVALID_PHONE_NUMBER,
+        })
+        .optional(),
+
       vehicleType: z
         .enum(vehicleTypes, {
           errorMap: () => ({ message: ERROR_CODES.INVALID_VEHICLE_TYPE }),
@@ -20,6 +40,13 @@ const updateDriverSchema = z.object({
           errorMap: () => ({ message: ERROR_CODES.INVALID_STATUS }),
         })
         .optional(),
+
+      vehicleRegistrationNumber: z
+        .string()
+        .min(1, { message: ERROR_CODES.VEHICLE_REGISTRATION_REQUIRED })
+        .optional(),
+
+      address: z.string().optional().nullable(),
 
       capacity: z
         .object({
@@ -47,37 +74,26 @@ const updateDriverSchema = z.object({
         .partial()
         .optional(),
 
-      currentLocation: z
+      timeAvailability: z
         .object({
-          type: z.literal('Point').optional(),
-          coordinates: z
-            .preprocess(
-              (val) => {
-                if (!Array.isArray(val) || val.length !== 2) return val;
-                return val.map((v, i) =>
-                  ensureNumber(
-                    v,
-                    `currentLocation.coordinates[${i}]`,
-                    ERROR_CODES.INVALID_COORDINATES
-                  )
-                );
-              },
-              z.array(z.number()).length(2, { message: ERROR_CODES.INVALID_COORDINATES })
-            )
+          start: z
+            .string()
+            .regex(timeRegex, { message: ERROR_CODES.INVALID_TIME_FORMAT })
             .optional(),
+          end: z.string().regex(timeRegex, { message: ERROR_CODES.INVALID_TIME_FORMAT }).optional(),
         })
-        .partial()
+        .refine(
+          (data) => {
+            if (!data.start || !data.end) return true;
+            const [startH, startM] = data.start.split(':').map(Number);
+            const [endH, endM] = data.end.split(':').map(Number);
+            return startH * 60 + startM < endH * 60 + endM;
+          },
+          { message: ERROR_CODES.END_TIME_MUST_BE_GREATER, path: ['end'] }
+        )
         .optional(),
-
-      lastLocationAt: z.preprocess(
-        (val) =>
-          val
-            ? ensureISODate(val, ERROR_CODES.INVALID_ISO_DATE_FORMAT, 'lastLocationAt')
-            : undefined,
-        z.date().optional()
-      ),
     })
-    .partial(),
+    .partial(), // make all fields optional for update
 });
 
 export const updateDriverValidator = (req) => {
