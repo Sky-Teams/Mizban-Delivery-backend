@@ -42,9 +42,7 @@ app.use(loggerMiddleware);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/businesses', businessRoutes);
 app.use('/api/drivers', authorizeRole('admin'), driverRoutes);
-
 app.use('/api/orders', authorizeRole('admin'), orderRoutes);
-
 app.use('/api/admin/business-customers', authorizeRole('admin'), adminBusinessCustomerRoutes);
 app.use('/api/admin/businesses', authorizeRole('admin'), adminBusinessRoutes);
 //#endregion
