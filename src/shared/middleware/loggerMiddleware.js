@@ -8,12 +8,12 @@ export const loggerMiddleware = (req, res, next) => {
 
   res.on('finish', () => {
     const isAuditAction = !!auditMethods[req.method];
-    const userId = req.user?._id
+    const userId = req.user?._id;
     isSuccess = res.statusCode >= 200 && res.statusCode < 300;
-    
+
     const logData = {
       logId: randomUUID(),
-      userId: req.user?._id, 
+      userId: user,
       method: req.method,
       path: req.originalUrl,
       statusCode: res.statusCode,
