@@ -28,7 +28,7 @@ export const login = async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: { accessToken, id, email, role },
+    data: { token: accessToken, id, email, role },
   });
 };
 
@@ -45,6 +45,6 @@ export const refreshAccessToken = async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: { accessToken },
+    data: { token: accessToken },
   });
 };

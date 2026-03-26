@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
 export const REFRESH_TOKEN_EXPIRES_TIME = 7 * 24 * 60 * 60 * 1000;
@@ -27,4 +28,8 @@ export const generateRefreshToken = () => {
 
 export const hashToken = (token) => {
   return crypto.createHash('sha256').update(token).digest('hex');
+};
+
+export const hashPassword = async (password) => {
+  return await bcrypt.hash(password, 12);
 };

@@ -2,6 +2,7 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import { ensureNumber } from '#shared/utils/ensureNumber.js';
+import mongoose from 'mongoose';
 
 const businessType = ['restaurant', 'shop', 'pharmacy', 'warehouse', 'other'];
 
@@ -17,10 +18,10 @@ const createBusinessSchema = z.object({
       message: ERROR_CODES.INVALID_PHONE_NUMBER,
     }),
 
-    addressText: z.string().trim().min(3, { message: ERROR_CODES.LENGTH_IS_TOO_SHORT }),
+    addressText: z.string().trim(),
     location: z
       .object({
-        type: z.literal('Point', {message: ERROR_CODES.INVALID_LOCATION_TYPE}).optional(),
+        type: z.literal('Point', { message: ERROR_CODES.INVALID_LOCATION_TYPE }).optional(),
         coordinates: z.preprocess(
           (val) => {
             if (!Array.isArray(val) || val.length !== 2) return val;

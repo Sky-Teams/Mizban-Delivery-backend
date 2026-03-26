@@ -19,3 +19,6 @@ export const unauthorized = () =>
 
 export const noFieldsProvidedForUpdate = () =>
   new AppError('No fields provided for update', 400, ERROR_CODES.NO_FIELDS_PROVIDED);
+
+export const routeNotFound = () =>
+  new AppError('Route not found', 404, ERROR_CODES.ROUTE_NOT_FOUND);

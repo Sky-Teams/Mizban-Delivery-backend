@@ -3,15 +3,19 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
-import { businessRoutes } from '#modules/businesses/index.js';
+import { adminBusinessRoutes, businessRoutes } from '#modules/businesses/index.js';
 import { authRoutes, userRoutes } from '#modules/users/index.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import { driverRoutes } from '#modules/drivers/index.js';
 import { notificationRoutes } from '#modules/notifications/index.js';
+import { authorizeRole } from '#shared/middleware/authorizeRole.js';
+import { adminBusinessCustomerRoutes } from '#modules/businessCustomers/index.js';
+import { routeNotFound } from '#shared/errors/error.js';
+import { orderRoutes } from '#modules/orders/index.js';
 
 const app = express();
 
-//#region Normal Midlleware
+//#region Normal Middleware
 
 app.use(express.json());
 
@@ -34,16 +38,18 @@ app.use('/api/auth', authRoutes);
 app.use(authMiddleware);
 
 app.use('/api/user', userRoutes);
-app.use('/api/drivers', driverRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/businesses', businessRoutes);
-
+app.use('/api/drivers', authorizeRole('admin'), driverRoutes);
+app.use('/api/orders', authorizeRole('admin'), orderRoutes);
+app.use('/api/admin/business-customers', authorizeRole('admin'), adminBusinessCustomerRoutes);
+app.use('/api/admin/businesses', authorizeRole('admin'), adminBusinessRoutes);
 //#endregion
 
 //#region Not found (404) middleware
 
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+app.use((req, res, next) => {
+  next(routeNotFound());
 });
 
 //#endregion
