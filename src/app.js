@@ -11,6 +11,7 @@ import { notificationRoutes } from '#modules/notifications/index.js';
 import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { adminBusinessCustomerRoutes } from '#modules/businessCustomers/index.js';
 import { orderRoutes } from '#modules/orders/index.js';
+import { loggerMiddleware } from '#shared/middleware/loggerMiddleware.js';
 
 const app = express();
 
@@ -34,19 +35,17 @@ app.use('/api/auth', authRoutes);
 
 // Protected routes
 
-app.use('/api/notifications', authMiddleware, notificationRoutes);
-app.use('/api/businesses', authMiddleware, businessRoutes);
-app.use('/api/drivers', authMiddleware, authorizeRole('admin'), driverRoutes);
+app.use(authMiddleware);
+app.use(loggerMiddleware);
 
-app.use('/api/orders', authMiddleware, authorizeRole('admin'), orderRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/businesses', businessRoutes);
+app.use('/api/drivers', authorizeRole('admin'), driverRoutes);
 
-app.use(
-  '/api/admin/business-customers',
-  authMiddleware,
-  authorizeRole('admin'),
-  adminBusinessCustomerRoutes
-);
-app.use('/api/admin/businesses', authMiddleware, authorizeRole('admin'), adminBusinessRoutes);
+app.use('/api/orders', authorizeRole('admin'), orderRoutes);
+
+app.use('/api/admin/business-customers', authorizeRole('admin'), adminBusinessCustomerRoutes);
+app.use('/api/admin/businesses', authorizeRole('admin'), adminBusinessRoutes);
 //#endregion
 
 //#region Not found (404) middleware
