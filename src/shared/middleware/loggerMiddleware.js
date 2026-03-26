@@ -13,7 +13,7 @@ export const loggerMiddleware = (req, res, next) => {
 
     const logData = {
       logId: randomUUID(),
-      userId: user,
+      userId: userId,
       method: req.method,
       path: req.originalUrl,
       statusCode: res.statusCode,
