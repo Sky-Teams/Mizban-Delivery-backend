@@ -31,7 +31,7 @@ describe('login controller', () => {
     loginService.mockResolvedValue({
       id: 'u1',
       email: 'user@example.com',
-      role: 'customer',
+      role: 'driver',
       accessToken: 'access-token-123',
       refreshToken: 'refresh-token-123',
     });
@@ -61,7 +61,7 @@ describe('login controller', () => {
     const serviceResult = {
       id: 'u1',
       email: 'user@example.com',
-      role: 'customer',
+      role: 'driver',
       accessToken: 'access-token-123',
       refreshToken: 'refresh-token-123',
     };
@@ -82,7 +82,7 @@ describe('login controller', () => {
         accessToken: 'access-token-123',
         id: 'u1',
         email: 'user@example.com',
-        role: 'customer',
+        role: 'driver',
       },
     });
   });
