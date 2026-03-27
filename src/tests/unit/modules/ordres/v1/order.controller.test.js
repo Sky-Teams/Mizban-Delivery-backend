@@ -1,31 +1,31 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   assignDriver,
-  assignDriverToDeliveryRequest,
-  cancelDeliveryRequest,
+  assignDriverToOrderWithTransaction,
+  cancelOrderWithTransaction,
   cancelOrder,
-  createDelivery,
-  createDeliveryRequest,
-  deliverDeliveryRequest,
+  createOrder,
+  addOrder,
+  deliverOrderWithTransaction,
   deliverOrder,
-  pickupDeliveryRequest,
+  pickupOrderWithTransaction,
   pickupOrder,
-  updateDeliveryRequest,
-  updateDeliveryRequestInfo,
-} from '#modules/deliveryRequests/index.js';
+  updateOrder,
+  updateOrderInfo,
+} from '#modules/orders/index.js';
 import { notFound } from '#shared/errors/error.js';
 
 // Mock the service
-vi.mock('#modules/deliveryRequests/services/v1/deliveryRequest.service.js', () => ({
-  createDeliveryRequest: vi.fn(),
-  updateDeliveryRequestInfo: vi.fn(),
-  assignDriverToDeliveryRequest: vi.fn(),
-  pickupDeliveryRequest: vi.fn(),
-  deliverDeliveryRequest: vi.fn(),
-  cancelDeliveryRequest: vi.fn(),
+vi.mock('#modules/orders/services/v1/order.service.js', () => ({
+  addOrder: vi.fn(),
+  updateOrderInfo: vi.fn(),
+  assignDriverToOrderWithTransaction: vi.fn(),
+  pickupOrderWithTransaction: vi.fn(),
+  deliverOrderWithTransaction: vi.fn(),
+  cancelOrderWithTransaction: vi.fn(),
 }));
 
-describe('Controller Delivery - create delivery request', () => {
+describe('Controller Order - create order', () => {
   let req, res;
 
   beforeEach(() => {
@@ -58,10 +58,10 @@ describe('Controller Delivery - create delivery request', () => {
   it('should throw unauthorized error if user is missing', async () => {
     req.user = null;
 
-    await expect(createDelivery(req, res)).rejects.toThrow();
+    await expect(createOrder(req, res)).rejects.toThrow();
   });
 
-  it('should create delivery request and return 201 response', async () => {
+  it('should create order and return 201 response', async () => {
     const mockDeliveryRequest = {
       _id: '1',
       type: 'parcel',
@@ -78,11 +78,11 @@ describe('Controller Delivery - create delivery request', () => {
       updatedAt: new Date(),
     };
 
-    createDeliveryRequest.mockResolvedValue(mockDeliveryRequest);
+    addOrder.mockResolvedValue(mockDeliveryRequest);
 
-    await createDelivery(req, res);
+    await createOrder(req, res);
 
-    expect(createDeliveryRequest).toHaveBeenCalledWith(req.body);
+    expect(addOrder).toHaveBeenCalledWith(req.body);
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -103,11 +103,11 @@ describe('Controller Delivery - create delivery request', () => {
       updatedAt: new Date(),
     };
 
-    createDeliveryRequest.mockResolvedValue(mockDeliveryRequest);
+    addOrder.mockResolvedValue(mockDeliveryRequest);
 
-    await createDelivery(req, res);
+    await createOrder(req, res);
 
-    expect(createDeliveryRequest).toHaveBeenCalledWith(req.body);
+    expect(addOrder).toHaveBeenCalledWith(req.body);
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -141,11 +141,11 @@ describe('Controller Delivery - create delivery request', () => {
       updatedAt: new Date(),
     };
 
-    createDeliveryRequest.mockResolvedValue(mockDeliveryRequest);
+    addOrder.mockResolvedValue(mockDeliveryRequest);
 
-    await createDelivery(req, res);
+    await createOrder(req, res);
 
-    expect(createDeliveryRequest).toHaveBeenCalledWith(req.body);
+    expect(addOrder).toHaveBeenCalledWith(req.body);
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -161,20 +161,20 @@ describe('Controller Delivery - create delivery request', () => {
     req.body.driverId = '62f1a3b8c3a5f4e5a1a1d1c';
 
     const error = notFound('Driver');
-    createDeliveryRequest.mockRejectedValue(error);
+    addOrder.mockRejectedValue(error);
 
-    await expect(createDelivery(req, res)).rejects.toThrow('Driver not found');
+    await expect(createOrder(req, res)).rejects.toThrow('Driver not found');
   });
 
   it('should propagate error from service', async () => {
     const error = new Error('DB failed');
-    createDeliveryRequest.mockRejectedValue(error);
+    addOrder.mockRejectedValue(error);
 
-    await expect(createDelivery(req, res)).rejects.toThrow('DB failed');
+    await expect(createOrder(req, res)).rejects.toThrow('DB failed');
   });
 });
 
-describe('Controller Delivery - updateDeliveryRequest', () => {
+describe('Controller Order - updateOrder', () => {
   let req, res;
 
   beforeEach(() => {
@@ -195,16 +195,16 @@ describe('Controller Delivery - updateDeliveryRequest', () => {
   it('should throw unauthorized error if user is missing', async () => {
     req.user = null;
 
-    await expect(updateDeliveryRequest(req, res)).rejects.toThrow();
+    await expect(updateOrder(req, res)).rejects.toThrow();
   });
 
-  it('should call service and return 200 response with updated delivery request', async () => {
+  it('should call service and return 200 response with updated order', async () => {
     const mockUpdatedDelivery = { _id: 'delivery123', status: 'assigned' };
-    updateDeliveryRequestInfo.mockResolvedValue(mockUpdatedDelivery);
+    updateOrderInfo.mockResolvedValue(mockUpdatedDelivery);
 
-    await updateDeliveryRequest(req, res);
+    await updateOrder(req, res);
 
-    expect(updateDeliveryRequestInfo).toHaveBeenCalledWith(req.params.id, req.body);
+    expect(updateOrderInfo).toHaveBeenCalledWith(req.params.id, req.body);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -214,19 +214,19 @@ describe('Controller Delivery - updateDeliveryRequest', () => {
 
   it('should propagate error from service', async () => {
     const error = new Error('DB failed');
-    updateDeliveryRequestInfo.mockRejectedValue(error);
+    updateOrderInfo.mockRejectedValue(error);
 
-    await expect(updateDeliveryRequest(req, res)).rejects.toThrow('DB failed');
+    await expect(updateOrder(req, res)).rejects.toThrow('DB failed');
   });
 
-  it('should update delivery request with partial fields', async () => {
+  it('should update order with partial fields', async () => {
     req.body = { status: 'pickedUp' }; // partial update
     const mockUpdatedDelivery = { _id: 'delivery123', status: 'pickedUp' };
-    updateDeliveryRequestInfo.mockResolvedValue(mockUpdatedDelivery);
+    updateOrderInfo.mockResolvedValue(mockUpdatedDelivery);
 
-    await updateDeliveryRequest(req, res);
+    await updateOrder(req, res);
 
-    expect(updateDeliveryRequestInfo).toHaveBeenCalledWith(req.params.id, req.body);
+    expect(updateOrderInfo).toHaveBeenCalledWith(req.params.id, req.body);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -235,7 +235,7 @@ describe('Controller Delivery - updateDeliveryRequest', () => {
   });
 });
 
-describe('Controller Delivery - assignDriver', () => {
+describe('Controller Order - assignDriver', () => {
   let req, res;
 
   beforeEach(() => {
@@ -261,11 +261,14 @@ describe('Controller Delivery - assignDriver', () => {
 
   it('should assign driver and return 200 response', async () => {
     const mockDelivery = { _id: 'delivery123', driverId: 'driver456', status: 'assigned' };
-    assignDriverToDeliveryRequest.mockResolvedValue(mockDelivery);
+    assignDriverToOrderWithTransaction.mockResolvedValue(mockDelivery);
 
     await assignDriver(req, res);
 
-    expect(assignDriverToDeliveryRequest).toHaveBeenCalledWith(req.params.id, req.body.driverId);
+    expect(assignDriverToOrderWithTransaction).toHaveBeenCalledWith(
+      req.params.id,
+      req.body.driverId
+    );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -275,7 +278,7 @@ describe('Controller Delivery - assignDriver', () => {
 
   it('should propagate error from service', async () => {
     const error = new Error('Driver not idle');
-    assignDriverToDeliveryRequest.mockRejectedValue(error);
+    assignDriverToOrderWithTransaction.mockRejectedValue(error);
 
     await expect(assignDriver(req, res)).rejects.toThrow('Driver not idle');
   });
@@ -283,11 +286,11 @@ describe('Controller Delivery - assignDriver', () => {
   it('should assign driver with a different driverId', async () => {
     req.body.driverId = 'driver789';
     const mockDelivery = { _id: 'delivery123', driverId: 'driver789', status: 'assigned' };
-    assignDriverToDeliveryRequest.mockResolvedValue(mockDelivery);
+    assignDriverToOrderWithTransaction.mockResolvedValue(mockDelivery);
 
     await assignDriver(req, res);
 
-    expect(assignDriverToDeliveryRequest).toHaveBeenCalledWith(req.params.id, 'driver789');
+    expect(assignDriverToOrderWithTransaction).toHaveBeenCalledWith(req.params.id, 'driver789');
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -296,7 +299,7 @@ describe('Controller Delivery - assignDriver', () => {
   });
 });
 
-describe('Controller Delivery - pickupOrder', () => {
+describe('Controller Order - pickupOrder', () => {
   let req, res;
 
   beforeEach(() => {
@@ -325,11 +328,11 @@ describe('Controller Delivery - pickupOrder', () => {
       status: 'pickedUp',
       timeline: { pickedUpAt: new Date() },
     };
-    pickupDeliveryRequest.mockResolvedValue(mockDelivery);
+    pickupOrderWithTransaction.mockResolvedValue(mockDelivery);
 
     await pickupOrder(req, res);
 
-    expect(pickupDeliveryRequest).toHaveBeenCalledWith(req.params.id);
+    expect(pickupOrderWithTransaction).toHaveBeenCalledWith(req.params.id);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -339,7 +342,7 @@ describe('Controller Delivery - pickupOrder', () => {
 
   it('should propagate error from service', async () => {
     const error = new Error('Pickup not allowed');
-    pickupDeliveryRequest.mockRejectedValue(error);
+    pickupOrderWithTransaction.mockRejectedValue(error);
 
     await expect(pickupOrder(req, res)).rejects.toThrow('Pickup not allowed');
   });
@@ -347,7 +350,7 @@ describe('Controller Delivery - pickupOrder', () => {
   it('should ensure delivery status is updated to pickedUp', async () => {
     const now = new Date();
     const mockDelivery = { _id: 'delivery123', status: 'pickedUp', timeline: { pickedUpAt: now } };
-    pickupDeliveryRequest.mockResolvedValue(mockDelivery);
+    pickupOrderWithTransaction.mockResolvedValue(mockDelivery);
 
     await pickupOrder(req, res);
 
@@ -361,7 +364,7 @@ describe('Controller Delivery - pickupOrder', () => {
   });
 });
 
-describe('Controller Delivery - deliverOrder', () => {
+describe('Controller Order - deliverOrder', () => {
   let req, res;
 
   beforeEach(() => {
@@ -391,11 +394,11 @@ describe('Controller Delivery - deliverOrder', () => {
       paymentStatus: 'paid',
     };
 
-    deliverDeliveryRequest.mockResolvedValue(mockDelivery);
+    deliverOrderWithTransaction.mockResolvedValue(mockDelivery);
 
     await deliverOrder(req, res);
 
-    expect(deliverDeliveryRequest).toHaveBeenCalledWith(req.params.id);
+    expect(deliverOrderWithTransaction).toHaveBeenCalledWith(req.params.id);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -404,10 +407,10 @@ describe('Controller Delivery - deliverOrder', () => {
   });
 
   it('should propagate error from service', async () => {
-    const error = new Error('Delivery failed');
-    deliverDeliveryRequest.mockRejectedValue(error);
+    const error = new Error('Order failed');
+    deliverOrderWithTransaction.mockRejectedValue(error);
 
-    await expect(deliverOrder(req, res)).rejects.toThrow('Delivery failed');
+    await expect(deliverOrder(req, res)).rejects.toThrow('Order failed');
   });
 
   it('should return delivered status in response', async () => {
@@ -417,7 +420,7 @@ describe('Controller Delivery - deliverOrder', () => {
       timeline: { deliveredAt: new Date() },
     };
 
-    deliverDeliveryRequest.mockResolvedValue(mockDelivery);
+    deliverOrderWithTransaction.mockResolvedValue(mockDelivery);
 
     await deliverOrder(req, res);
 
@@ -430,7 +433,7 @@ describe('Controller Delivery - deliverOrder', () => {
   });
 });
 
-describe('Controller Delivery - cancelOrder', () => {
+describe('Controller Order - cancelOrder', () => {
   let req, res;
 
   beforeEach(() => {
@@ -461,11 +464,11 @@ describe('Controller Delivery - cancelOrder', () => {
       cancelReason: 'Customer requested cancellation',
     };
 
-    cancelDeliveryRequest.mockResolvedValue(mockDelivery);
+    cancelOrderWithTransaction.mockResolvedValue(mockDelivery);
 
     await cancelOrder(req, res);
 
-    expect(cancelDeliveryRequest).toHaveBeenCalledWith(req.params.id, req.body.cancelReason);
+    expect(cancelOrderWithTransaction).toHaveBeenCalledWith(req.params.id, req.body.cancelReason);
 
     expect(res.status).toHaveBeenCalledWith(200);
 
@@ -477,7 +480,7 @@ describe('Controller Delivery - cancelOrder', () => {
 
   it('should propagate error from service', async () => {
     const error = new Error('Cancel not allowed');
-    cancelDeliveryRequest.mockRejectedValue(error);
+    cancelOrderWithTransaction.mockRejectedValue(error);
 
     await expect(cancelOrder(req, res)).rejects.toThrow('Cancel not allowed');
   });
@@ -491,11 +494,11 @@ describe('Controller Delivery - cancelOrder', () => {
       cancelReason: null,
     };
 
-    cancelDeliveryRequest.mockResolvedValue(mockDelivery);
+    cancelOrderWithTransaction.mockResolvedValue(mockDelivery);
 
     await cancelOrder(req, res);
 
-    expect(cancelDeliveryRequest).toHaveBeenCalledWith(req.params.id, undefined);
+    expect(cancelOrderWithTransaction).toHaveBeenCalledWith(req.params.id, undefined);
 
     expect(res.json).toHaveBeenCalledWith({
       success: true,

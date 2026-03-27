@@ -10,7 +10,7 @@ export const assignDriverSchema = z.object({
   }),
 });
 
-export const cancelDeliverySchema = z.object({
+export const cancelOrderSchema = z.object({
   body: z.object({
     cancelReason: z
       .string()
@@ -24,6 +24,6 @@ export const assignDriverValidator = (req) => {
   return assignDriverSchema.safeParse({ body: req.body });
 };
 
-export const cancelDeliveryValidator = (req) => {
-  return cancelDeliverySchema.safeParse({ body: req.body });
+export const cancelOrderValidator = (req) => {
+  return cancelOrderSchema.safeParse({ body: req.body });
 };

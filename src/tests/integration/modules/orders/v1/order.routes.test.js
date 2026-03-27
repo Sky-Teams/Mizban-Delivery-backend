@@ -8,17 +8,17 @@ import {
   createFakeUserWithToken,
   createFakeDriver,
 } from '../../../../config/memoryDB.js';
-import { DeliveryRequestModel } from '#modules/deliveryRequests/models/deliveryRequest.model.js';
+import { OrderModel } from '#modules/orders/models/order.model.js';
 import { postWithAuth } from '#tests/utils/testHelpers.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import mongoose from 'mongoose';
 import { DriverModel } from '#modules/drivers/index.js';
 
-const baseURL = '/api/admin/delivery-request';
+const baseURL = '/api/orders';
 let token;
 let adminUserId;
 
-describe('Admin Delivery Request API v1 Integration', () => {
+describe('Order API v1 Integration', () => {
   beforeAll(async () => {
     await connectDB();
   });
@@ -34,25 +34,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
     token = result.token;
   });
 
-  describe('Admin Delivery Request API v1 Integration - create delivery request', () => {
-    let deliveryId;
-
-    const deliveryData = {
-      type: 'parcel',
-      serviceType: 'immediate',
-      sender: { name: 'Alice', phone: '0790909090' },
-      receiver: {
-        name: 'Bob',
-        phone: '0790909090',
-        address: 'Herat',
-      },
-      pickupLocation: { type: 'Point', coordinates: [62.2, 34.35] },
-      dropoffLocation: { type: 'Point', coordinates: [62.2, 34.35] },
-      paymentType: 'COD',
-      amountToCollect: 100,
-      deliveryPrice: { total: 20 },
-    };
-
+  describe('Order API v1 Integration - create order request', () => {
     beforeEach(async () => {
       await clearDB();
       const result = await createFakeUserWithToken('admin');
@@ -60,8 +42,8 @@ describe('Admin Delivery Request API v1 Integration', () => {
       token = result.token;
     });
 
-    it('should create a delivery request successfully', async () => {
-      const deliveryData = {
+    it('should create a order request successfully', async () => {
+      const orderData = {
         type: 'parcel',
         serviceType: 'immediate',
         sender: { name: 'Alice', phone: '0790909090' },
@@ -77,7 +59,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
         deliveryPrice: { total: 20 },
       };
 
-      const res = await postWithAuth(app, baseURL, deliveryData, token);
+      const res = await postWithAuth(app, baseURL, orderData, token);
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -86,14 +68,14 @@ describe('Admin Delivery Request API v1 Integration', () => {
       expect(res.body.data.finalPrice).toBe(120);
 
       // Verify in DB
-      const deliveryInDB = await DeliveryRequestModel.findById(res.body.data._id);
-      expect(deliveryInDB).not.toBeNull();
-      expect(deliveryInDB.sender.name).toBe('Alice');
-      expect(deliveryInDB.receiver.name).toBe('Bob');
+      const orderInDB = await OrderModel.findById(res.body.data._id);
+      expect(orderInDB).not.toBeNull();
+      expect(orderInDB.sender.name).toBe('Alice');
+      expect(orderInDB.receiver.name).toBe('Bob');
     });
 
     it('should fail if required field is missing', async () => {
-      const deliveryData = {
+      const orderData = {
         serviceType: 'immediate',
         sender: { name: 'Alice', phone: '0790909090' },
         receiver: {
@@ -108,7 +90,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
         amountToCollect: 100,
       };
 
-      const res = await postWithAuth(app, baseURL, deliveryData, token);
+      const res = await postWithAuth(app, baseURL, orderData, token);
 
       expect(res.status).toBe(400);
       expect(res.body.field).toBe('type');
@@ -120,7 +102,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
 
       const normalUser = await createFakeUserWithToken('customer');
 
-      const deliveryData = {
+      const orderData = {
         type: 'parcel',
         serviceType: 'express',
         sender: { name: 'Alice', phone: '123456' },
@@ -138,7 +120,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
       const res = await request(app)
         .post(baseURL)
         .set('Authorization', `Bearer ${normalUser.token}`)
-        .send(deliveryData);
+        .send(orderData);
 
       expect(res.status).toBe(403);
       expect(res.body.code).toBe(ERROR_CODES.FORBIDDEN);
@@ -146,7 +128,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
     });
 
     it('should fail if authorization header is missing', async () => {
-      const deliveryData = {
+      const orderData = {
         type: 'parcel',
         serviceType: 'express',
         sender: { name: 'Alice', phone: '123456' },
@@ -161,7 +143,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
         amountToCollect: 100,
       };
 
-      const res = await request(app).post(baseURL).send(deliveryData);
+      const res = await request(app).post(baseURL).send(orderData);
 
       expect(res.status).toBe(401);
       expect(res.body.message).toMatch(/unauthorized/i);
@@ -171,7 +153,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
       const driverUser = await createFakeDriver();
       const driverId = driverUser._id;
 
-      const deliveryData = {
+      const orderData = {
         type: 'parcel',
         serviceType: 'immediate',
         driverId,
@@ -187,14 +169,14 @@ describe('Admin Delivery Request API v1 Integration', () => {
         amountToCollect: 100,
       };
 
-      const res = await postWithAuth(app, baseURL, deliveryData, token);
+      const res = await postWithAuth(app, baseURL, orderData, token);
       expect(res.status).toBe(201);
       expect(res.body.data.status).toBe('assigned');
       expect(res.body.data.timeline.assignedAt).toBeDefined();
     });
 
     it('should throw notFound if driverId does not exist', async () => {
-      const deliveryData = {
+      const orderData = {
         type: 'parcel',
         serviceType: 'immediate',
         driverId: new mongoose.Types.ObjectId(),
@@ -210,14 +192,14 @@ describe('Admin Delivery Request API v1 Integration', () => {
         amountToCollect: 100,
       };
 
-      const res = await postWithAuth(app, baseURL, deliveryData, token);
+      const res = await postWithAuth(app, baseURL, orderData, token);
 
       expect(res.status).toBe(404);
       expect(res.body.message).toMatch(/Driver not found/i);
     });
 
     it('should throw invalidId if driverId is invalid', async () => {
-      const deliveryData = {
+      const orderData = {
         type: 'parcel',
         serviceType: 'immediate',
         driverId: 'mahdiHasanzadeh',
@@ -233,7 +215,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
         amountToCollect: 100,
       };
 
-      const res = await postWithAuth(app, baseURL, deliveryData, token);
+      const res = await postWithAuth(app, baseURL, orderData, token);
 
       expect(res.status).toBe(400);
       expect(res.body.code).toBe(ERROR_CODES.INVALID_DRIVER_ID);
@@ -241,7 +223,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
     });
 
     it('should calculate items total correctly', async () => {
-      const deliveryData = {
+      const orderData = {
         type: 'parcel',
         serviceType: 'immediate',
         sender: { name: 'Alice', phone: '0790909090' },
@@ -260,7 +242,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
         ],
       };
 
-      const res = await postWithAuth(app, baseURL, deliveryData, token);
+      const res = await postWithAuth(app, baseURL, orderData, token);
 
       expect(res.status).toBe(201);
       expect(res.body.data.items[0].total).toBe(20);
@@ -268,7 +250,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
     });
 
     it('should handle missing optional deliveryPrice', async () => {
-      const deliveryData = {
+      const orderData = {
         type: 'parcel',
         serviceType: 'immediate',
         sender: { name: 'Alice', phone: '0790909090' },
@@ -283,15 +265,15 @@ describe('Admin Delivery Request API v1 Integration', () => {
         amountToCollect: 50,
       };
 
-      const res = await postWithAuth(app, baseURL, deliveryData, token);
+      const res = await postWithAuth(app, baseURL, orderData, token);
 
       expect(res.status).toBe(201);
       expect(res.body.data.finalPrice).toBe(50);
       expect(res.body.data.status).toBe('created');
     });
 
-    it('should calculate total for each item in the delivery request', async () => {
-      const deliveryData = {
+    it('should calculate total for each item in the order request', async () => {
+      const orderData = {
         type: 'parcel',
         serviceType: 'immediate',
         sender: { name: 'Alice', phone: '0790909090' },
@@ -314,7 +296,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
       const res = await request(app)
         .post(baseURL)
         .set('Authorization', `Bearer ${token}`)
-        .send(deliveryData);
+        .send(orderData);
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -322,13 +304,13 @@ describe('Admin Delivery Request API v1 Integration', () => {
       expect(res.body.data.items[1].total).toBe(15); // 3 * 5
 
       // Verify in DB
-      const deliveryInDB = await DeliveryRequestModel.findById(res.body.data._id);
-      expect(deliveryInDB.items[0].total).toBe(20);
-      expect(deliveryInDB.items[1].total).toBe(15);
+      const orderInDB = await OrderModel.findById(res.body.data._id);
+      expect(orderInDB.items[0].total).toBe(20);
+      expect(orderInDB.items[1].total).toBe(15);
     });
   });
 
-  describe('Admin Delivery Request API v1 Integration - update delivery request', () => {
+  describe('Order API v1 Integration - update order request', () => {
     let deliveryId;
 
     beforeEach(async () => {
@@ -338,7 +320,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
       adminUserId = result.testUserId;
       token = result.token;
 
-      const delivery = await DeliveryRequestModel.create({
+      const order = await OrderModel.create({
         type: 'parcel',
         serviceType: 'immediate',
         sender: { name: 'Alice', phone: '0790909090' },
@@ -355,10 +337,10 @@ describe('Admin Delivery Request API v1 Integration', () => {
         status: 'created',
       });
 
-      deliveryId = delivery._id.toString();
+      deliveryId = order._id.toString();
     });
 
-    it('should update delivery request successfully', async () => {
+    it('should update order request successfully', async () => {
       const updateData = {
         amountToCollect: 200,
       };
@@ -372,11 +354,11 @@ describe('Admin Delivery Request API v1 Integration', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.amountToCollect).toBe(200);
 
-      const updatedDelivery = await DeliveryRequestModel.findById(deliveryId);
+      const updatedDelivery = await OrderModel.findById(deliveryId);
       expect(updatedDelivery.amountToCollect).toBe(200);
     });
 
-    it('should fail if delivery request does not exist', async () => {
+    it('should fail if order request does not exist', async () => {
       const fakeId = new mongoose.Types.ObjectId();
 
       const res = await request(app)
@@ -412,8 +394,8 @@ describe('Admin Delivery Request API v1 Integration', () => {
       expect(res.body.message).toMatch(/unauthorized/i);
     });
 
-    it('should fail if delivery is already delivered', async () => {
-      await DeliveryRequestModel.findByIdAndUpdate(deliveryId, {
+    it('should fail if order is already delivered', async () => {
+      await OrderModel.findByIdAndUpdate(deliveryId, {
         status: 'delivered',
       });
 
@@ -427,7 +409,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
     });
   });
 
-  describe('Admin Delivery Request API v1 Integration - assign driver', () => {
+  describe('Order API v1 Integration - assign driver', () => {
     let deliveryId;
     let driver;
 
@@ -436,7 +418,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
       const result = await createFakeUserWithToken('admin');
       adminUserId = result.testUserId;
       token = result.token;
-      const deliveryData = {
+      const orderData = {
         type: 'parcel',
         serviceType: 'express',
         sender: { name: 'Alice', phone: '123456' },
@@ -453,7 +435,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
 
       driver = await createFakeDriver();
 
-      const delivery = await DeliveryRequestModel.create({
+      const order = await OrderModel.create({
         type: 'parcel',
         serviceType: 'immediate',
         sender: { name: 'Alice', phone: '0790909090' },
@@ -470,7 +452,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
         status: 'created',
       });
 
-      deliveryId = delivery._id.toString();
+      deliveryId = order._id.toString();
     });
 
     it('should assign driver successfully', async () => {
@@ -487,8 +469,8 @@ describe('Admin Delivery Request API v1 Integration', () => {
       expect(res.body.data.status).toBe('assigned');
       expect(res.body.data.timeline.assignedAt).toBeDefined();
 
-      const deliveryInDB = await DeliveryRequestModel.findById(deliveryId);
-      expect(deliveryInDB.driverId.toString()).toBe(driver._id.toString());
+      const orderInDB = await OrderModel.findById(deliveryId);
+      expect(orderInDB.driverId.toString()).toBe(driver._id.toString());
     });
 
     it('should fail if driver does not exist', async () => {
@@ -501,7 +483,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
       expect(res.body.message).toMatch(/Driver not found/i);
     });
 
-    it('should fail if delivery request does not exist', async () => {
+    it('should fail if order request does not exist', async () => {
       const fakeId = new mongoose.Types.ObjectId();
 
       const res = await request(app)
@@ -547,7 +529,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
     });
   });
 
-  describe('Admin Delivery Request API v1 Integration - pickup order', () => {
+  describe('Order API v1 Integration - pickup order', () => {
     let deliveryId;
     let driver;
 
@@ -559,7 +541,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
 
       driver = await createFakeDriver();
 
-      const delivery = await DeliveryRequestModel.create({
+      const order = await OrderModel.create({
         type: 'parcel',
         serviceType: 'immediate',
         driverId: driver._id,
@@ -578,7 +560,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
         timeline: { assignedAt: new Date() },
       });
 
-      deliveryId = delivery._id.toString();
+      deliveryId = order._id.toString();
     });
 
     it('should pickup order successfully', async () => {
@@ -595,7 +577,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
       expect(res.body.data.timeline.pickedUpAt).toBeDefined();
     });
 
-    it('should fail if delivery does not exist', async () => {
+    it('should fail if order does not exist', async () => {
       const res = await request(app)
         .patch(`${baseURL}/${new mongoose.Types.ObjectId()}/pickup`)
         .set('Authorization', `Bearer ${token}`);
@@ -603,8 +585,8 @@ describe('Admin Delivery Request API v1 Integration', () => {
       expect(res.status).toBe(404);
     });
 
-    it('should fail if delivery status is not assigned', async () => {
-      await DeliveryRequestModel.findByIdAndUpdate(deliveryId, {
+    it('should fail if order status is not assigned', async () => {
+      await OrderModel.findByIdAndUpdate(deliveryId, {
         status: 'created',
       });
 
@@ -622,7 +604,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
     });
   });
 
-  describe('Admin Delivery Request API v1 Integration - deliver order', () => {
+  describe('Order API v1 Integration - deliver order', () => {
     let deliveryId;
     let driver;
 
@@ -631,7 +613,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
       const result = await createFakeUserWithToken('admin');
       token = result.token;
       driver = await createFakeDriver();
-      const delivery = await DeliveryRequestModel.create({
+      const order = await OrderModel.create({
         type: 'parcel',
         serviceType: 'immediate',
         driverId: driver._id,
@@ -650,7 +632,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
         timeline: { pickedUpAt: new Date() },
       });
 
-      deliveryId = delivery._id.toString();
+      deliveryId = order._id.toString();
     });
 
     it('should deliver order successfully', async () => {
@@ -666,7 +648,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
       expect(res.body.data.timeline.deliveredAt).toBeDefined();
     });
 
-    it('should fail if delivery does not exist', async () => {
+    it('should fail if order does not exist', async () => {
       const res = await request(app)
         .patch(`${baseURL}/${new mongoose.Types.ObjectId()}/deliver`)
         .set('Authorization', `Bearer ${token}`);
@@ -674,8 +656,8 @@ describe('Admin Delivery Request API v1 Integration', () => {
       expect(res.status).toBe(404);
     });
 
-    it('should fail if delivery status is not pickedUp', async () => {
-      await DeliveryRequestModel.findByIdAndUpdate(deliveryId, {
+    it('should fail if order status is not pickedUp', async () => {
+      await OrderModel.findByIdAndUpdate(deliveryId, {
         status: 'assigned',
       });
 
@@ -693,14 +675,14 @@ describe('Admin Delivery Request API v1 Integration', () => {
     });
   });
 
-  describe('Admin Delivery Request API v1 Integration - cancel order', () => {
+  describe('Order API v1 Integration - cancel order', () => {
     let deliveryId;
     beforeEach(async () => {
       await clearDB();
       const result = await createFakeUserWithToken('admin');
       token = result.token;
 
-      const delivery = await DeliveryRequestModel.create({
+      const order = await OrderModel.create({
         type: 'parcel',
         serviceType: 'immediate',
         sender: { name: 'Alice', phone: '0790909090' },
@@ -717,7 +699,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
         status: 'created',
       });
 
-      deliveryId = delivery._id.toString();
+      deliveryId = order._id.toString();
     });
 
     it('should throw notFound if driverId does not exist', async () => {});
@@ -740,7 +722,7 @@ describe('Admin Delivery Request API v1 Integration', () => {
         .send({});
     });
 
-    it('should fail if delivery does not exist', async () => {
+    it('should fail if order does not exist', async () => {
       const res = await request(app)
         .patch(`${baseURL}/${new mongoose.Types.ObjectId()}/cancel`)
         .set('Authorization', `Bearer ${token}`)
@@ -748,8 +730,8 @@ describe('Admin Delivery Request API v1 Integration', () => {
       expect(res.status).toBe(404);
     });
 
-    it('should fail if delivery already delivered', async () => {
-      await DeliveryRequestModel.findByIdAndUpdate(deliveryId, {
+    it('should fail if order already delivered', async () => {
+      await OrderModel.findByIdAndUpdate(deliveryId, {
         status: 'delivered',
       });
 
