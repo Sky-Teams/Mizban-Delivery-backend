@@ -87,12 +87,9 @@ export const modifyExistedBusiness = withTransaction(async (session, businessId,
     throw new AppError('No fields provided for update', 400, ERROR_CODES.NO_FIELDS_PROVIDED);
   }
 
-  const business = await BusinessModel.findById(businessId).session(session);
-  if (!business) throw notFound('Business');
-
   const updateUser = Object.keys(userUpdateFields).length
-    ? await UserModel.findByIdAndUpdate(
-        business.owner,
+    ? await UserModel.findOneAndUpdate(
+        { _id: businessData.userId },
         { $set: userUpdateFields },
         { runValidators: true, session, returnDocument: 'after' }
       )
@@ -109,14 +106,12 @@ export const modifyExistedBusiness = withTransaction(async (session, businessId,
   if (Object.keys(userUpdateFields).length && !updateUser) throw notFound('User');
   if (Object.keys(businessUpdateFields).length && !updateBusiness) throw notFound('Business');
 
-  const mergedBusiness = updateBusiness ?? business;
-
   return {
-    ...(mergedBusiness ? mergedBusiness.toObject() : {}),
+    ...(updateBusiness ? updateBusiness.toObject() : {}),
     ...(updateUser
       ? { username: updateUser.name, email: updateUser.email, userPhoneNumber: updateUser.phone }
       : {}),
-    owner: mergedBusiness?.owner,
+    owner: updateBusiness?.owner,
   };
 });
 
@@ -147,3 +142,41 @@ export const getBusinessById = async (businessId) => {
 };
 
 //endregion
+
+/* unnecessary codes
+
+//Partial Update (Business)
+export const updateBusinessService = async (userId, businessId, businessData) => {
+  const allowedFieldsToUpdate = [
+    'name',
+    'type',
+    'addressText',
+    'phone',
+    'prepTimeAvgMinutes',
+    'location',
+  ];
+
+  const updates = {};
+  for (const key of Object.keys(businessData)) {
+    if (allowedFieldsToUpdate.includes(key) && key !== 'location') {
+      updates[key] = businessData[key];
+    }
+  }
+
+  if (businessData.location?.coordinates !== undefined) {
+    updates['location.coordinates'] = businessData.location.coordinates;
+  }
+
+  if (Object.keys(updates).length === 0) throw noFieldsProvidedForUpdate();
+
+  const updateBusiness = await BusinessModel.findOneAndUpdate(
+    { _id: businessId, owner: userId },
+    { $set: updates },
+    { new: true, runValidators: true }
+  );
+
+  if (!updateBusiness) throw notFound('Business');
+
+  return updateBusiness;
+};
+*/
