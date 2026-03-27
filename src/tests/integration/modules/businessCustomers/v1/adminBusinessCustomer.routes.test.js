@@ -9,6 +9,8 @@ import {
 } from '../../../../config/memoryDB.js';
 import { businessCustomerModel } from '#modules/businessCustomers/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import mongoose from 'mongoose';
+import { getWithAuth } from '#tests/utils/testHelpers.js';
 import { BusinessModel } from '#modules/businesses/index.js';
 
 const baseURL = '/api/admin/business-customers';
@@ -141,6 +143,34 @@ describe('Admin BusinessCustomer API Integration', () => {
 
       expect(res.status).toBe(401);
       expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
+    });
+  });
+
+  describe('GET /api/admin/business-customers', () => {
+    beforeEach(async () => {
+      await businessCustomerModel.create({
+        _id: new mongoose.Types.ObjectId(),
+        business: new mongoose.Types.ObjectId(),
+        name: 'Test',
+        email: 'test@gmail.com',
+        phone: '0789123456',
+        addressText: 'Afghanistan, Herat',
+      });
+    });
+
+    it('should throw unauthorized error if user is missing', async () => {
+      const res = await getWithAuth(app, baseURL);
+
+      expect(res.status).toBe(401);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
+    });
+
+    it('should return business customers lists', async () => {
+      const res = await getWithAuth(app, baseURL, token);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(1);
     });
   });
 });
