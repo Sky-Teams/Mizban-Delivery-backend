@@ -27,6 +27,7 @@ vi.mock('#modules/users/models/user.model.js', () => ({
   UserModel: {
     create: vi.fn(),
     findByIdAndUpdate: vi.fn(),
+    findOneAndUpdate: vi.fn(),
   },
 }));
 

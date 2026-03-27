@@ -321,7 +321,9 @@ describe('Admin Business API Integration', async () => {
       expect(response.body.success).toBe(true);
       expect(Array.isArray(response.body.data)).toBe(true);
       expect(response.body.data.length).toBeGreaterThan(0);
-      expect(response.body.data[0]).toHaveProperty('name', 'Test Restaurant');
+      const names = response.body.data.map((b) => b.name);
+      expect(names).toContain('Test Restaurant');
+      expect(names).toContain('Test Shop');
       expect(response.body.data[0]).toHaveProperty('owner');
     });
 
