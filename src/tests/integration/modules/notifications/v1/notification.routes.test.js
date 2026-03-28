@@ -56,7 +56,7 @@ describe('Notifications API Integration', () => {
     beforeEach(async () => {
       const notif = await NotificationModel.create({
         user: testUserId,
-        type: 'system',
+        type: 'SYSTEM',
         title: 'Test Notification',
         isRead: false,
       });
@@ -113,7 +113,7 @@ describe('Notifications API Integration', () => {
     beforeEach(async () => {
       const notif = await NotificationModel.create({
         user: testUserId,
-        type: 'system',
+        type: 'SYSTEM',
         title: 'Test Notification',
         isRead: true,
       });
@@ -171,7 +171,7 @@ describe('Notifications API Integration', () => {
       notif = await NotificationModel.create({
         user: testUserId,
         title: 'Test Notification',
-        type: 'system',
+        type: 'SYSTEM',
         isRead: false,
       });
     });
@@ -199,6 +199,48 @@ describe('Notifications API Integration', () => {
       expect(res.status).toBe(401);
       expect(res.body.message).toBe('Unauthorized: Token missing');
       expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
+    });
+  });
+
+  describe('Notifications API Integration - Admin Notifications', () => {
+    let adminToken, adminId;
+
+    beforeEach(async () => {
+      await clearDB();
+
+      // Create two fake admin users
+      const admin = await createFakeUserWithToken('admin');
+      adminId = admin.testUserId;
+      adminToken = admin.token;
+    });
+
+    it('should create notifications for all admins', async () => {
+      const { createNotificationForAdmins } = await import('#modules/notifications/index.js');
+
+      // Call the service
+      await createNotificationForAdmins('ORDER', 'New Order', 'Order 123 created');
+
+      // Verify notifications in DB for both admins
+      const notifications = await NotificationModel.find({ user: adminId });
+
+      expect(notifications.length).toBe(1);
+      expect(notifications[0].type).toBe('ORDER');
+      expect(notifications[0].title).toBe('New Order');
+      expect(notifications[0].message).toBe('Order 123 created');
+    });
+
+    it('admins should retrieve their notifications via API', async () => {
+      const { createNotificationForAdmins } = await import('#modules/notifications/index.js');
+      await createNotificationForAdmins('ORDER', 'New Order', 'Order 123 created');
+
+      const res = await request(app)
+        .get('/api/notifications/')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(1);
+      expect(res.body.data[0].title).toBe('New Order');
     });
   });
 });

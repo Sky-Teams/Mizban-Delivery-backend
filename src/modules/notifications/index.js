@@ -5,4 +5,5 @@ export {
   getNotificationsByUserId,
   markAsRead,
   markAsUnread,
+  createNotificationForAdmins,
 } from './services/v1/notification.service.js';

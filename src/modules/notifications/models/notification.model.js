@@ -5,9 +5,9 @@ const NotificationSchema = new mongoose.Schema(
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     type: {
       type: String,
-      enum: ['system', 'payment', 'delivery_update'],
+      enum: ['SYSTEM', 'PAYMENT', 'ORDER'],
       required: true,
-      default: 'system',
+      default: 'SYSTEM',
     },
     title: { type: String, required: true, trim: true, minlength: 1, maxlength: 100 },
     message: { type: String, trim: true, maxlength: 500 },

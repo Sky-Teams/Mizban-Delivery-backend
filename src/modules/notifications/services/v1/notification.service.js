@@ -2,6 +2,7 @@ import { NotificationModel } from '../../models/notification.model.js';
 import { createNotificationSchema } from '../../dto/create-notification.schema.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import { getAllAdmins } from '#modules/users/index.js';
 
 /**
  * Create a new notification in the system.
@@ -58,4 +59,17 @@ export const markAsUnread = async (notificationId, userId) => {
   notification.isRead = false;
   await notification.save();
   return notification;
+};
+
+export const createNotificationForAdmins = async (type, title, message) => {
+  const admins = await getAllAdmins();
+
+  const notifications = admins.map((admin) => ({
+    user: admin._id.toString(),
+    type,
+    title,
+    message,
+  }));
+
+  await NotificationModel.insertMany(notifications);
 };
