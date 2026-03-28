@@ -152,3 +152,9 @@ export const refreshService = async ({ refreshToken, deviceId }) => {
     refreshToken: rotatedRefreshToken,
   };
 };
+
+export const getAllAdmins = async () => {
+  const admins = await UserModel.find({ role: 'admin' });
+
+  return admins;
+};

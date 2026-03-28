@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NotificationModel } from '#modules/notifications/index.js';
+import { NotificationModel, createNotificationForAdmins } from '#modules/notifications/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import {
   createNotification,
@@ -7,6 +7,7 @@ import {
   markAsRead,
   markAsUnread,
 } from '#modules/notifications/index.js';
+import { getAllAdmins } from '#modules/users/index.js';
 
 // Mock only DB layer
 vi.mock('#modules/notifications/models/notification.model.js', () => ({
@@ -14,7 +15,13 @@ vi.mock('#modules/notifications/models/notification.model.js', () => ({
     create: vi.fn(),
     find: vi.fn(),
     findOne: vi.fn(),
+    insertMany: vi.fn(),
   },
+}));
+
+// Mock getAllAdmins
+vi.mock('#modules/users/index.js', () => ({
+  getAllAdmins: vi.fn(),
 }));
 
 describe('Notification Service', () => {
@@ -25,7 +32,7 @@ describe('Notification Service', () => {
   describe('createNotification', () => {
     it('should create a notification successfully', async () => {
       const userId = '507f1f77bcf86cd799439011';
-      const type = 'system';
+      const type = 'SYSTEM';
       const title = 'Test Title';
       const message = 'Test Message';
 
@@ -224,6 +231,33 @@ describe('Notification Service', () => {
         code: ERROR_CODES.ALREADY_MARKED_AS_UNREAD,
         status: 400,
       });
+    });
+  });
+
+  describe('createNotificationForAdmins', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('should handle no admins gracefully', async () => {
+      getAllAdmins.mockResolvedValue([]);
+
+      await createNotificationForAdmins('ORDER', 'New Order', 'Order 123 created');
+
+      expect(NotificationModel.insertMany).toHaveBeenCalledWith([]);
+    });
+
+    it('should insert notifications for all admins', async () => {
+      const admins = [{ _id: '1' }, { _id: '2' }];
+      getAllAdmins.mockResolvedValue(admins);
+
+      await createNotificationForAdmins('ORDER', 'New Order', 'Order 123 created');
+
+      expect(NotificationModel.insertMany).toHaveBeenCalledTimes(1);
+      expect(NotificationModel.insertMany).toHaveBeenCalledWith([
+        { user: '1', type: 'ORDER', title: 'New Order', message: 'Order 123 created' },
+        { user: '2', type: 'ORDER', title: 'New Order', message: 'Order 123 created' },
+      ]);
     });
   });
 });
