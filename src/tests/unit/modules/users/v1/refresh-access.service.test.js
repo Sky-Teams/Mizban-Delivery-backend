@@ -129,7 +129,7 @@ describe('refreshService', () => {
     findById.mockResolvedValue({
       _id: 'u1',
       email: 'user@example.com',
-      role: 'customer',
+      role: 'driver',
       isActive: true,
     });
 

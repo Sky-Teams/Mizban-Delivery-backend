@@ -4,7 +4,7 @@ import cookieParser from 'cookie-parser';
 import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
 import { businessRoutes } from '#modules/businesses/index.js';
-import { authRoutes } from '#modules/users/index.js';
+import { authRoutes, userRoutes } from '#modules/users/index.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import { driverRoutes } from '#modules/drivers/index.js';
 import { notificationRoutes } from '#modules/notifications/index.js';
@@ -34,18 +34,14 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 
 // Protected routes
+app.use(authMiddleware);
 
-app.use('/api/notifications', authMiddleware, notificationRoutes);
-app.use('/api/businesses', authMiddleware, authorizeRole('admin'), businessRoutes);
-app.use('/api/drivers', authMiddleware, authorizeRole('admin'), driverRoutes);
-app.use('/api/orders', authMiddleware, authorizeRole('admin'), orderRoutes);
-
-app.use(
-  '/api/admin/business-customers',
-  authMiddleware,
-  authorizeRole('admin'),
-  adminBusinessCustomerRoutes
-);
+app.use('/api/user', userRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/businesses', authorizeRole('admin'), businessRoutes);
+app.use('/api/drivers', authorizeRole('admin'), driverRoutes);
+app.use('/api/orders', authorizeRole('admin'), orderRoutes);
+app.use('/api/admin/business-customers', authorizeRole('admin'), adminBusinessCustomerRoutes);
 //#endregion
 
 //#region Not found (404) middleware
