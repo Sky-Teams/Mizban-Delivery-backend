@@ -2,12 +2,13 @@ import pino from 'pino';
 import path from 'path';
 
 const logsDir = path.join(process.cwd(), 'logs');
+const transportPath= path.join(import.meta.dirname, 'levelFilterTransport.js')
 
 //create a transport
 const transports = pino.transport({
   targets: [
     {
-      target: './levelFilterTransport.js',
+      target: transportPath,
       options: {
         targetLevel: 'info',
         logType: 'ACCESS',
@@ -20,7 +21,7 @@ const transports = pino.transport({
       },
     },
     {
-      target: './levelFilterTransport.js',
+      target: transportPath,
       options: {
         targetLevel: 'error',
         logType: 'ERROR',
@@ -33,7 +34,7 @@ const transports = pino.transport({
       },
     },
     {
-      target: './levelFilterTransport.js',
+      target: transportPath,
       options: {
         targetLevel: 'fatal',
         logType: 'FATAL',
@@ -46,7 +47,7 @@ const transports = pino.transport({
       },
     },
     {
-      target: './levelFilterTransport.js',
+      target: transportPath,
       options: {
         targetLevel: 'info',
         logType: 'AUDIT',
