@@ -8,7 +8,7 @@ const UserSchema = new mongoose.Schema(
     phone: { type: String, trim: true },
     password: { type: String, required: true },
     googleId: { type: String, default: null },
-    role: { type: String, enum: ['customer', 'driver', 'business', 'admin'], default: 'customer' },
+    role: { type: String, enum: ['customer', 'driver', 'business', 'admin'], default: 'driver' },
     changedPasswordAt: { type: Date, default: null },
     isActive: { type: Boolean, default: true },
     passwordResetToken: { type: String, default: null },

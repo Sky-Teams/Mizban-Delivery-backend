@@ -29,6 +29,7 @@
     "#shared/*": "./src/shared/*",
     "#modules/*": "./src/modules/*",
     "#tests/*": "./src/tests/*",
+    "#config/*": "./src/config/*",
     "#root": "./*"
   },
   "keywords": [],
@@ -48,6 +49,7 @@
     "mongodb-memory-server": "^11.0.1",
     "mongoose": "^9.2.1",
     "nodemailer": "^8.0.2",
+    "socket.io": "^4.8.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {

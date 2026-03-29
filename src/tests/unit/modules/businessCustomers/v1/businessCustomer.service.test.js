@@ -2,8 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createNewBusinessCustomer,
   doesBusinessCustomerExist,
+  getAllBusinessCustomer,
   updateExistedBusinessCustomer,
-} from '#modules/businessCustomers/services/v1/businessCustomer.service.js';
+} from '#modules/businessCustomers/index.js';
 import { businessCustomerModel } from '#modules/businessCustomers/models/businessCustomer.model.js';
 import { BusinessModel } from '#modules/businesses/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
@@ -12,6 +13,8 @@ vi.mock('#modules/businessCustomers/models/businessCustomer.model.js', () => ({
   businessCustomerModel: {
     exists: vi.fn(),
     create: vi.fn(),
+    find: vi.fn(),
+    countDocuments: vi.fn(),
     findById: vi.fn(),
     findOneAndUpdate: vi.fn(),
   },
@@ -32,7 +35,11 @@ describe('BusinessCustomer Service', () => {
     it('returns true when customer exists for business and phone or email', async () => {
       businessCustomerModel.exists.mockResolvedValue(true);
 
-      const result = await doesBusinessCustomerExist('business1', '0797123456', 'mahdi@example.com');
+      const result = await doesBusinessCustomerExist(
+        'business1',
+        '0797123456',
+        'mahdi@example.com'
+      );
 
       expect(businessCustomerModel.exists).toHaveBeenCalledWith({
         business: 'business1',
@@ -44,7 +51,11 @@ describe('BusinessCustomer Service', () => {
     it('returns false when customer does not exist', async () => {
       businessCustomerModel.exists.mockResolvedValue(false);
 
-      const result = await doesBusinessCustomerExist('business1', '0797123456', 'mahdi@example.com');
+      const result = await doesBusinessCustomerExist(
+        'business1',
+        '0797123456',
+        'mahdi@example.com'
+      );
 
       expect(result).toBe(false);
     });
@@ -142,6 +153,51 @@ describe('BusinessCustomer Service', () => {
       ).rejects.toMatchObject({
         code: ERROR_CODES.NOT_FOUND,
         message: 'BusinessCustomer not found',
+      });
+    });
+  });
+
+  describe('getAllBusinessCustomer', () => {
+    it('should return business customers lists sorted by latest', async () => {
+      const mockBusinessCustomer = [{ _id: '3' }, { _id: '2' }, { _id: '1' }];
+      businessCustomerModel.countDocuments.mockResolvedValue(10);
+      businessCustomerModel.find.mockReturnValue({
+        sort: vi.fn().mockReturnThis(),
+        skip: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        lean: vi.fn().mockResolvedValue(mockBusinessCustomer),
+      });
+
+      const result = await getAllBusinessCustomer(2, 4);
+
+      expect(result).toEqual({
+        businessCustomers: mockBusinessCustomer,
+        totalBusinessCustomers: 10,
+        totalPage: 3,
+      });
+    });
+
+    it('should return business customers lists sorted by totalOrders ', async () => {
+      const mockBusinessCustomer = [
+        { _id: '4', totalOrders: 10 },
+        { _id: '2', totalOrders: 7 },
+        { _id: '3', totalOrders: 1 },
+        { _id: '1', totalOrders: 0 },
+      ];
+      businessCustomerModel.countDocuments.mockResolvedValue(14);
+      businessCustomerModel.find.mockReturnValue({
+        sort: vi.fn().mockReturnThis(),
+        skip: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        lean: vi.fn().mockResolvedValue(mockBusinessCustomer),
+      });
+
+      const result = await getAllBusinessCustomer(1, 5, { sort: 'top' });
+
+      expect(result).toEqual({
+        businessCustomers: mockBusinessCustomer,
+        totalBusinessCustomers: 14,
+        totalPage: 3,
       });
     });
   });

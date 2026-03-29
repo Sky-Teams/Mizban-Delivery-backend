@@ -2,7 +2,7 @@ import { z } from 'zod';
 import mongoose from 'mongoose';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
-const notificationTypes = ['system', 'payment', 'delivery_update'];
+const notificationTypes = ['SYSTEM', 'PAYMENT', 'ORDER'];
 
 export const createNotificationSchema = z.object({
   user: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
@@ -16,7 +16,7 @@ export const createNotificationSchema = z.object({
     .optional(),
   title: z
     .string({
-      required_error: ERROR_CODES.TITLE_REQUIRED,
+      message: ERROR_CODES.TITLE_REQUIRED,
     })
     .min(1, { message: ERROR_CODES.TITLE_REQUIRED })
     .max(100, { message: ERROR_CODES.TITLE_TOO_LONG }),

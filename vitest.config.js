@@ -6,6 +6,7 @@ export default defineConfig({
     alias: {
       '#root': path.resolve(__dirname),
       '#shared': path.resolve(__dirname, './src/shared'),
+      '#config': path.resolve(__dirname, './src/config'),
       '#modules': path.resolve(__dirname, './src/modules'),
       '#tests': path.resolve(__dirname, './src/tests'),
     },

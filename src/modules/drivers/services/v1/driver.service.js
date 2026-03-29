@@ -10,7 +10,7 @@ import { hashPassword } from '#shared/utils/jwt.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
 
-//#region Admin Services
+//#region Services
 
 /** Fetch all Drivers with pagination functionality */
 export const fetchDrivers = async (limit = 8, page = 1, searchQuery = {}) => {
@@ -39,6 +39,13 @@ export const fetchDriverByDriverId = async (driverId) => {
     })
     .lean();
   return drivers;
+};
+
+// Return only Driver status
+export const getDriverStatusByDriverId = async (driverId) => {
+  const driver = await DriverModel.findById(driverId).select('status');
+  if (!driver) throw notFound('Driver');
+  return driver;
 };
 
 /** Create a new driver in system through admin*/
@@ -148,6 +155,12 @@ export const addNewDriver = withTransaction(addDriver);
 //#endregion
 
 //#region User Services => For now we dont need these services, in future we can use them
+
+/** Check if the driver exist by driverId. Return true or false */
+export const doesDriverExistByDriverId = async (driverId) => {
+  const exist = await DriverModel.exists({ _id: driverId });
+  return !!exist;
+};
 
 /** Check if the driver exist by userId. Return true or false. */
 export const doesDriverExist = async (userId) => {

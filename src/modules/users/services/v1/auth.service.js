@@ -213,3 +213,9 @@ export const resetPasswordService = async ({ resetToken, newPassword, confirmPas
 
   await RefreshTokenModel.deleteMany({ user: user._id });
 };
+
+export const getAllAdmins = async () => {
+  const admins = await UserModel.find({ role: 'admin' });
+
+  return admins;
+};
