@@ -24,6 +24,8 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 
 //#endregion
+//Logger Middleware
+app.use(loggerMiddleware);
 
 //#region Route Middlewares
 
@@ -37,7 +39,6 @@ app.use('/api/auth', authRoutes);
 // Protected routes
 
 app.use(authMiddleware);
-app.use(loggerMiddleware);
 
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/businesses', businessRoutes);
