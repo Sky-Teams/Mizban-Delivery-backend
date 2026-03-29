@@ -65,18 +65,6 @@ const transports = pino.transport({
 export const logger = pino(
   {
     level: 'info',
-    redact: {
-      paths: [
-        '*.password',
-        '*.token',
-        '*.authorization',
-        '*.cookie',
-        '*.refreshToken',
-        '*.accessToken',
-      ], //We can add more sensitive fields here
-      placeholder: '[REDACTED]',
-      remove: false,
-    },
     timestamp: pino.stdTimeFunctions.isoTime,
   },
   transports
