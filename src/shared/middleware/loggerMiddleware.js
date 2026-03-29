@@ -1,22 +1,35 @@
+import { maskSensitiveFields } from '#shared/logger/helper.log.js';
 import { logger } from '#shared/logger/logger.js';
 import { randomUUID } from 'crypto';
 
 export const loggerMiddleware = (req, res, next) => {
   const auditMethods = { POST: 'Create', PUT: 'Update', DELETE: 'Delete' };
   const startDate = new Date();
-  let isSuccess;
+  const originalUrl = req.originalUrl;
+  const isAuthPath = originalUrl.includes('/api/auth');
+
+  const originalJson = res.json.bind(res);
+  res.locals.responseBody = undefined;
+
+  res.json = (body) => {
+    res.locals.responseBody = body && typeof body.toJSON === 'function' ? body.toJSON() : body;
+    return originalJson(body);
+  };
 
   res.on('finish', () => {
     const isAuditAction = !!auditMethods[req.method];
     const userId = req.user?._id;
-    isSuccess = res.statusCode >= 200 && res.statusCode < 300;
-
     const logData = {
       logId: randomUUID(),
-      userId: userId,
+      userId: req.user?._id ? userId : null,
       method: req.method,
-      path: req.originalUrl,
+      path: originalUrl,
+      request: maskSensitiveFields(req.body),
       statusCode: res.statusCode,
+      response:
+        res.locals.responseBody?.success === true
+          ? { success: true }
+          : maskSensitiveFields(res.locals.responseBody),
       duration: `${new Date() - startDate}ms`,
       clientIp:
         req.ip === '::1'
@@ -25,17 +38,17 @@ export const loggerMiddleware = (req, res, next) => {
       userAgent: req.headers['user-agent'],
     };
 
-    if (isAuditAction && userId) {
+    if (isAuditAction) {
+      const authAction = originalUrl.includes('login') ? 'Login' : 'Register';
+      const action = isAuthPath ? authAction : auditMethods[req.method];
       logger.info(
         {
           ...logData,
           logType: 'AUDIT',
           userRole: req.user?.role,
-          action: auditMethods[req.method],
-          payload: req.body,
-          success: isSuccess,
+          action: action,
         },
-        `Audit: ${auditMethods[req.method]} operation`
+        `Audit: ${action} operation`
       );
     } else {
       logger.info({ ...logData, logType: 'ACCESS' }, 'Request completed');
@@ -51,6 +64,8 @@ export const loggerMiddleware = (req, res, next) => {
         'System error detected'
       );
     }
+
+    //TODO: We can implement logger.fatal in future.
   });
 
   next();
