@@ -13,7 +13,7 @@ import mongoose from 'mongoose';
 import { getWithAuth } from '#tests/utils/testHelpers.js';
 import { BusinessModel } from '#modules/businesses/index.js';
 
-const baseURL = '/api/admin/business-customers';
+const baseURL = '/api/business-customers';
 
 let token;
 let testUserId;
@@ -46,7 +46,7 @@ describe('Admin BusinessCustomer API Integration', () => {
     });
   });
 
-  describe('POST /api/admin/business-customers', () => {
+  describe('POST /api/business-customers', () => {
     let validPayload;
 
     beforeEach(() => {
@@ -97,7 +97,7 @@ describe('Admin BusinessCustomer API Integration', () => {
     });
   });
 
-  describe('PATCH /api/admin/business-customers/:id', () => {
+  describe('PATCH /api/business-customers/:id', () => {
     it('updates business customer successfully for authenticated user', async () => {
       const seeded = await businessCustomerModel.create({
         business: business._id,
