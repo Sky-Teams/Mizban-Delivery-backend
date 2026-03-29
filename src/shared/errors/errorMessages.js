@@ -525,6 +525,11 @@ export const ERROR_MESSAGES = {
     fa: 'گزینه مرتب‌سازی نامعتبر است',
     ps: 'د ترتیب انتخاب ناسم دی',
   },
+  [ERROR_CODES.PASSWORD_NOT_MATCHING]: {
+    en: 'Passwords do not match',
+    fa: 'رمز عبور مطابقت ندارد',
+    ps: 'پټنومونه سره نه سمون خوري',
+  },
   [ERROR_CODES.INVALID_TOKEN]: {
     en: 'Invalid token',
     fa: 'توکن نا معتبر است',
