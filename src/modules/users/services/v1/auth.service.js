@@ -206,8 +206,7 @@ export const resetPasswordService = async ({ resetToken, newPassword, confirmPas
     password: newPasswordHashed,
     passwordResetToken: null,
     passwordResetExpires: null,
-    // Subtract 1s to avoid edge-cases where JWT `iat` equals this exact millisecond window
-    changedPasswordAt: new Date(Date.now() - 1000),
+    changedPasswordAt: new Date(Date.now()),
   });
 
   await user.save();
