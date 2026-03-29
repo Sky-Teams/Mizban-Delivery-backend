@@ -9,7 +9,7 @@ import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import { driverRoutes } from '#modules/drivers/index.js';
 import { notificationRoutes } from '#modules/notifications/index.js';
 import { authorizeRole } from '#shared/middleware/authorizeRole.js';
-import { adminBusinessCustomerRoutes } from '#modules/businessCustomers/index.js';
+import { businessCustomerRoutes } from '#modules/businessCustomers/index.js';
 import { routeNotFound } from '#shared/errors/error.js';
 import { orderRoutes } from '#modules/orders/index.js';
 
@@ -39,11 +39,12 @@ app.use(authMiddleware);
 
 app.use('/api/user', userRoutes);
 app.use('/api/notifications', notificationRoutes);
-app.use('/api/businesses', businessRoutes);
 app.use('/api/drivers', authorizeRole('admin'), driverRoutes);
 app.use('/api/orders', authorizeRole('admin'), orderRoutes);
-app.use('/api/admin/business-customers', authorizeRole('admin'), adminBusinessCustomerRoutes);
+app.use('/api/businesses', businessRoutes);
 app.use('/api/admin/businesses', authorizeRole('admin'), adminBusinessRoutes);
+app.use('/api/business-customers', authorizeRole('admin'), businessCustomerRoutes);
+
 //#endregion
 
 //#region Not found (404) middleware
