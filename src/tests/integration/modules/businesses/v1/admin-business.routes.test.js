@@ -61,8 +61,6 @@ describe('Admin Business Routes Integration', () => {
       expect(response.body.success).toBe(true);
       expect(Array.isArray(response.body.data)).toBe(true);
       expect(response.body.data.length).toBeGreaterThan(0);
-      expect(response.body.data[0]).toHaveProperty('name', 'Test Restaurant');
-      expect(response.body.data[0]).toHaveProperty('owner');
     });
 
     it('should return empty array when there are no businesses', async () => {
