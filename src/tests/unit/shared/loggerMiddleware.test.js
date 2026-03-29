@@ -15,7 +15,7 @@ describe('loggerMiddleware', () => {
     vi.clearAllMocks();
     req = {
       method: 'POST',
-      path: '/test-path',
+      originalUrl: '/test-path',
       headers: { 'user-agent': 'vitest' },
       body: { key: 'value' },
       user: { _id: '1', role: 'admin' },
@@ -23,6 +23,7 @@ describe('loggerMiddleware', () => {
     };
     res = {
       statusCode: 200,
+      json :  vi.fn().mockReturnThis(),
       locals: {},
       on: vi.fn((event, callback) => {
         if (event === 'finish') {
@@ -40,7 +41,7 @@ describe('loggerMiddleware', () => {
       expect.objectContaining({
         logType: 'AUDIT',
         action: 'Create',
-        payload: { key: 'value' },
+        request: { key: 'value' },
       }),
       expect.stringContaining('Audit:')
     );
