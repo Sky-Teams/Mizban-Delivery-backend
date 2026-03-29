@@ -28,7 +28,7 @@ describe('POST /api/auth/login Integration', () => {
       name: 'Test User',
       email: 'user@example.com',
       password: hashedPassword,
-      role: 'customer',
+      role: 'driver',
       isActive: true,
       ...overrides,
     });
@@ -91,7 +91,7 @@ describe('POST /api/auth/login Integration', () => {
     const user = await createUser({
       email: 'valid@example.com',
       password: '123456',
-      role: 'customer',
+      role: 'driver',
     });
 
     const res = await request(app).post(loginUrl).send({
@@ -104,7 +104,7 @@ describe('POST /api/auth/login Integration', () => {
     expect(res.body.data).toMatchObject({
       id: user._id.toString(),
       email: 'valid@example.com',
-      role: 'customer',
+      role: 'driver',
       token: expect.any(String),
     });
 

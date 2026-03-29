@@ -1,6 +1,7 @@
 import { getDriverStatusByDriverId } from '#modules/drivers/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, noFieldsProvidedForUpdate, notFound } from '#shared/errors/error.js';
+import { eventBus } from '#shared/event-bus/eventBus.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
 import { orderUpdateQuery } from '#shared/utils/queryBuilder.js';
@@ -39,12 +40,21 @@ export const addOrder = async (orderData) => {
   // We can add discount in future, because discount is not sent from frontend
   const finalPrice = amountToCollect + deliveryTotal;
 
-  return await OrderModel.create({
+  const newOrder = await OrderModel.create({
     ...orderData,
     finalPrice,
     status,
     timeline,
   });
+
+  // emit events
+  eventBus.emit('order:created', {
+    orderId: newOrder._id,
+    userId: '69b1be9bf83d53a0cdc7266b', // We can use the sender Id in future to send notification, for now we send admin Id (hardcoded)
+    newOrder,
+  });
+
+  return newOrder;
 };
 
 export const getOrderById = async (orderId) => {

@@ -4,7 +4,7 @@ import cookieParser from 'cookie-parser';
 import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
 import { adminBusinessRoutes, businessRoutes } from '#modules/businesses/index.js';
-import { authRoutes } from '#modules/users/index.js';
+import { authRoutes, userRoutes } from '#modules/users/index.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import { driverRoutes } from '#modules/drivers/index.js';
 import { notificationRoutes } from '#modules/notifications/index.js';
@@ -40,6 +40,7 @@ app.use('/api/auth', authRoutes);
 
 app.use(authMiddleware);
 
+app.use('/api/user', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/businesses', businessRoutes);
 app.use('/api/drivers', authorizeRole('admin'), driverRoutes);
