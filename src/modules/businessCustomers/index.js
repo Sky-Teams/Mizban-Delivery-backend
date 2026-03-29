@@ -1,4 +1,4 @@
-export { default as adminBusinessCustomerRoutes } from './routes/v1/adminBusinessCustomer.routes.js';
+export { default as businessCustomerRoutes } from './routes/v1/businessCustomer.routes.js';
 export { businessCustomerModel } from './models/businessCustomer.model.js';
 export {
   doesBusinessCustomerExist,
