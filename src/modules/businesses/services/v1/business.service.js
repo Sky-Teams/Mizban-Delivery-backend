@@ -6,7 +6,6 @@ import { hashPassword } from '#shared/utils/jwt.js';
 import { filterUserField } from '#shared/utils/queryBuilder.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
-//region admin
 //create new business by admin
 export const addNewBusiness = withTransaction(async (session, businessData) => {
   const {
@@ -141,9 +140,30 @@ export const getBusinessById = async (businessId) => {
   return business;
 };
 
-//endregion
-
 /* unnecessary codes
+
+export const createNewBusiness = async (userId, businessData) => {
+  const {
+    name,
+    type: businessType,
+    phone,
+    addressText,
+    prepTimeAvgMinutes,
+    location,
+  } = businessData;
+
+  const newBusiness = await BusinessModel.create({
+    name,
+    type: businessType,
+    phone,
+    addressText,
+    prepTimeAvgMinutes,
+    location,
+    owner: userId,
+  });
+
+  return newBusiness;
+};
 
 //Partial Update (Business)
 export const updateBusinessService = async (userId, businessId, businessData) => {
