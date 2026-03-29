@@ -88,3 +88,13 @@ export const ERROR_CODES = {
   INVALID_CANCEL_REASON: 'INVALID_CANCEL_REASON',
   INVALID_ITEM_NAME: 'INVALID_ITEM_NAME',
 };
+
+export const SENSITIVE_KEYS = [
+  'password',
+  'token',
+  'authorization',
+  'cookie',
+  'messages',
+  'refreshToken',
+  'accessToken',
+];

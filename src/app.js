@@ -12,6 +12,7 @@ import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { businessCustomerRoutes } from '#modules/businessCustomers/index.js';
 import { routeNotFound } from '#shared/errors/error.js';
 import { orderRoutes } from '#modules/orders/index.js';
+import { loggerMiddleware } from '#shared/middleware/loggerMiddleware.js';
 
 const app = express();
 
@@ -23,6 +24,8 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 
 //#endregion
+//Logger Middleware
+app.use(loggerMiddleware);
 
 //#region Route Middlewares
 
