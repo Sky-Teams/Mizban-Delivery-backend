@@ -24,6 +24,6 @@ router.post(
   validate(changePasswordValidator),
   asyncHandler(changePassword)
 );
-router.post('/logout', authMiddleware, asyncHandler(logout));
+router.post('/logout', asyncHandler(logout));
 
 export default router;
