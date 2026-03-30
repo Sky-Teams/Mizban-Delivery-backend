@@ -7,7 +7,7 @@ import {
   hashToken,
   REFRESH_TOKEN_EXPIRES_TIME,
 } from '#shared/utils/jwt.js';
-import { AppError, unauthorized } from '#shared/errors/error.js';
+import { AppError, notFound, unauthorized } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 //!  Helper Functions
@@ -88,6 +88,7 @@ const rotateRefreshToken = async (currentTokenId) => {
 
   return newRefreshToken;
 };
+// -----------
 
 //!  Services
 
@@ -157,4 +158,33 @@ export const getAllAdmins = async () => {
   const admins = await UserModel.find({ role: 'admin' });
 
   return admins;
+};
+
+export const changePasswordService = async (
+  userId,
+  { currentPassword, newPassword, confirmNewPassword }
+) => {
+  const user = await UserModel.findById(userId);
+  if (!user) throw notFound('User');
+
+  const psMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!psMatch) {
+    throw new AppError('Invalid current password', 401, ERROR_CODES.INVALID_CREDENTIAL);
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    throw new AppError('Passwords not matches', 400, ERROR_CODES.PASSWORDS_NOT_MATCHES);
+  }
+
+  user.password = await bcrypt.hash(newPassword, 12);
+  user.changedPasswordAt = new Date();
+  await user.save();
+
+  await RefreshTokenModel.deleteMany({ user: user._id });
+};
+
+export const logoutUser = async ({ refreshToken, deviceId }) => {
+  const hashedToken = hashToken(refreshToken);
+
+  await RefreshTokenModel.deleteOne({ token: hashedToken, deviceId });
 };
