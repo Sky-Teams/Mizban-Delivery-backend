@@ -535,4 +535,9 @@ export const ERROR_MESSAGES = {
     fa: 'توکن نا معتبر است',
     ps: 'توکن ناسم دی',
   },
+  [ERROR_CODES.INVALID_RESET_PASSWORD_TOKEN]: {
+    en: 'The password reset token is invalid',
+    fa: 'توکن بازیابی رمز عبور نامعتبر است',
+    ps: 'د پټنوم د بیا تنظیم ټوکن ناسم دی',
+  },
 };
