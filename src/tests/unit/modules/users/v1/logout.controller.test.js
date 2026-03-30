@@ -36,13 +36,13 @@ describe('Auth controller - logout', () => {
     req.cookies = { deviceId: 'd1' };
     await expect(logout(req, res)).rejects.toMatchObject({
       status: 401,
-      code: ERROR_CODES.INVALID_CREDENTIAL,
+      code: ERROR_CODES.LOGOUT_INVALID_SESSION,
     });
 
     req.cookies = { refreshToken: 'rt1' };
     await expect(logout(req, res)).rejects.toMatchObject({
       status: 401,
-      code: ERROR_CODES.INVALID_CREDENTIAL,
+      code: ERROR_CODES.LOGOUT_INVALID_SESSION,
     });
   });
 

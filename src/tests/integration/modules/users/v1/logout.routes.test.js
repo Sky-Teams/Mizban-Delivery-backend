@@ -1,8 +1,12 @@
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { ERROR_CODES } from '#shared/errors/customCodes.js';
-import { connectDB, disconnectDB, clearDB, createFakeUserWithToken } from '../../../../config/memoryDB.js';
+import {
+  connectDB,
+  disconnectDB,
+  clearDB,
+  createFakeUserWithToken,
+} from '../../../../config/memoryDB.js';
 import app from '../../../../../app.js';
 
 describe('POST /api/auth/logout Integration', () => {
