@@ -18,7 +18,7 @@ describe('Forgot/Reset Password Integration', () => {
   let app;
 
   beforeAll(async () => {
-    process.env.RESET_PASSWORD_URL_BASE = 'http://example.com/api/auth/reset-password';
+    process.env.FRONTEND_URL = 'http://example.com';
     app = (await import('../../../../../app.js')).default;
     await connectDB();
   }, 30000);
@@ -69,6 +69,7 @@ describe('Forgot/Reset Password Integration', () => {
         username: 'Test User',
         resetUrl: expect.any(String),
       });
+      expect(jobData.resetUrl).toContain('/reset-password/');
 
       const token = jobData.resetUrl.split('/').pop();
       expect(token).toMatch(/^[a-f0-9]{64}$/i);

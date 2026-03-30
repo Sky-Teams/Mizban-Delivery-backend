@@ -38,7 +38,8 @@ vi.mock('#modules/users/models/refreshToken.model.js', () => ({
 describe('Password Services (forgot/reset)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.RESET_PASSWORD_URL_BASE = 'http://example.com/api/auth/reset-password';
+    delete process.env.RESET_PASSWORD_URL_BASE;
+    process.env.FRONTEND_URL = 'http://example.com';
   });
 
   describe('forgotPasswordService', () => {
@@ -63,10 +64,33 @@ describe('Password Services (forgot/reset)', () => {
       expect(agenda.now).toHaveBeenCalledWith('send-reset-password-email', {
         email: fakeUser.email,
         username: fakeUser.name,
-        resetUrl: expect.stringContaining('/reset-token'),
+        resetUrl: expect.stringContaining('/reset-password/reset-token'),
       });
 
-      expect(resetUrl).toBe('http://example.com/api/auth/reset-password/reset-token');
+      expect(resetUrl).toBe('http://example.com/reset-password/reset-token');
+    });
+
+    it('should use legacy RESET_PASSWORD_URL_BASE when provided', async () => {
+      process.env.RESET_PASSWORD_URL_BASE = 'http://legacy.example.com/api/auth/reset-password/';
+
+      const fakeUser = {
+        _id: 'user-id',
+        name: 'Test User',
+        email: 'user@example.com',
+        createPasswordResetToken: vi.fn(() => 'reset-token'),
+        save: vi.fn().mockResolvedValue(true),
+      };
+
+      UserModel.findOne.mockResolvedValue(fakeUser);
+      agenda.now.mockResolvedValue(true);
+
+      const { resetUrl } = await forgotPasswordService({ email: fakeUser.email });
+
+      expect(resetUrl).toBe('http://legacy.example.com/api/auth/reset-password/reset-token');
+      expect(agenda.now).toHaveBeenCalledWith(
+        'send-reset-password-email',
+        expect.objectContaining({ resetUrl })
+      );
     });
 
     it('should throw INVALID_CREDENTIAL when email does not exist', async () => {
