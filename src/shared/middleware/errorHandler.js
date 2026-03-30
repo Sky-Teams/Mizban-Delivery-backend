@@ -6,6 +6,12 @@ const VALIDATION_ERROR = 'ValidationError'; // Error throw by the mongodb
 export const errorHandler = (err, req, res, next) => {
   console.warn(err);
 
+  res.locals.errorData = {
+    code: ERROR_CODES.SERVER_ERROR,
+    message: err.message,
+    stack: err.stack ? err.stack.split('\n').slice(0, 4).join('\n') : undefined,
+  };
+
   if (err.isOperational) {
     const { messages } = buildErrorMessages(err.code);
 
