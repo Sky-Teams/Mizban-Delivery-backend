@@ -73,13 +73,11 @@ export const changePassword = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-  if (!req.user) throw unauthorized();
-
-  const refreshToken = req.cookies.refreshToken;
-  const deviceId = req.cookies.deviceId;
+  const refreshToken = req.cookies?.refreshToken;
+  const deviceId = req.cookies?.deviceId;
 
   if (!refreshToken || !deviceId)
-    throw new AppError('Invalid credentials', 401, ERROR_CODES.INVALID_COORDINATES);
+    throw new AppError('Invalid session data for logout', 401, ERROR_CODES.LOGOUT_INVALID_SESSION);
 
   await logoutUser({ refreshToken, deviceId });
 
