@@ -3,7 +3,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
-import { adminBusinessRoutes, businessRoutes } from '#modules/businesses/index.js';
+import { businessRoutes } from '#modules/businesses/index.js';
 import { authRoutes, userRoutes } from '#modules/users/index.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import { driverRoutes } from '#modules/drivers/index.js';
@@ -34,15 +34,13 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 
 // Protected routes
-
 app.use(authMiddleware);
 
 app.use('/api/user', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/drivers', authorizeRole('admin'), driverRoutes);
 app.use('/api/orders', authorizeRole('admin'), orderRoutes);
-app.use('/api/businesses', businessRoutes);
-app.use('/api/admin/businesses', authorizeRole('admin'), adminBusinessRoutes);
+app.use('/api/businesses', authorizeRole('admin'), businessRoutes);
 app.use('/api/business-customers', authorizeRole('admin'), businessCustomerRoutes);
 
 //#endregion
