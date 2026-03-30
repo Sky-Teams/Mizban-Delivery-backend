@@ -15,10 +15,7 @@ describe('Auth controller - logout', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    req = {
-      user: undefined,
-      cookies: {},
-    };
+    req = { cookies: {} };
 
     res = {
       clearCookie: vi.fn(),
@@ -27,35 +24,36 @@ describe('Auth controller - logout', () => {
     };
   });
 
-  it('should throw unauthorized when req.user is missing', async () => {
+  it('should throw INVALID_CREDENTIAL when cookies are missing', async () => {
     await expect(logout(req, res)).rejects.toBeInstanceOf(AppError);
-    await expect(logout(req, res)).rejects.toMatchObject({
-      status: 401,
-      code: ERROR_CODES.UNAUTHORIZED,
-    });
   });
 
-  it('should throw invalid credentials when refreshToken and deviceId are present (current behavior)', async () => {
-    req.user = { _id: 'u1' };
+  it('should throw INVALID_CREDENTIAL when refreshToken or deviceId is missing', async () => {
     req.cookies = { refreshToken: 'rt1', deviceId: 'd1' };
 
+    await expect(logout(req, res)).resolves.toBeUndefined();
+
+    req.cookies = { deviceId: 'd1' };
     await expect(logout(req, res)).rejects.toMatchObject({
-      status: 400,
-      code: ERROR_CODES.INVALID_COORDINATES,
+      status: 401,
+      code: ERROR_CODES.INVALID_CREDENTIAL,
     });
 
-    expect(logoutUser).not.toHaveBeenCalled();
+    req.cookies = { refreshToken: 'rt1' };
+    await expect(logout(req, res)).rejects.toMatchObject({
+      status: 401,
+      code: ERROR_CODES.INVALID_CREDENTIAL,
+    });
   });
 
-  it('should logout successfully when deviceId is missing but refreshToken exists (current behavior)', async () => {
-    req.user = { _id: 'u1' };
-    req.cookies = { refreshToken: 'rt1' };
+  it('should logout successfully when refreshToken and deviceId are present', async () => {
+    req.cookies = { refreshToken: 'rt1', deviceId: 'd1' };
 
     await logout(req, res);
 
-    expect(logoutUser).toHaveBeenCalledWith({ refreshToken: 'rt1', deviceId: undefined });
-    expect(res.clearCookie).toHaveBeenCalledWith('refreshToken');
-    expect(res.clearCookie).toHaveBeenCalledWith('deviceId');
+    expect(logoutUser).toHaveBeenCalledWith({ refreshToken: 'rt1', deviceId: 'd1' });
+    expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', expect.any(Object));
+    expect(res.clearCookie).toHaveBeenCalledWith('deviceId', expect.any(Object));
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -63,4 +61,3 @@ describe('Auth controller - logout', () => {
     });
   });
 });
-

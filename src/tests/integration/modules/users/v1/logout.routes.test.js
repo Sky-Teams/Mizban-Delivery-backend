@@ -20,7 +20,7 @@ describe('POST /api/auth/logout Integration', () => {
     await clearDB();
   });
 
-  it('should return 401 because route does not set req.user', async () => {
+  it('should logout successfully with refreshToken and deviceId cookies', async () => {
     const secret = process.env.JWT_SECRET || 'mizban-delivery-system-key';
     process.env.JWT_SECRET = secret;
 
@@ -32,8 +32,7 @@ describe('POST /api/auth/logout Integration', () => {
       .set('Authorization', `Bearer ${token}`)
       .set('Cookie', ['refreshToken=rt1', 'deviceId=d1']);
 
-    expect(res.status).toBe(401);
-    expect(res.body.code).toBe(ERROR_CODES.UNAUTHORIZED);
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
   });
 });
-
