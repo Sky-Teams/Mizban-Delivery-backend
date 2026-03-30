@@ -531,4 +531,9 @@ export const ERROR_MESSAGES = {
     fa: 'گزینه مرتب‌سازی نامعتبر است',
     ps: 'د ترتیب انتخاب ناسم دی',
   },
+  [ERROR_CODES.LOGOUT_INVALID_SESSION]: {
+    en: 'Refresh token or device ID is invalid for logout',
+    fa: 'توکن رفرش یا شناسه دستگاه برای خروج نامعتبر است',
+    ps: 'د وتلو لپاره د ریفریش ټوکن یا د وسیلې پېژند ناسم دی',
+  },
 };
