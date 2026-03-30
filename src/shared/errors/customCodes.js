@@ -91,3 +91,13 @@ export const ERROR_CODES = {
   INVALID_ITEM_NAME: 'INVALID_ITEM_NAME',
   INVALID_RESET_PASSWORD_TOKEN: 'INVALID_RESET_PASSWORD_TOKEN',
 };
+
+export const SENSITIVE_KEYS = [
+  'password',
+  'token',
+  'authorization',
+  'cookie',
+  'messages',
+  'refreshToken',
+  'accessToken',
+];
