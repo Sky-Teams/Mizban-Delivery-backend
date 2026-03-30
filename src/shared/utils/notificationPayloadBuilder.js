@@ -11,4 +11,15 @@ export const NotificationPayloads = {
     title: 'Order Assigned',
     message: `Order ${orderId} has been assigned`,
   }),
+
+  orderOffered: () => ({
+    type: 'OFFER',
+    title: 'New Offer',
+    message: 'An offer is ready to pickup',
+  }),
+  noDriverFound: (orderId) => ({
+    type: 'NO-DRIVER',
+    title: 'No Driver Found',
+    message: `No Driver found for order ${orderId}`,
+  }),
 };
