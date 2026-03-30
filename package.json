@@ -44,6 +44,9 @@
     "libphonenumber-js": "^1.12.37",
     "mongodb-memory-server": "^11.0.1",
     "mongoose": "^9.2.1",
+    "pino": "^10.3.1",
+    "pino-abstract-transport": "^3.0.0",
+    "pino-roll": "^4.0.0",
     "socket.io": "^4.8.3",
     "zod": "^4.3.6"
   },

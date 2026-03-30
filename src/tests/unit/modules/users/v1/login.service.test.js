@@ -67,7 +67,7 @@ describe('loginService', () => {
       _id: 'u1',
       email: 'x@test.com',
       password: 'hashed',
-      role: 'customer',
+      role: 'driver',
       isActive: true,
     });
 
@@ -94,7 +94,7 @@ describe('loginService', () => {
       _id: 'u1',
       email: 'x@test.com',
       password: 'hashed',
-      role: 'customer',
+      role: 'driver',
       isActive: false,
     });
 
@@ -115,7 +115,7 @@ describe('loginService', () => {
       _id: 'u1',
       email: 'x@test.com',
       password: 'hashed',
-      role: 'customer',
+      role: 'driver',
       isActive: true,
     };
 
@@ -149,7 +149,7 @@ describe('loginService', () => {
     expect(result).toEqual({
       id: 'u1',
       email: 'x@test.com',
-      role: 'customer',
+      role: 'driver',
       accessToken: 'access-token-123',
       refreshToken: 'refresh-token-123',
     });
