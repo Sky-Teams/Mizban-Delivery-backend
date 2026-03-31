@@ -91,19 +91,6 @@ const rotateRefreshToken = async (currentTokenId) => {
 };
 
 // Forgot password helpers
-const normalizeBaseUrl = (url) => (url ? url.replace(/\/+$/, '') : url);
-
-const buildResetPasswordLink = (resetToken) => {
-  // Legacy: previously this was expected to be a full "reset password" endpoint base.
-  // Keep support to avoid breaking existing deployments.
-  const legacyBaseUrl = process.env.RESET_PASSWORD_URL_BASE;
-  if (legacyBaseUrl) return `${normalizeBaseUrl(legacyBaseUrl)}/${resetToken}`;
-
-  // Recommended: use the frontend base URL, then append the reset-password page path + token.
-  const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  return `${normalizeBaseUrl(frontendBaseUrl)}/reset-password/${resetToken}`;
-};
-
 const findUserByResetToken = async (resetToken) => {
   const user = await UserModel.findOne({
     passwordResetToken: hashToken(resetToken),
@@ -189,7 +176,7 @@ export const forgotPasswordService = async ({ email }) => {
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
 
-  const resetUrl = buildResetPasswordLink(resetToken);
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
   await agenda.now('send-reset-password-email', {
     email: user.email,
