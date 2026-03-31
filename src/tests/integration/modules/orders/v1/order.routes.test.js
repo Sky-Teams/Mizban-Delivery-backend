@@ -815,7 +815,6 @@ describe('Order API v1 Integration', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.length).toBe(1);
       expect(res.body.data._id).toBe(orderId);
     });
   });
