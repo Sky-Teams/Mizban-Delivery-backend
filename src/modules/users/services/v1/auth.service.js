@@ -9,7 +9,7 @@ import {
 } from '#shared/utils/jwt.js';
 import { AppError, unauthorized } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
-import { agenda } from '../../../../config/agenda.js';
+import { agenda } from '#root/src/config/agenda.js';
 
 //!  Helper Functions
 

@@ -3,6 +3,12 @@ import bcrypt from 'bcryptjs';
 import { registerUser, doesUserExist } from '#modules/users/index.js';
 import { UserModel } from '#modules/users/index.js';
 
+vi.mock('#root/src/config/agenda.js', () => ({
+  agenda: {
+    now: vi.fn(),
+  },
+}));
+
 vi.mock('bcryptjs', () => ({
   default: {
     hash: vi.fn(),
@@ -22,12 +28,10 @@ describe('Auth Service ', () => {
     phone: '1233456576',
     password: 'password123',
   };
-  const fakeUser = {
-    _id: '12',
-    email: userData.email,
-  };
+  const fakeUser = { _id: '12', email: userData.email, name: userData.name };
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.FRONTEND_URL = 'http://example.com';
   });
 
   describe('doesUserExist', () => {
@@ -50,7 +54,11 @@ describe('Auth Service ', () => {
     it('bcrypt.hash is called with the correct password', async () => {
       bcrypt.hash.mockResolvedValue('hash_password');
 
-      UserModel.create.mockResolvedValue({ _id: fakeUser._id, email: fakeUser.email });
+      UserModel.create.mockResolvedValue({
+        ...fakeUser,
+        createToken: vi.fn(() => 'verify-token'),
+        save: vi.fn().mockResolvedValue(true),
+      });
       await registerUser(userData);
 
       expect(bcrypt.hash).toHaveBeenCalledWith('password123', 12);
@@ -73,7 +81,11 @@ describe('Auth Service ', () => {
     it('should create a new user with hashed password', async () => {
       bcrypt.hash.mockResolvedValue('hashedPassword');
 
-      UserModel.create.mockResolvedValue(fakeUser);
+      UserModel.create.mockResolvedValue({
+        ...fakeUser,
+        createToken: vi.fn(() => 'verify-token'),
+        save: vi.fn().mockResolvedValue(true),
+      });
 
       const result = await registerUser(userData);
 
