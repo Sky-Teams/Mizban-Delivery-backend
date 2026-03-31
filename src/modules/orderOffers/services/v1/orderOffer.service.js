@@ -10,18 +10,23 @@ import { createOderOfferSchema } from '../../dto/create-order-offer.schema.js';
     @returns {Object}  orderOffer object
  */
 export const createOrderOffer = async (orderId, driverId) => {
-  const orderOffer = { order: orderId, driver: driverId };
-  createOderOfferSchema.parse(orderOffer);
+  try {
+    const orderOffer = { order: orderId, driver: driverId };
+    createOderOfferSchema.parse(orderOffer);
 
-  const orderOfferObject = {
-    order: orderId,
-    driver: driverId,
-    offeredAt: Date.now(), //TODO: Check the UTC format
-  };
+    const orderOfferObject = {
+      order: orderId,
+      driver: driverId,
+      offeredAt: Date.now(), //TODO: Check the UTC format
+    };
 
-  const newOrderOffer = await OrderOfferModel.create(orderOfferObject);
+    const newOrderOffer = await OrderOfferModel.create(orderOfferObject);
+    console.log('After creating');
 
-  return newOrderOffer;
+    return newOrderOffer;
+  } catch (error) {
+    console.log('Error creating orderOffer. ', error);
+  }
 };
 
 // export const updateOrderOffer = async(orderId)
