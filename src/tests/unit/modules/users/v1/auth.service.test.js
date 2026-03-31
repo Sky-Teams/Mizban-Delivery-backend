@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, expectTypeOf } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import bcrypt from 'bcryptjs';
 import {
   registerUser,
