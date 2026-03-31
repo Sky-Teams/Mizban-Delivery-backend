@@ -4,8 +4,14 @@ import { connectDB } from './config/db.js';
 import http from 'http';
 import { CustomSocket } from './config/socket.js';
 import { registerNotificationListeners } from '#modules/notifications/listeners/index.js';
+import { defineOfferJobs } from './jobs/offer.job.js';
+import { agenda } from '#config/agenda.js';
 
 connectDB();
+
+defineOfferJobs();
+
+await agenda.start();
 
 const server = http.createServer(app);
 
