@@ -815,7 +815,8 @@ describe('Order API v1 Integration', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data._id).toBe(orderId);
+      expect(res.body.data.type).toBe('parcel');
+      expect(res.body.data.serviceType).toBe('immediate');
     });
   });
 });
