@@ -4,7 +4,7 @@ import { AppError, noFieldsProvidedForUpdate, notFound } from '#shared/errors/er
 import { eventBus } from '#shared/event-bus/eventBus.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
-import { orderUpdateQuery } from '#shared/utils/queryBuilder.js';
+import { driverQueryBuilder, orderUpdateQuery } from '#shared/utils/queryBuilder.js';
 import { OrderModel } from '../../models/order.model.js';
 
 export const addOrder = async (orderData) => {
@@ -62,6 +62,25 @@ export const getOrderById = async (orderId) => {
   if (!order) throw notFound('DeliveryRequest');
 
   return order;
+};
+
+export const getAllOrders = async (page = 1, limit = 10, searchQuery = {}) => {
+  const skip = (page - 1) * limit;
+
+  const query = await driverQueryBuilder(searchQuery);
+
+  const totalOrders = await OrderModel.countDocuments(query);
+  const orders = await OrderModel.find(query)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  return {
+    orders,
+    totalOrders,
+    totalPage: Math.ceil(totalOrders / limit),
+  };
 };
 
 export const updateOrderInfo = async (orderId, orderData) => {
