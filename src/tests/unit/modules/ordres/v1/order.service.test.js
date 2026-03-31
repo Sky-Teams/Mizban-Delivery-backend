@@ -9,10 +9,11 @@ import {
   deliverOrderWithTransaction,
   OrderModel,
   pickupOrderWithTransaction,
+  getAllOrders,
 } from '#modules/orders/index.js';
 import mongoose from 'mongoose';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
-import { orderUpdateQuery } from '#shared/utils/queryBuilder.js';
+import { orderUpdateQuery, driverQueryBuilder } from '#shared/utils/queryBuilder.js';
 import { getOrderById, updateOrderInfo } from '#modules/orders/services/v1/order.service.js';
 
 vi.mock('#modules/orders/models/order.model.js', () => ({
@@ -20,6 +21,8 @@ vi.mock('#modules/orders/models/order.model.js', () => ({
     create: vi.fn(),
     findById: vi.fn(),
     findByIdAndUpdate: vi.fn(),
+    find: vi.fn(),
+    countDocuments: vi.fn(),
   },
 }));
 
@@ -39,6 +42,7 @@ vi.mock('#shared/utils/math.helper.js', () => ({
 
 vi.mock('#shared/utils/queryBuilder.js', () => ({
   orderUpdateQuery: vi.fn(),
+  driverQueryBuilder: vi.fn(),
 }));
 
 const fakeSession = {
@@ -597,5 +601,53 @@ describe('getOrderById', () => {
 
     await expect(getOrderById(deliveryId)).rejects.toThrow(notFound('DeliveryRequest'));
     expect(OrderModel.findById).toHaveBeenCalledWith(deliveryId);
+  });
+});
+
+describe('getAllOrders', () => {
+  it('should return orders list', async () => {
+    const mockOrders = [{ _id: '3' }, { _id: '2' }, { _id: '1' }];
+    driverQueryBuilder.mockReturnValue(mockOrders);
+    OrderModel.countDocuments.mockResolvedValue(10);
+    OrderModel.find.mockReturnValue({
+      sort: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue(mockOrders),
+    });
+
+    const result = await getAllOrders(2, 4);
+
+    expect(result).toEqual({
+      orders: mockOrders,
+      totalOrders: 10,
+      totalPage: 3,
+    });
+  });
+
+  it('should return order lists by status: assigned ', async () => {
+    const mockOrders = [
+      { _id: '4', status: 'assigned' },
+      { _id: '2', status: 'assigned' },
+      { _id: '3', status: 'assigned' },
+      { _id: '1', status: 'assigned' },
+    ];
+    driverQueryBuilder.mockReturnValue(mockOrders);
+
+    OrderModel.countDocuments.mockResolvedValue(14);
+    OrderModel.find.mockReturnValue({
+      sort: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue(mockOrders),
+    });
+
+    const result = await getAllOrders(1, 5, { status: 'assigned' });
+
+    expect(result).toEqual({
+      orders: mockOrders,
+      totalOrders: 14,
+      totalPage: 3,
+    });
   });
 });
