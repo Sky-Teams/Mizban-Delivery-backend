@@ -7,6 +7,7 @@ import {
   loginService,
   refreshService,
   resetPasswordService,
+  verifyUserEmail,
 } from '../../services/v1/auth.service.js';
 import { doesUserExist, registerUser } from '../../services/v1/auth.service.js';
 
@@ -74,5 +75,16 @@ export const resetPassword = async (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Password updated successfully',
+  });
+};
+
+export const verifyEmail = async (req, res) => {
+  const { verifyToken } = req.params;
+
+  await verifyUserEmail(verifyToken);
+
+  res.status(200).json({
+    success: true,
+    message: 'Your email verified successfully',
   });
 };
