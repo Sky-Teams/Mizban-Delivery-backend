@@ -525,4 +525,9 @@ export const ERROR_MESSAGES = {
     fa: 'گزینه مرتب‌سازی نامعتبر است',
     ps: 'د ترتیب انتخاب ناسم دی',
   },
+  [ERROR_CODES.INVALID_GOOGLE_TOKEN]: {
+    en: 'Invalid google token',
+    fa: 'توکن گوگل نامعتبر هست',
+    ps: 'د گوگل توکن نامعتبر دی',
+  },
 };
