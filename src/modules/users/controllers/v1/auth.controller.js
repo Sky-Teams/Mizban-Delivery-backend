@@ -2,7 +2,11 @@ import { cookieOptions } from '#shared/utils/jwt.js';
 import { ensureDeviceId, getDeviceId } from '#shared/utils/auth.helper.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError } from '#shared/errors/error.js';
-import { loginService, refreshService } from '../../services/v1/auth.service.js';
+import {
+  authenticateWithGoogle,
+  loginService,
+  refreshService,
+} from '../../services/v1/auth.service.js';
 import { doesUserExist, registerUser } from '../../services/v1/auth.service.js';
 
 export const register = async (req, res) => {
@@ -46,5 +50,23 @@ export const refreshAccessToken = async (req, res) => {
   res.status(200).json({
     success: true,
     data: { token: accessToken },
+  });
+};
+
+export const googleLogin = async (req, res) => {
+  const deviceId = ensureDeviceId(req, res);
+  const { id_token } = req.body;
+  if (!id_token) throw new AppError('Invalid google token', 401, ERROR_CODES.INVALID_GOOGLE_TOKEN);
+
+  const { accessToken, refreshToken, id, email, role } = await authenticateWithGoogle(
+    id_token,
+    deviceId
+  );
+
+  res.cookie('refreshToken', refreshToken, cookieOptions);
+
+  res.status(200).json({
+    success: true,
+    data: { token: accessToken, id, email, role },
   });
 };
