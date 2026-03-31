@@ -6,6 +6,8 @@ export {
   pickupOrder,
   deliverOrder,
   cancelOrder,
+  getOrders,
+  getOrder
 } from './controllers/v1/order.controller.js';
 export {
   addOrder,
@@ -15,5 +17,6 @@ export {
   cancelOrderWithTransaction,
   getOrderById,
   updateOrderInfo,
+  getAllOrders,
 } from './services/v1/order.service.js';
 export { OrderModel } from './models/order.model.js';
