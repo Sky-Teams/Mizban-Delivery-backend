@@ -95,7 +95,6 @@ export class CustomSocket {
    */
   static emitToUser(userId, event, payload) {
     if (!this.#io) throw new Error('Socket is not initialized');
-    // console.log('Sending to ', event, payload);
     this.getIO().to(userId).emit(event, payload);
   }
 
@@ -105,7 +104,6 @@ export class CustomSocket {
    * @param {Object} payload - Payload that should be send to front
    */
   static emitToAdmins(event, payload) {
-    // console.log('payload: ', payload);
     this.getIO().to('admins').emit(event, payload);
   }
 
@@ -116,7 +114,6 @@ export class CustomSocket {
    * @param {Object} payload - Payload that should be send to front
    */
   static emitToDrivers(drivers, event, payload) {
-    // console.log('Drivers: ', drivers.length);
     for (const driver of drivers) {
       this.emitToUser(driver.user.toString(), event, payload);
     }
