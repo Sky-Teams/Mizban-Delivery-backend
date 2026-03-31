@@ -9,8 +9,12 @@
   },
   "scripts": {
     "dev": "nodemon src/server.js",
+    "dev:api": "nodemon src/server.js",
+    "start:api": "node src/server.js",
+    "worker:dev": "nodemon src/workers.js",
     "start": "node src/server.js",
     "lint": "eslint src/**/*.js",
+    "worker": "node src/workers.js",
     "lint:fix": "eslint src/**/*.js --fix",
     "format": "prettier --write src/**/*.js",
     "test": "vitest",
@@ -34,6 +38,8 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@agendajs/mongo-backend": "^4.0.0",
+    "agenda": "^6.2.3",
     "axios": "^1.14.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
