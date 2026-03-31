@@ -29,6 +29,26 @@ const queryValidator = z.object({
       .string()
       .refine((val) => mongoose.Types.ObjectId.isValid(val), { message: ERROR_CODES.INVALID_ID })
       .optional(),
+
+    status: z
+      .enum(['created', 'assigned', 'pickedUp', 'delivered', 'cancelled'], {
+        message: ERROR_CODES.INVALID_STATUS,
+      })
+      .optional(),
+    type: z
+      .enum(['food', 'parcel', 'grocery', 'other'], {
+        message: ERROR_CODES.INVALID_DELIVERY_TYPE,
+      })
+      .optional(),
+    priority: z
+      .enum(['normal', 'high', 'critical'], {
+        message: ERROR_CODES.INVALID_PRIORITY,
+      })
+      .optional(),
+    driverId: z
+      .string()
+      .refine((val) => mongoose.Types.ObjectId.isValid(val), { message: ERROR_CODES.INVALID_ID })
+      .optional(),
   }),
 });
 
