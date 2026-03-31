@@ -4,6 +4,7 @@ import {
   login,
   refreshAccessToken,
   resetPassword,
+  verifyEmail,
 } from '../../controllers/v1/auth.controller.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
 import { validate } from '#shared/middleware/validate.js';
@@ -24,5 +25,6 @@ router.post(
   validate(resetPasswordValidator),
   asyncHandler(resetPassword)
 );
+router.get('/verify-email/:verifyToken', asyncHandler(verifyEmail));
 
 export default router;
