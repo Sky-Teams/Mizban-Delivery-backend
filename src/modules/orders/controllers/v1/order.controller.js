@@ -5,6 +5,8 @@ import {
   deliverOrderWithTransaction,
   pickupOrderWithTransaction,
   updateOrderInfo,
+  getOrderById,
+  getAllOrders,
 } from '../../services/v1/order.service.js';
 import { unauthorized } from '#shared/errors/error.js';
 
@@ -55,4 +57,36 @@ export const cancelOrder = async (req, res) => {
   const updatedOrder = await cancelOrderWithTransaction(req.params.id, req.body?.cancelReason);
 
   res.status(200).json({ success: true, data: updatedOrder });
+};
+
+export const getOrders = async (req, res) => {
+  if (!req.user) throw unauthorized();
+
+  const { page, limit } = req.query;
+  const searchQuery = {
+    type: req.query.type,
+    priority: req.query.priority,
+    status: req.query.status,
+    driverId: req.query.driverId,
+  };
+
+  const { orders, totalOrders, totalPage } = await getAllOrders(page, limit, searchQuery);
+
+  res.status(200).json({
+    success: true,
+    data: orders,
+    totalOrders,
+    totalPage,
+  });
+};
+
+export const getOrder = async (req, res) => {
+  if (!req.user) throw unauthorized();
+
+  const order = await getOrderById(req.params.id);
+
+  res.status(200).json({
+    success: true,
+    data: order,
+  });
 };
