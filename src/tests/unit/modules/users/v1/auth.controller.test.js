@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { registerUser, doesUserExist } from '#modules/users/index.js';
-import { register } from '#modules/users/index.js';
+import { registerUser, doesUserExist, authenticateWithGoogle } from '#modules/users/index.js';
+import { register, googleLogin } from '#modules/users/index.js';
 import { AppError } from '#shared/errors/error.js';
 
 vi.mock('#modules/users/services/v1/auth.service.js', () => ({
   registerUser: vi.fn(),
   doesUserExist: vi.fn(),
+  authenticateWithGoogle: vi.fn(),
 }));
 
 describe('Auth controller - register', () => {
@@ -66,5 +67,67 @@ describe('Auth controller - register', () => {
 
     const responseCall = res.json.mock.calls[0][0];
     expect(responseCall).not.toHaveProperty('password');
+  });
+});
+
+describe('Auth controller - googleLogin', () => {
+  let req, res;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    req = {
+      body: {
+        id_token: 'google-token',
+      },
+      cookies: {
+        deviceId: 'device-1',
+      },
+    };
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+      cookie: vi.fn(),
+    };
+  });
+
+  it('should return 200 with success response', async () => {
+    const mockFakeUser = {
+      id: 'user1',
+      name: 'test',
+      email: 'test@example.com',
+      role: 'driver',
+      accessToken: 'access-token-123',
+      refreshToken: 'refresh-token-123',
+    };
+    authenticateWithGoogle.mockResolvedValue(mockFakeUser);
+
+    await googleLogin(req, res);
+    expect(res.cookie).toHaveBeenCalledWith(
+      'refreshToken',
+      'refresh-token-123',
+      expect.any(Object)
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        token: 'access-token-123',
+        id: 'user1',
+        email: 'test@example.com',
+        role: 'driver',
+      },
+    });
+  });
+  it('should return an error if google token missing', async () => {
+    req = {
+      body: {},
+      cookies: {
+        deviceId: 'device-1',
+      },
+    };
+
+    expect(googleLogin(req, res)).rejects.toThrow();
   });
 });
