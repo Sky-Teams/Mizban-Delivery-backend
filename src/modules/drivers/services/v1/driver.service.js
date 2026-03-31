@@ -9,6 +9,8 @@ import { UserModel } from '#modules/users/index.js';
 import { hashPassword } from '#shared/utils/jwt.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
+import { GeoService } from '#shared/utils/geoService.js';
+import { DriverScore } from '#shared/utils/scorePrediction.js';
 //#region Services
 
 /** Fetch all Drivers with pagination functionality */
@@ -158,7 +160,7 @@ export const addNewDriver = withTransaction(addDriver);
  * @param {Number} limit - limit the number of drivers. Default is 10
  * @returns {Array} Nearest Drivers as an array
  */
-export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, limit = 10) => {
+export const findNearestDrivers = async (pickupLocation, maxDistance = 4000, limit = 10) => {
   try {
     const nearestDrivers = await DriverModel.find({
       status: 'idle',
@@ -177,6 +179,35 @@ export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, lim
   } catch (error) {
     console.error('Error in finding nearest drivers. ', error.message);
   }
+};
+
+/**
+ * Find nearest drivers and calculate score
+ * @param {Array} pickupCoordinates [lng, lat]
+ * @returns {Array} drivers with distance, eta, and score
+ */
+export const findNearestAndScore = async (pickupCoordinates) => {
+  const drivers = await findNearestDrivers(pickupCoordinates);
+
+  if (!drivers.length) return [];
+
+  const driversWithETA = await GeoService.getDistanceMatrix(drivers, pickupCoordinates);
+
+  // Attach score to each driver
+  const scoredDrivers = driversWithETA.map(({ driver, distance, eta }) => {
+    const score = DriverScore.calculateWithETA(driver, { distance, time: eta });
+    return {
+      ...driver,
+      distance,
+      eta,
+      score,
+    };
+  });
+
+  // Sort descending by score
+  scoredDrivers.sort((a, b) => b.score - a.score);
+
+  return scoredDrivers;
 };
 
 //#endregion
