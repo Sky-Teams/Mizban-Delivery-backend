@@ -39,6 +39,8 @@ const validateLoginUser = async (user, password) => {
   if (!user.isActive) {
     throw new AppError('Account is disabled!', 403, ERROR_CODES.ACCOUNT_DISABLED);
   }
+
+  if (!user.isVerified) throw new AppError('You email is not verified, please verify your email');
 };
 
 // Refresh helpers
@@ -91,6 +93,17 @@ const rotateRefreshToken = async (currentTokenId) => {
 };
 
 // Forgot password helpers
+const findUserByEmailVerificationToken = async (verifyToken) => {
+  const user = await UserModel.findOne({
+    emailVerificationToken: hashToken(verifyToken),
+    emailVerificationExpires: { $gt: new Date() },
+  });
+
+  if (!user) throw new AppError('Invalid or expired token', 400, ERROR_CODES.INVALID_TOKEN);
+
+  return user;
+};
+
 const findUserByResetToken = async (resetToken) => {
   const user = await UserModel.findOne({
     passwordResetToken: hashToken(resetToken),
@@ -115,6 +128,18 @@ export const registerUser = async (data) => {
     email,
     phone,
     password: hashPassword,
+  });
+
+  const token = user.createToken('verify');
+
+  await user.save({ validateBeforeSave: false });
+
+  const verifyUrl = `${process.env.FRONTEND_URL}/verify-email/${token}`;
+
+  await agenda.now('send-email-verification-token', {
+    email: user.email,
+    username: user.name,
+    verifyUrl,
   });
 
   return {
@@ -173,7 +198,7 @@ export const refreshService = async ({ refreshToken, deviceId }) => {
 export const forgotPasswordService = async ({ email }) => {
   const user = await getUserByEmail(email);
 
-  const resetToken = user.createPasswordResetToken();
+  const resetToken = user.createToken('reset');
   await user.save({ validateBeforeSave: false });
 
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
@@ -206,6 +231,18 @@ export const resetPasswordService = async ({ resetToken, newPassword, confirmPas
   await user.save();
 
   await RefreshTokenModel.deleteMany({ user: user._id });
+};
+
+export const verifyUserEmail = async (verifyToken) => {
+  const user = await findUserByEmailVerificationToken(verifyToken);
+
+  user.set({
+    isVerified: true,
+    emailVerificationToken: null,
+    emailVerificationExpires: null,
+  });
+
+  await user.save();
 };
 
 export const getAllAdmins = async () => {
