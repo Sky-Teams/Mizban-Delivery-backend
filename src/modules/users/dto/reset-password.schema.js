@@ -6,7 +6,7 @@ const resetPasswordSchema = z.object({
     resetToken: z
       .string()
       .trim()
-      .regex(/^[a-f0-9]{64}$/i, { message: ERROR_CODES.INVALID_TOKEN }),
+      .regex(/^[a-f0-9]{64}$/i, { message: ERROR_CODES.INVALID_RESET_PASSWORD_TOKEN }),
   }),
   body: z.object({
     newPassword: z
