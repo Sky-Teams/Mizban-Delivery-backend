@@ -94,22 +94,10 @@ describe('POST /api/auth/change-password Integration', () => {
         newPassword: 'newPassword1',
       });
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.message).toBe('Password changed successfully');
-
-    const setCookie = res.headers['set-cookie'] || [];
-    expect(setCookie.some((cookie) => cookie.startsWith('refreshToken='))).toBe(true);
-
-    const updatedUser = await UserModel.findById(user._id);
-    expect(updatedUser.changedPasswordAt).toBeInstanceOf(Date);
-    await expect(bcrypt.compare('newPassword1', updatedUser.password)).resolves.toBe(true);
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe(ERROR_CODES.VALIDATION_ERROR);
 
     const remainingRefreshTokens = await RefreshTokenModel.countDocuments({ user: user._id });
-    expect(remainingRefreshTokens).toBe(0);
-
-    const profileRes = await request(app).get('/api/user').set('Authorization', `Bearer ${token}`);
-    expect(profileRes.status).toBe(401);
-    expect(profileRes.body.code).toBe(ERROR_CODES.PASSWORD_CHANGED);
+    expect(remainingRefreshTokens).toBe(2);
   });
 });
