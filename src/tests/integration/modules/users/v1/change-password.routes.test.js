@@ -46,29 +46,10 @@ describe('POST /api/auth/change-password Integration', () => {
     const res = await request(app).post(changePasswordUrl).send({
       currentPassword: '123456',
       newPassword: 'newPassword1',
-      confirmNewPassword: 'newPassword1',
     });
 
     expect(res.status).toBe(401);
     expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
-  });
-
-  it('should return 400 when confirmNewPassword does not match', async () => {
-    const { token } = await createUserWithToken({ password: '123456' });
-
-    const res = await request(app)
-      .post(changePasswordUrl)
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        currentPassword: '123456',
-        newPassword: 'newPassword1',
-        confirmNewPassword: 'differentPassword',
-      });
-
-    expect(res.status).toBe(400);
-    expect(res.body.code).toBe(ERROR_CODES.PASSWORDS_NOT_MATCHES);
-    expect(res.body.message).toBe('Validation failed');
-    expect(res.body.field).toBe('confirmNewPassword');
   });
 
   it('should return 401 when current password is wrong', async () => {
@@ -80,7 +61,6 @@ describe('POST /api/auth/change-password Integration', () => {
       .send({
         currentPassword: 'wrong-password',
         newPassword: 'newPassword1',
-        confirmNewPassword: 'newPassword1',
       });
 
     expect(res.status).toBe(401);
@@ -112,7 +92,6 @@ describe('POST /api/auth/change-password Integration', () => {
       .send({
         currentPassword: '123456',
         newPassword: 'newPassword1',
-        confirmNewPassword: 'newPassword1',
       });
 
     expect(res.status).toBe(200);

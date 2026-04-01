@@ -170,7 +170,7 @@ export const changePasswordService = async (userId, { currentPassword, newPasswo
     throw new AppError('Invalid current password', 401, ERROR_CODES.INVALID_CREDENTIAL);
   }
 
-  user.password = hashPassword(user.password);
+  user.password = hashPassword(newPassword);
   user.changedPasswordAt = new Date();
   await user.save();
 
