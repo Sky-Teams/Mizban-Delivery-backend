@@ -17,11 +17,11 @@ export const createOrderOffer = async (orderId, driverId) => {
     const orderOfferObject = {
       order: orderId,
       driver: driverId,
-      offeredAt: Date.now(), //TODO: Check the UTC format
+      offeredAt: Date.now(), // TODO: Check the UTC format
     };
 
     const newOrderOffer = await OrderOfferModel.create(orderOfferObject);
-    console.log('After creating');
+    // console.log('After creating');
 
     return newOrderOffer;
   } catch (error) {
@@ -29,4 +29,10 @@ export const createOrderOffer = async (orderId, driverId) => {
   }
 };
 
-// export const updateOrderOffer = async(orderId)
+export const getOrderOffer = async (orderId, driverId) => {
+  const orderOffer = { order: orderId, driver: driverId };
+  createOderOfferSchema.parse(orderOffer);
+
+  const offer = await OrderOfferModel.findOne(orderOffer);
+  return offer;
+};
