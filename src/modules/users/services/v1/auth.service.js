@@ -4,6 +4,7 @@ import { RefreshTokenModel } from '../../models/refreshToken.model.js';
 import {
   generateAccessToken,
   generateRefreshToken,
+  hashPassword,
   hashToken,
   REFRESH_TOKEN_EXPIRES_TIME,
 } from '#shared/utils/jwt.js';
@@ -169,7 +170,7 @@ export const changePasswordService = async (userId, { currentPassword, newPasswo
     throw new AppError('Invalid current password', 401, ERROR_CODES.INVALID_CREDENTIAL);
   }
 
-  user.password = await bcrypt.hash(newPassword, 12);
+  user.password = hashPassword(user.password);
   user.changedPasswordAt = new Date();
   await user.save();
 
