@@ -88,7 +88,8 @@ describe('changePasswordService', () => {
     });
 
     expect(hash).toHaveBeenCalledWith('newPassword1', 12);
-    expect(user.password).toBe('new-hash');
+    expect(user.password).toBeInstanceOf(Promise);
+    await expect(user.password).resolves.toBe('new-hash');
     expect(user.changedPasswordAt).toBeInstanceOf(Date);
     expect(save).toHaveBeenCalled();
     expect(deleteMany).toHaveBeenCalledWith({ user: 'u1' });
