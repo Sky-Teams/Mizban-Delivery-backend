@@ -34,7 +34,6 @@ describe('changePasswordService', () => {
       changePasswordService('', {
         currentPassword: 'old',
         newPassword: 'newPassword1',
-        confirmNewPassword: 'newPassword1',
       })
     ).rejects.toMatchObject({
       status: 404,
@@ -51,7 +50,6 @@ describe('changePasswordService', () => {
       changePasswordService('u1', {
         currentPassword: 'old',
         newPassword: 'newPassword1',
-        confirmNewPassword: 'newPassword1',
       })
     ).rejects.toMatchObject({
       status: 404,
@@ -69,31 +67,11 @@ describe('changePasswordService', () => {
       changePasswordService('u1', {
         currentPassword: 'wrong',
         newPassword: 'newPassword1',
-        confirmNewPassword: 'newPassword1',
       })
     ).rejects.toMatchObject({
       status: 401,
       code: ERROR_CODES.INVALID_CREDENTIAL,
     });
-  });
-
-  it('throws PASSWORDS_NOT_MATCHES when passwords mismatch', async () => {
-    findById.mockResolvedValue({ _id: 'u1', password: 'hash', save: vi.fn() });
-    compare.mockResolvedValue(true);
-
-    await expect(
-      changePasswordService('u1', {
-        currentPassword: 'old',
-        newPassword: 'newPassword1',
-        confirmNewPassword: 'different',
-      })
-    ).rejects.toMatchObject({
-      status: 400,
-      code: ERROR_CODES.PASSWORDS_NOT_MATCHES,
-    });
-
-    expect(hash).not.toHaveBeenCalled();
-    expect(deleteMany).not.toHaveBeenCalled();
   });
 
   it('hashes new password, sets changedPasswordAt, saves user, and deletes refresh tokens', async () => {
@@ -107,7 +85,6 @@ describe('changePasswordService', () => {
     await changePasswordService('u1', {
       currentPassword: 'old',
       newPassword: 'newPassword1',
-      confirmNewPassword: 'newPassword1',
     });
 
     expect(hash).toHaveBeenCalledWith('newPassword1', 12);
