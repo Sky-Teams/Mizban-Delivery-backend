@@ -188,11 +188,8 @@ export const forgotPasswordService = async ({ email }) => {
 };
 
 // Reset Password
-export const resetPasswordService = async ({ resetToken, newPassword, confirmPassword }) => {
+export const resetPasswordService = async ({ resetToken, newPassword }) => {
   const user = await findUserByResetToken(resetToken);
-
-  if (newPassword !== confirmPassword)
-    throw new AppError('Password not match', 400, ERROR_CODES.PASSWORD_NOT_MATCHING);
 
   const newPasswordHashed = await bcrypt.hash(newPassword, 12);
 

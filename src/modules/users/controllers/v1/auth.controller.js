@@ -67,9 +67,9 @@ export const forgotPassword = async (req, res) => {
 
 export const resetPassword = async (req, res) => {
   const { resetToken } = req.params;
-  const { newPassword, confirmPassword } = req.body;
+  const { newPassword } = req.body;
 
-  await resetPasswordService({ resetToken, newPassword, confirmPassword });
+  await resetPasswordService({ resetToken, newPassword });
 
   res.status(200).json({
     success: true,

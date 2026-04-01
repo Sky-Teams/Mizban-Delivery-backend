@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import bcrypt from 'bcryptjs';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
-import { AppError } from '#shared/errors/error.js';
 import {
   forgotPasswordService,
   resetPasswordService,
@@ -88,35 +87,12 @@ describe('Password Services (forgot/reset)', () => {
         resetPasswordService({
           resetToken: 'bad-token',
           newPassword: 'newpass123',
-          confirmPassword: 'newpass123',
         })
       ).rejects.toMatchObject({
         status: 400,
         code: ERROR_CODES.INVALID_TOKEN,
         isOperational: true,
       });
-    });
-
-    it('should throw PASSWORD_NOT_MATCHING when passwords do not match', async () => {
-      const fakeUser = {
-        _id: 'user-id',
-        set: vi.fn(),
-        save: vi.fn(),
-      };
-
-      UserModel.findOne.mockResolvedValue(fakeUser);
-
-      await expect(
-        resetPasswordService({
-          resetToken: 'valid-token',
-          newPassword: 'newpass123',
-          confirmPassword: 'different123',
-        })
-      ).rejects.toThrow(AppError);
-
-      expect(bcrypt.hash).not.toHaveBeenCalled();
-      expect(fakeUser.save).not.toHaveBeenCalled();
-      expect(RefreshTokenModel.deleteMany).not.toHaveBeenCalled();
     });
 
     it('should hash password, clear reset fields, and delete refresh tokens', async () => {
@@ -133,7 +109,6 @@ describe('Password Services (forgot/reset)', () => {
       await resetPasswordService({
         resetToken: 'valid-token',
         newPassword: 'newpass123',
-        confirmPassword: 'newpass123',
       });
 
       expect(bcrypt.hash).toHaveBeenCalledWith('newpass123', 12);
