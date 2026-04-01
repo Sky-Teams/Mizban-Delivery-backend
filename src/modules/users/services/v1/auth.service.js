@@ -193,7 +193,7 @@ export const resetPasswordService = async ({ resetToken, newPassword }) => {
   const user = await findUserByResetToken(resetToken);
 
   user.set({
-    password: hashPassword(newPassword),
+    password: await hashPassword(newPassword),
     passwordResetToken: null,
     passwordResetExpires: null,
     changedPasswordAt: new Date(Date.now()),
