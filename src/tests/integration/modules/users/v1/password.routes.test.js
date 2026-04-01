@@ -89,7 +89,7 @@ describe('Forgot/Reset Password Integration', () => {
         .send({ newPassword: 'newpass123' });
 
       expect(res.status).toBe(400);
-      expect(res.body.code).toBe(ERROR_CODES.INVALID_TOKEN);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_RESET_PASSWORD_TOKEN);
       expect(res.body.message).toBe('Validation failed');
       expect(res.body.field).toBe('resetToken');
     });
