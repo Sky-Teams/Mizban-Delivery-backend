@@ -533,7 +533,7 @@ export const ERROR_MESSAGES = {
   },
   [ERROR_CODES.LOGOUT_INVALID_SESSION]: {
     en: 'Refresh token or device ID is invalid for logout',
-    fa: 'توکن رفرش یا شناسه دستگاه برای خروج نامعتبر است',
-    ps: 'د وتلو لپاره د ریفریش ټوکن یا د وسیلې پېژند ناسم دی',
+    fa: 'خروج انجام نشد، لطفاً دوباره تلاش کنید یا دوباره وارد شوید',
+    ps: 'وتل ممکن نه شول، مهرباني وکړئ بیا هڅه وکړئ یا بیا ننوځئ',
   },
 };
