@@ -160,20 +160,13 @@ export const getAllAdmins = async () => {
   return admins;
 };
 
-export const changePasswordService = async (
-  userId,
-  { currentPassword, newPassword, confirmNewPassword }
-) => {
+export const changePasswordService = async (userId, { currentPassword, newPassword }) => {
   const user = await UserModel.findById(userId);
   if (!user) throw notFound('User');
 
   const psMatch = await bcrypt.compare(currentPassword, user.password);
   if (!psMatch) {
     throw new AppError('Invalid current password', 401, ERROR_CODES.INVALID_CREDENTIAL);
-  }
-
-  if (newPassword !== confirmNewPassword) {
-    throw new AppError('Passwords not matches', 400, ERROR_CODES.PASSWORDS_NOT_MATCHES);
   }
 
   user.password = await bcrypt.hash(newPassword, 12);

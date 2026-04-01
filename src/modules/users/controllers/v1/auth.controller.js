@@ -57,13 +57,9 @@ export const refreshAccessToken = async (req, res) => {
 export const changePassword = async (req, res) => {
   if (!req.user) throw unauthorized();
 
-  const { currentPassword, newPassword, confirmNewPassword } = req.body;
+  const { currentPassword, newPassword } = req.body;
 
-  await changePasswordService(req.user._id, {
-    currentPassword,
-    newPassword,
-    confirmNewPassword,
-  });
+  await changePasswordService(req.user._id, { currentPassword, newPassword });
 
   res.clearCookie('refreshToken', cookieOptions);
   res.status(200).json({
