@@ -28,6 +28,7 @@ vi.mock('#modules/drivers/models/driver.model.js', () => ({
 vi.mock('#modules/users/models/user.model.js', () => ({
   UserModel: {
     create: vi.fn(),
+    find: vi.fn(),
     findOneAndUpdate: vi.fn(),
   },
 }));
@@ -94,6 +95,43 @@ describe('Driver Services', () => {
       });
       expect(DriverModel.countDocuments).toHaveBeenCalled();
       expect(DriverModel.find).toHaveBeenCalled();
+    });
+
+    it('should filter drivers by user fields when searchTerm is provided', async () => {
+      const mockedDrivers = [{ _id: 'd1' }];
+      const userIds = ['u1', 'u2'];
+
+      UserModel.find.mockReturnValue({
+        select: vi.fn().mockResolvedValue(userIds.map((_id) => ({ _id }))),
+      });
+
+      DriverModel.countDocuments.mockResolvedValue(1);
+      DriverModel.find.mockReturnValue({
+        populate: vi.fn().mockReturnThis(),
+        sort: vi.fn().mockReturnThis(),
+        skip: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        lean: vi.fn().mockResolvedValue(mockedDrivers),
+      });
+
+      const result = await fetchDrivers(5, 1, { searchTerm: 'john' });
+
+      expect(UserModel.find).toHaveBeenCalledWith({
+        $or: [
+          { name: { $regex: 'john', $options: 'i' } },
+          { email: { $regex: 'john', $options: 'i' } },
+          { phone: { $regex: 'john', $options: 'i' } },
+        ],
+      });
+
+      expect(DriverModel.countDocuments).toHaveBeenCalledWith({ user: { $in: userIds } });
+      expect(DriverModel.find).toHaveBeenCalledWith({ user: { $in: userIds } });
+
+      expect(result).toEqual({
+        drivers: mockedDrivers,
+        totalDrivers: 1,
+        totalPages: 1,
+      });
     });
   });
 
