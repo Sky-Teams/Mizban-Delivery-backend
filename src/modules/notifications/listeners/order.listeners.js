@@ -19,7 +19,6 @@ export const registerOrderListeners = () => {
     if (!drivers.length) {
       const noDriverFoundPayload = NotificationPayloads.noDriverFound(orderId);
       CustomSocket.emitToAdmins('no-driver', noDriverFoundPayload);
-      // TODO we should store this notification for all admins
       await createNotificationForAdmins(
         noDriverFoundPayload.type,
         noDriverFoundPayload.title,
