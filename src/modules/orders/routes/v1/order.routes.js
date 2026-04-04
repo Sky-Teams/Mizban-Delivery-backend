@@ -15,7 +15,7 @@ import { createOrderValidator } from '../../dto/create-order.schema.js';
 import { mongoIdValidator } from '#shared/middleware/mongoIdValidator.js';
 import { updateOrderValidator } from '../../dto/update-order.schema.js';
 import { assignDriverValidator, cancelOrderValidator } from '../../dto/order-actions.schema.js';
-import { queriesValidator } from '#shared/middleware/queryValidator.js';
+import { orderQueryValidator } from '#modules/orders/dto/order-query-validator.js';
 
 const router = express.Router();
 
@@ -40,7 +40,7 @@ router.put(
   validate(updateOrderValidator),
   asyncHandler(updateOrder)
 );
-router.get('/', validate(queriesValidator), asyncHandler(getOrders));
+router.get('/', validate(orderQueryValidator), asyncHandler(getOrders));
 router.get('/:id', validate(mongoIdValidator), asyncHandler(getOrder));
 
 export default router;
