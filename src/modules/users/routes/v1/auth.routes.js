@@ -1,9 +1,11 @@
 import express from 'express';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import {
-  changePassword,
   login,
   logout,
+  changePassword,
+  forgotPassword,
+  resetPassword,
   refreshAccessToken,
 } from '../../controllers/v1/auth.controller.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
@@ -12,6 +14,8 @@ import { loginValidator } from '../../dto/login.schema.js';
 import { changePasswordValidator } from '../../dto/change-password.schema.js';
 import { register } from '../../controllers/v1/auth.controller.js';
 import { registerUserValidator } from '../../dto/register.user.schema.js';
+import { forgotPasswordValidator } from '#modules/users/dto/forgot-password.schema.js';
+import { resetPasswordValidator } from '../../dto/reset-password.schema.js';
 
 const router = express.Router();
 
@@ -25,5 +29,11 @@ router.post(
   asyncHandler(changePassword)
 );
 router.post('/logout', asyncHandler(logout));
+router.post('/forgot-password', validate(forgotPasswordValidator), asyncHandler(forgotPassword));
+router.post(
+  '/reset-password/:resetToken',
+  validate(resetPasswordValidator),
+  asyncHandler(resetPassword)
+);
 
 export default router;

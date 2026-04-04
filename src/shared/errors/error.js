@@ -1,11 +1,12 @@
 import { ERROR_CODES } from './customCodes.js';
 
 export class AppError extends Error {
-  constructor(message, status = 400, code, field) {
+  constructor(message, status = 400, code, field, errors) {
     super(message);
     this.status = status;
     this.code = code;
     this.field = field;
+    this.errors = errors;
     this.isOperational = true;
   }
 }

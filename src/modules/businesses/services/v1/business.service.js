@@ -1,4 +1,4 @@
-import { AppError, noFieldsProvidedForUpdate, notFound } from '#shared/errors/error.js';
+import { AppError, notFound } from '#shared/errors/error.js';
 import { BusinessModel } from '../../models/business.model.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { UserModel } from '#modules/users/index.js';
@@ -6,7 +6,6 @@ import { hashPassword } from '#shared/utils/jwt.js';
 import { filterUserField } from '#shared/utils/queryBuilder.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
-//region admin
 //create new business by admin
 export const addNewBusiness = withTransaction(async (session, businessData) => {
   const {
@@ -56,6 +55,7 @@ export const modifyExistedBusiness = withTransaction(async (session, businessId,
     ...(email && { email }),
     ...(userPhoneNumber && { phone: userPhoneNumber }),
   };
+
   const userUpdateFields = await filterUserField(userData);
 
   const allowedFieldsToUpdate = [
@@ -114,32 +114,6 @@ export const modifyExistedBusiness = withTransaction(async (session, businessId,
   };
 });
 
-//endregion
-
-//Create new Business
-export const createNewBusiness = async (userId, businessData) => {
-  const {
-    name,
-    type: businessType,
-    phone,
-    addressText,
-    prepTimeAvgMinutes,
-    location,
-  } = businessData;
-
-  const newBusiness = await BusinessModel.create({
-    name,
-    type: businessType,
-    phone,
-    addressText,
-    prepTimeAvgMinutes,
-    location,
-    owner: userId,
-  });
-
-  return newBusiness;
-};
-
 export const getAllBusinesses = async (limit = 8, page = 1, searchQuery = {}) => {
   const skip = (page - 1) * limit;
 
@@ -164,6 +138,31 @@ export const getBusinessById = async (businessId) => {
   const business = await BusinessModel.findById(businessId).populate('owner', 'name email');
 
   return business;
+};
+
+/* unnecessary codes
+
+export const createNewBusiness = async (userId, businessData) => {
+  const {
+    name,
+    type: businessType,
+    phone,
+    addressText,
+    prepTimeAvgMinutes,
+    location,
+  } = businessData;
+
+  const newBusiness = await BusinessModel.create({
+    name,
+    type: businessType,
+    phone,
+    addressText,
+    prepTimeAvgMinutes,
+    location,
+    owner: userId,
+  });
+
+  return newBusiness;
 };
 
 //Partial Update (Business)
@@ -200,3 +199,4 @@ export const updateBusinessService = async (userId, businessId, businessData) =>
 
   return updateBusiness;
 };
+*/

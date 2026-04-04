@@ -2,16 +2,12 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import { ensureNumber } from '#shared/utils/ensureNumber.js';
-import mongoose from 'mongoose';
 
 const businessType = ['restaurant', 'shop', 'pharmacy', 'warehouse', 'other'];
 
-const adminUpdateBusinessSchema = z.object({
+const updateBusinessSchema = z.object({
   body: z
     .object({
-      userId: z.string().refine((val) => !val || mongoose.Types.ObjectId.isValid(val), {
-        message: ERROR_CODES.INVALID_USER_ID,
-      }),
       username: z
         .string({
           message: ERROR_CODES.NAME_TOO_SHORT,
@@ -74,6 +70,6 @@ const adminUpdateBusinessSchema = z.object({
     .partial(),
 });
 
-export const adminUpdateBusinessValidator = (req) => {
-  return adminUpdateBusinessSchema.safeParse({ body: req.body });
+export const updateBusinessValidator = (req) => {
+  return updateBusinessSchema.safeParse({ body: req.body });
 };

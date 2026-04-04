@@ -8,8 +8,11 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
-    "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
+    "dev": "concurrently \"npm run dev:api\" \"npm run worker:dev\"",
+    "dev:api": "nodemon src/server.js",
+    "start:api": "node src/server.js",
+    "worker:dev": "nodemon src/workers.js",
+    "worker": "node src/workers.js",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint src/**/*.js --fix",
     "format": "prettier --write src/**/*.js",
@@ -34,6 +37,8 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@agendajs/mongo-backend": "^4.0.0",
+    "agenda": "^6.2.3",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -43,11 +48,16 @@
     "libphonenumber-js": "^1.12.37",
     "mongodb-memory-server": "^11.0.1",
     "mongoose": "^9.2.1",
+    "nodemailer": "^8.0.2",
+    "pino": "^10.3.1",
+    "pino-abstract-transport": "^3.0.0",
+    "pino-roll": "^4.0.0",
     "socket.io": "^4.8.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.18",
+    "concurrently": "^9.2.1",
     "eslint": "^10.0.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
