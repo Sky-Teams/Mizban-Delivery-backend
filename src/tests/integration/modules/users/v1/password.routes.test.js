@@ -86,24 +86,12 @@ describe('Forgot/Reset Password Integration', () => {
     it('should fail for invalid token format', async () => {
       const res = await request(app)
         .post('/api/auth/reset-password/not-a-valid-token')
-        .send({ newPassword: 'newpass123', confirmPassword: 'newpass123' });
+        .send({ newPassword: 'newpass123' });
 
       expect(res.status).toBe(400);
-      expect(res.body.code).toBe(ERROR_CODES.INVALID_TOKEN);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_RESET_PASSWORD_TOKEN);
       expect(res.body.message).toBe('Validation failed');
       expect(res.body.field).toBe('resetToken');
-    });
-
-    it('should fail when passwords do not match (validator)', async () => {
-      const token64 = 'a'.repeat(64);
-      const res = await request(app)
-        .post(`/api/auth/reset-password/${token64}`)
-        .send({ newPassword: 'newpass123', confirmPassword: 'different123' });
-
-      expect(res.status).toBe(400);
-      expect(res.body.code).toBe(ERROR_CODES.PASSWORD_NOT_MATCHING);
-      expect(res.body.message).toBe('Validation failed');
-      expect(res.body.field).toBe('confirmPassword');
     });
 
     it('should reset password and clear refresh tokens', async () => {
@@ -128,7 +116,7 @@ describe('Forgot/Reset Password Integration', () => {
 
       const res = await request(app)
         .post(`/api/auth/reset-password/${resetToken}`)
-        .send({ newPassword: 'newpass123', confirmPassword: 'newpass123' });
+        .send({ newPassword: 'newpass123' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -160,7 +148,7 @@ describe('Forgot/Reset Password Integration', () => {
 
       const res = await request(app)
         .post(`/api/auth/reset-password/${resetToken}`)
-        .send({ newPassword: 'newpass123', confirmPassword: 'newpass123' });
+        .send({ newPassword: 'newpass123' });
 
       expect(res.status).toBe(400);
       expect(res.body.code).toBe(ERROR_CODES.INVALID_TOKEN);

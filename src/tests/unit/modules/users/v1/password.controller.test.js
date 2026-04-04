@@ -40,7 +40,7 @@ describe('Auth controller - forgot/reset password', () => {
   it('resetPassword should call resetPasswordService and return success', async () => {
     req = {
       params: { resetToken: 'token' },
-      body: { newPassword: 'newpass123', confirmPassword: 'newpass123' },
+      body: { newPassword: 'newpass123' },
     };
     resetPasswordService.mockResolvedValue(true);
 
@@ -49,7 +49,6 @@ describe('Auth controller - forgot/reset password', () => {
     expect(resetPasswordService).toHaveBeenCalledWith({
       resetToken: 'token',
       newPassword: 'newpass123',
-      confirmPassword: 'newpass123',
     });
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
@@ -58,4 +57,3 @@ describe('Auth controller - forgot/reset password', () => {
     });
   });
 });
-

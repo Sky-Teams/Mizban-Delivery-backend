@@ -4,6 +4,7 @@ import { RefreshTokenModel } from '../../models/refreshToken.model.js';
 import {
   generateAccessToken,
   generateRefreshToken,
+  hashPassword,
   hashToken,
   REFRESH_TOKEN_EXPIRES_TIME,
 } from '#shared/utils/jwt.js';
@@ -213,16 +214,11 @@ export const forgotPasswordService = async ({ email }) => {
 };
 
 // Reset Password
-export const resetPasswordService = async ({ resetToken, newPassword, confirmPassword }) => {
+export const resetPasswordService = async ({ resetToken, newPassword }) => {
   const user = await findUserByResetToken(resetToken);
 
-  if (newPassword !== confirmPassword)
-    throw new AppError('Password not match', 400, ERROR_CODES.PASSWORD_NOT_MATCHING);
-
-  const newPasswordHashed = await bcrypt.hash(newPassword, 12);
-
   user.set({
-    password: newPasswordHashed,
+    password: await hashPassword(newPassword),
     passwordResetToken: null,
     passwordResetExpires: null,
     changedPasswordAt: new Date(Date.now()),
