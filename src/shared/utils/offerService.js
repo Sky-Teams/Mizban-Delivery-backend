@@ -1,5 +1,5 @@
 import { agenda } from '#config/agenda.js';
-import { createOrderOffer, getOrderOffer } from '#modules/orderOffers/index.js';
+import { createOffer, getOffer } from '#modules/offers/index.js';
 import { CustomSocket } from '#config/socket.js';
 import { NotificationPayloads } from './notificationPayloadBuilder.js';
 
@@ -19,7 +19,7 @@ export class OfferService {
     }
 
     const driver = drivers[driverIndex];
-    await createOrderOffer(orderId, driver._id.toString());
+    await createOffer(orderId, driver._id.toString());
 
     const offerPayload = NotificationPayloads.orderOffered();
     CustomSocket.emitToUser(driver.user.toString(), 'offer', offerPayload);
@@ -43,7 +43,7 @@ export class OfferService {
     console.log('Timeout, sending offer to new driver');
     const driver = drivers[driverIndex];
 
-    const offer = await getOrderOffer(orderId, driver._id.toString());
+    const offer = await getOffer(orderId, driver._id.toString());
     if (!offer) return;
 
     switch (offer.status) {
