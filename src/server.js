@@ -9,8 +9,9 @@ import { agenda } from '#config/agenda.js';
 
 connectDB();
 
-defineOfferJobs();
+// For now we need to initialize the agenda with our API server in same the process.Different process cause big problem for us.
 
+defineOfferJobs();
 await agenda.start();
 
 const server = http.createServer(app);
