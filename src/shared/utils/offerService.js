@@ -12,6 +12,7 @@ export class OfferService {
    */
   static async sendOfferToDriver(orderId, drivers, driverIndex) {
     if (driverIndex >= drivers.length) {
+      // TODO we must search what should we do if no driver found. for now we just send an notification for all admins
       const noDriverFoundPayload = NotificationPayloads.noDriverFound(orderId);
       CustomSocket.emitToAdmins('no-driver', noDriverFoundPayload);
       return;
