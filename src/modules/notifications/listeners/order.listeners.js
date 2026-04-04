@@ -15,18 +15,6 @@ export const registerOrderListeners = () => {
 
     const drivers = await findNearestAndScore(data.newOrder.pickupLocation.coordinates);
 
-    // TODO we must search what should we do if no driver found. for now we just send an notification for all admins
-    if (!drivers.length) {
-      const noDriverFoundPayload = NotificationPayloads.noDriverFound(orderId);
-      CustomSocket.emitToAdmins('no-driver', noDriverFoundPayload);
-      await createNotificationForAdmins(
-        noDriverFoundPayload.type,
-        noDriverFoundPayload.title,
-        noDriverFoundPayload.message
-      );
-      return;
-    }
-
     await OfferService.sendOfferToDriver(orderId, drivers, 0);
   });
 };
