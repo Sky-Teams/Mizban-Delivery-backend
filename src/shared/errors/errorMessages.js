@@ -532,8 +532,8 @@ export const ERROR_MESSAGES = {
     ps: 'د ترتیب انتخاب ناسم دی',
   },
   [ERROR_CODES.LOGOUT_INVALID_SESSION]: {
-    en: 'Refresh token or device ID is invalid for logout',
-    fa: 'خروج انجام نشد، لطفاً دوباره تلاش کنید یا دوباره وارد شوید',
-    ps: 'وتل ممکن نه شول، مهرباني وکړئ بیا هڅه وکړئ یا بیا ننوځئ',
+    en: 'Logout failed. Please try again.',
+    fa: 'خروج انجام نشد، لطفاً دوباره تلاش کنید.',
+    ps: 'وتل ممکن نه شول، مهرباني وکړئ بیا هڅه وکړئ.',
   },
 };
