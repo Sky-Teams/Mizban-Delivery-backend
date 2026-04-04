@@ -492,7 +492,7 @@ describe('Order API v1 Integration', () => {
         .send({ driverId: driver._id });
 
       expect(res.status).toBe(404);
-      expect(res.body.message).toMatch(/DeliveryRequest not found/i);
+      expect(res.body.message).toMatch(/Order not found/i);
     });
 
     it('should fail if driverId is invalid', async () => {
@@ -809,7 +809,7 @@ describe('Order API v1 Integration', () => {
       expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
     });
 
-    it('should return orders list', async () => {
+    it('should return orders by id', async () => {
       const orderId = order._id;
       const res = await getWithAuth(app, `${baseURL}/${orderId}`, token);
 

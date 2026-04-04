@@ -217,8 +217,8 @@ describe('assignDriverToOrderWithTransaction', () => {
   it('should abort transaction if order not found', async () => {
     OrderModel.findById.mockResolvedValue(null);
 
-    await expect(assignDriverToOrderWithTransaction('delivery1', 'driver1')).rejects.toThrow(
-      notFound('DeliveryRequest')
+    await expect(assignDriverToOrderWithTransaction('order1', 'driver1')).rejects.toThrow(
+      notFound('Order')
     );
 
     expect(fakeSession.abortTransaction).toHaveBeenCalled();
@@ -305,8 +305,8 @@ describe('pickupOrderWithTransaction', () => {
   it('should abort transaction if order not found', async () => {
     OrderModel.findById.mockResolvedValue(null);
 
-    await expect(pickupOrderWithTransaction('delivery1')).rejects.toThrow(
-      new AppError('DeliveryRequest not found', 404, ERROR_CODES.NOT_FOUND, 'DeliveryRequest')
+    await expect(pickupOrderWithTransaction('order1')).rejects.toThrow(
+      new AppError('Order not found', 404, ERROR_CODES.NOT_FOUND, 'Order')
     );
 
     expect(fakeSession.abortTransaction).toHaveBeenCalled();
@@ -383,7 +383,7 @@ describe('deliverOrderWithTransaction', () => {
     OrderModel.findById.mockResolvedValue(null);
 
     await expect(deliverOrderWithTransaction('delivery1')).rejects.toThrow(
-      new AppError('DeliveryRequest not found', 404, ERROR_CODES.NOT_FOUND, 'DeliveryRequest')
+      new AppError('Order not found', 404, ERROR_CODES.NOT_FOUND, 'Order')
     );
 
     expect(fakeSession.abortTransaction).toHaveBeenCalled();
@@ -542,7 +542,7 @@ describe('updateOrderInfo', () => {
   it('should throw error if order not found', async () => {
     OrderModel.findById.mockResolvedValue(null);
 
-    await expect(updateOrderInfo('notfound', {})).rejects.toThrow(notFound('DeliveryRequest'));
+    await expect(updateOrderInfo('notfound', {})).rejects.toThrow(notFound('Order'));
   });
 
   it('should throw error if no fields provided for update', async () => {
@@ -583,24 +583,24 @@ describe('getOrderById', () => {
   });
 
   it('should return order if found', async () => {
-    const deliveryId = 'delivery123';
-    const mockDelivery = { _id: deliveryId, status: 'created' };
+    const orderId = 'order123';
+    const mockOrder = { _id: orderId, status: 'created' };
 
-    OrderModel.findById.mockResolvedValue(mockDelivery);
+    OrderModel.findById.mockResolvedValue(mockOrder);
 
-    const result = await getOrderById(deliveryId);
+    const result = await getOrderById(orderId);
 
-    expect(OrderModel.findById).toHaveBeenCalledWith(deliveryId);
-    expect(result).toEqual(mockDelivery);
+    expect(OrderModel.findById).toHaveBeenCalledWith(orderId);
+    expect(result).toEqual(mockOrder);
   });
 
   it('should throw notFound error if order does not exist', async () => {
-    const deliveryId = 'notfound';
+    const orderId = 'notfound';
 
     OrderModel.findById.mockResolvedValue(null);
 
-    await expect(getOrderById(deliveryId)).rejects.toThrow(notFound('DeliveryRequest'));
-    expect(OrderModel.findById).toHaveBeenCalledWith(deliveryId);
+    await expect(getOrderById(orderId)).rejects.toThrow(notFound('Order'));
+    expect(OrderModel.findById).toHaveBeenCalledWith(orderId);
   });
 });
 
