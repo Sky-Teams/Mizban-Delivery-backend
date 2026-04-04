@@ -8,5 +8,3 @@ export const agenda = new Agenda({
   }),
 });
 agenda.processEvery('5 seconds');
-
-console.log('Agenda started');
