@@ -1,5 +1,5 @@
-import { OrderOfferModel } from '#modules/orderOffers/models/orderOffer.model.js';
-import { createOderOfferSchema } from '../../dto/create-order-offer.schema.js';
+import { OfferModel } from '#modules/offers/models/offer.model.js';
+import { createOfferSchema } from '../../dto/create-offer.schema.js';
 
 /**
  * Create a new offer for an order in the system.
@@ -7,12 +7,12 @@ import { createOderOfferSchema } from '../../dto/create-order-offer.schema.js';
  * not via an API route, so validation is performed here in the service layer.
     @param {String} orderId 
     @param {String} driverId
-    @returns {Object}  orderOffer object
+    @returns {Object}  offer object
  */
-export const createOrderOffer = async (orderId, driverId) => {
+export const createOffer = async (orderId, driverId) => {
   try {
     const orderOffer = { order: orderId, driver: driverId };
-    createOderOfferSchema.parse(orderOffer);
+    createOfferSchema.parse(orderOffer);
 
     const orderOfferObject = {
       order: orderId,
@@ -20,7 +20,7 @@ export const createOrderOffer = async (orderId, driverId) => {
       offeredAt: Date.now(), // TODO: Check the UTC format
     };
 
-    const newOrderOffer = await OrderOfferModel.create(orderOfferObject);
+    const newOrderOffer = await OfferModel.create(orderOfferObject);
     // console.log('After creating');
 
     return newOrderOffer;
@@ -29,10 +29,10 @@ export const createOrderOffer = async (orderId, driverId) => {
   }
 };
 
-export const getOrderOffer = async (orderId, driverId) => {
+export const getOffer = async (orderId, driverId) => {
   const orderOffer = { order: orderId, driver: driverId };
-  createOderOfferSchema.parse(orderOffer);
+  createOfferSchema.parse(orderOffer);
 
-  const offer = await OrderOfferModel.findOne(orderOffer);
+  const offer = await OfferModel.findOne(orderOffer);
   return offer;
 };
