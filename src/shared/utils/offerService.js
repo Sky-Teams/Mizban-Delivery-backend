@@ -23,8 +23,8 @@ export class OfferService {
     const offerPayload = NotificationPayloads.orderOffered();
     CustomSocket.emitToUser(driver.user.toString(), 'offer', offerPayload);
 
-    // Schedule timeout job
-    await agenda.schedule('2s', 'offer:timeout', {
+    // Schedule timeout job. For simulating the process, timeout is set to 4s
+    await agenda.schedule('4s', 'offer:timeout', {
       orderId,
       driverIndex,
       drivers,
@@ -42,17 +42,12 @@ export class OfferService {
     console.log('Timeout, sending offer to new driver');
     const driver = drivers[driverIndex];
 
-    // TODO We should move this logic in OrderOffer service layer
-    // const offer = await OrderOfferModel.findOne({
-    //   order: orderId,
-    //   driver: driver._id,
-    // });
-
     const offer = await getOrderOffer(orderId, driver._id.toString());
     if (!offer) return;
 
     switch (offer.status) {
       case 'pending':
+        //TODO: In future we need to take care of race condition if we have more than one process.
         offer.status = 'expired';
         await offer.save();
         await OfferService.sendOfferToDriver(orderId, drivers, driverIndex + 1);
