@@ -42,6 +42,16 @@ export const fetchDriverByDriverId = async (driverId) => {
   return drivers;
 };
 
+export const fetchDriverByUserId = async (userId) => {
+  const driver = await DriverModel.findOne({ user: userId })
+    .populate({
+      path: 'user',
+      select: 'name phone email isActive',
+    })
+    .lean();
+  return driver;
+};
+
 // Return only Driver status
 export const getDriverStatusByDriverId = async (driverId) => {
   const driver = await DriverModel.findById(driverId).select('status');
