@@ -525,4 +525,10 @@ export const ERROR_MESSAGES = {
     fa: 'گزینه مرتب‌سازی نامعتبر است',
     ps: 'د ترتیب انتخاب ناسم دی',
   },
+
+  [ERROR_CODES.INVALID_DATE_FORMAT]: {
+    en: 'Invalid date format',
+    fa: 'فرمت تاریخ نامعتبر هست',
+    ps: 'د نیتی بنه ناسم ده',
+  },
 };
