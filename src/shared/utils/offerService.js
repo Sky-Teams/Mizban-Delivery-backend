@@ -1,7 +1,7 @@
 import { agenda } from '#config/agenda.js';
 import { createOffer, getOffer } from '#modules/offers/index.js';
-import { CustomSocket } from '#config/socket.js';
 import { NotificationPayloads } from './notificationPayloadBuilder.js';
+import { NotificationService } from './notificationService..js';
 
 export class OfferService {
   /**
@@ -14,7 +14,7 @@ export class OfferService {
     if (driverIndex >= drivers.length) {
       // TODO we must search what should we do if no driver found. for now we just send an notification for all admins
       const noDriverFoundPayload = NotificationPayloads.noDriverFound(orderId);
-      CustomSocket.emitToAdmins('no-driver', noDriverFoundPayload);
+      await NotificationService.send('admins', 'no-driver', noDriverFoundPayload);
       return;
     }
 
@@ -22,10 +22,10 @@ export class OfferService {
     await createOffer(orderId, driver._id.toString());
 
     const offerPayload = NotificationPayloads.orderOffered();
-    CustomSocket.emitToUser(driver.user.toString(), 'offer', offerPayload);
+    await NotificationService.send('driver', 'offer', offerPayload, driver.user.toString());
 
     // Schedule timeout job. For simulating the process, timeout is set to 4s
-    await agenda.schedule('4s', 'offer:timeout', {
+    await agenda.schedule('30s', 'offer:timeout', {
       orderId,
       driverIndex,
       drivers,
