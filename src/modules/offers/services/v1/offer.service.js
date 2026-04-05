@@ -1,4 +1,8 @@
+import { agenda } from '#config/agenda.js';
+import { fetchDriverByUserId } from '#modules/drivers/index.js';
 import { OfferModel } from '#modules/offers/models/offer.model.js';
+import { AppError, notFound } from '#shared/errors/error.js';
+import { OfferService } from '#shared/utils/offerService.js';
 import { createOfferSchema } from '../../dto/create-offer.schema.js';
 
 /**
@@ -21,7 +25,7 @@ export const createOffer = async (orderId, driverId) => {
     };
 
     const newOrderOffer = await OfferModel.create(orderOfferObject);
-    // console.log('After creating');
+    console.log('Offer Id: ', newOrderOffer._id);
 
     return newOrderOffer;
   } catch (error) {
@@ -34,5 +38,43 @@ export const getOffer = async (orderId, driverId) => {
   createOfferSchema.parse(orderOffer);
 
   const offer = await OfferModel.findOne(orderOffer);
+  return offer;
+};
+
+export const acceptAnOffer = async (offerId, userId) => {
+  console.log('UserId: ', userId);
+  const driver = await fetchDriverByUserId(userId);
+  if (!driver) throw notFound('driver');
+
+  // Atomic update
+  const o = await OfferModel.findOne({ _id: offerId }).lean();
+  console.log('offer: ', o);
+  const offer = await OfferModel.findOneAndUpdate(
+    { _id: offerId, driver: driver._id, status: 'pending' },
+    { status: 'accepted' },
+    { new: true }
+  );
+
+  if (!offer) throw new AppError('Offer already handled or not yours', 400);
+
+  // Cancel pending timeout job
+  await agenda.cancel({ 'data.offerId': offerId });
+
+  return offer;
+};
+
+export const rejectAnOffer = async (offerId, userId) => {
+  const driver = await fetchDriverByUserId(userId);
+  if (!driver) throw notFound('driver');
+  const offer = await OfferModel.findOneAndUpdate(
+    { _id: offerId, driver: driver._id, status: 'pending' },
+    { status: 'rejected' },
+    { new: true }
+  );
+
+  if (!offer) throw new AppError('Offer already handled or not yours', 400);
+
+  // trigger next driver
+  await OfferService.sendOfferToDriver(offer.order, offer.nextDrivers, offer.nextIndex);
   return offer;
 };
