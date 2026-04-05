@@ -104,7 +104,7 @@ describe('Forgot/Reset Password Integration', () => {
         isActive: true,
       });
 
-      const resetToken = user.createToken();
+      const resetToken = user.createPasswordResetToken();
       await user.save({ validateBeforeSave: false });
 
       await RefreshTokenModel.create({
