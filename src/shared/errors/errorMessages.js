@@ -530,4 +530,22 @@ export const ERROR_MESSAGES = {
     fa: 'توکن گوگل نامعتبر هست',
     ps: 'د گوگل توکن نامعتبر دی',
   },
+
+  [ERROR_CODES.PASSWORD_NOT_MATCHING]: {
+    en: 'Passwords do not match',
+    fa: 'رمز عبور مطابقت ندارد',
+    ps: 'پټنومونه سره نه سمون خوري',
+  },
+
+  [ERROR_CODES.INVALID_TOKEN]: {
+    en: 'Invalid token',
+    fa: 'توکن نا معتبر است',
+    ps: 'توکن ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_RESET_PASSWORD_TOKEN]: {
+    en: 'The password reset token is invalid',
+    fa: 'توکن بازیابی رمز عبور نامعتبر است',
+    ps: 'د پټنوم د بیا تنظیم ټوکن ناسم دی',
+  },
 };

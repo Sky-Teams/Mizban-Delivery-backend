@@ -4,8 +4,10 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError } from '#shared/errors/error.js';
 import {
   authenticateWithGoogle,
+  forgotPasswordService,
   loginService,
   refreshService,
+  resetPasswordService,
 } from '../../services/v1/auth.service.js';
 import { doesUserExist, registerUser } from '../../services/v1/auth.service.js';
 
@@ -68,5 +70,28 @@ export const googleLogin = async (req, res) => {
   res.status(200).json({
     success: true,
     data: { token: accessToken, id, email, role },
+  });
+};
+
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  await forgotPasswordService({ email });
+
+  res.status(200).json({
+    success: true,
+    message: 'Email sent',
+  });
+};
+
+export const resetPassword = async (req, res) => {
+  const { resetToken } = req.params;
+  const { newPassword } = req.body;
+
+  await resetPasswordService({ resetToken, newPassword });
+
+  res.status(200).json({
+    success: true,
+    message: 'Password updated successfully',
   });
 };
