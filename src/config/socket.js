@@ -37,7 +37,6 @@ export class CustomSocket {
       socket.userId = payload.id;
       socket.role = payload.role;
 
-      console.log('Socket.userId: ', payload.id);
       socket.join(socket.userId); // Add user to a personal room
 
       // Join admin room if role is ADMIN
