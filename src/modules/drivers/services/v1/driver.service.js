@@ -167,10 +167,10 @@ export const addNewDriver = withTransaction(addDriver);
  * Find nearest drivers based on pickupLocation
  * @param {Array} pickupLocation - coordinates of pickupLocation
  * @param {Number} maxDistance - the radius of searching area to find the nearest drivres. Default is 5000m
- * @param {Number} limit - limit the number of drivers. Default is 10
+ * @param {Number} limit - limit the number of drivers. Default is 10. We can change it based on future requirements
  * @returns {Array} Nearest Drivers as an array
  */
-export const findNearestDrivers = async (pickupLocation, maxDistance = 4000, limit = 10) => {
+export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, limit = 10) => {
   try {
     const nearestDrivers = await DriverModel.find({
       status: 'idle',
