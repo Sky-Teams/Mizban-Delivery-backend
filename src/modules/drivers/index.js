@@ -11,6 +11,7 @@ export {
   fetchDrivers,
   getDriverStatusByDriverId,
   findNearestAndScore,
+  fetchDriverByUserId,
 } from './services/v1/driver.service.js';
 export {
   addDriver,
