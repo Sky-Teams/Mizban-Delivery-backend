@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { registerUser, doesUserExist } from '#modules/users/index.js';
 import { UserModel } from '#modules/users/index.js';
 
-vi.mock('#root/src/config/agenda.js', () => ({
+vi.mock('#config/agenda.js', () => ({
   agenda: {
     now: vi.fn(),
   },

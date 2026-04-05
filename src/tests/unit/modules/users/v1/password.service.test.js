@@ -5,7 +5,7 @@ import {
   forgotPasswordService,
   resetPasswordService,
 } from '#modules/users/services/v1/auth.service.js';
-import { agenda } from '#root/src/config/agenda.js';
+import { agenda } from '#config/agenda.js';
 import { UserModel } from '#modules/users/models/user.model.js';
 import { RefreshTokenModel } from '#modules/users/models/refreshToken.model.js';
 
@@ -16,7 +16,7 @@ vi.mock('bcryptjs', () => ({
   },
 }));
 
-vi.mock('#root/src/config/agenda.js', () => ({
+vi.mock('#config/agenda.js', () => ({
   agenda: {
     now: vi.fn(),
   },
