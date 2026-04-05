@@ -17,12 +17,10 @@ export const createOffer = async (orderId, driverId) => {
     const orderOfferObject = {
       order: orderId,
       driver: driverId,
-      offeredAt: Date.now(), // TODO: Check the UTC format
+      offeredAt: new Date(),
     };
 
     const newOrderOffer = await OfferModel.create(orderOfferObject);
-    // console.log('After creating');
-
     return newOrderOffer;
   } catch (error) {
     console.log('Error creating orderOffer. ', error);
