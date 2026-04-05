@@ -540,4 +540,9 @@ export const ERROR_MESSAGES = {
     fa: 'توکن بازیابی رمز عبور نامعتبر است',
     ps: 'د پټنوم د بیا تنظیم ټوکن ناسم دی',
   },
+  [ERROR_CODES.INVALID_ORDER_ID]: {
+    en: 'Invalid order ID',
+    fa: 'آیدی سفارش نامعتبر است',
+    ps: 'د امر پېژند ناسم دی',
+  },
 };
