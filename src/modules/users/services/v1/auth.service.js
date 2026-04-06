@@ -41,7 +41,12 @@ const validateLoginUser = async (user, password) => {
     throw new AppError('Account is disabled!', 403, ERROR_CODES.ACCOUNT_DISABLED);
   }
 
-  if (!user.isVerified) throw new AppError('You email is not verified, please verify your email');
+  if (!user.isVerified)
+    throw new AppError(
+      'You email is not verified, please verify your email',
+      403,
+      ERROR_CODES.EMAIL_NOT_VERIFIED
+    );
 };
 
 // Refresh helpers
@@ -94,14 +99,20 @@ const rotateRefreshToken = async (currentTokenId) => {
 };
 // -----------
 
-// Forgot password helpers
+// password helpers
+
 const findUserByEmailVerificationToken = async (verifyToken) => {
   const user = await UserModel.findOne({
     emailVerificationToken: hashToken(verifyToken),
     emailVerificationExpires: { $gt: new Date() },
   });
 
-  if (!user) throw new AppError('Invalid or expired token', 400, ERROR_CODES.INVALID_TOKEN);
+  if (!user)
+    throw new AppError(
+      'Invalid or expired token',
+      400,
+      ERROR_CODES.INVALID_EMAIL_VERIFICATION_TOKEN
+    );
 
   return user;
 };
