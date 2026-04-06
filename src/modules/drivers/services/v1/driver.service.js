@@ -43,12 +43,7 @@ export const fetchDriverByDriverId = async (driverId) => {
 };
 
 export const fetchDriverByUserId = async (userId) => {
-  const driver = await DriverModel.findOne({ user: userId })
-    .populate({
-      path: 'user',
-      select: 'name phone email isActive',
-    })
-    .lean();
+  const driver = await DriverModel.findOne({ user: userId });
   return driver;
 };
 
