@@ -1,6 +1,7 @@
 import { agenda } from '#config/agenda.js';
 import { fetchDriverByUserId } from '#modules/drivers/index.js';
 import { OfferModel } from '#modules/offers/models/offer.model.js';
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { OfferService } from '#shared/utils/offerService.js';
 import { createOfferSchema } from '../../dto/create-offer.schema.js';
@@ -42,20 +43,26 @@ export const getOffer = async (orderId, driverId) => {
 };
 
 export const acceptAnOffer = async (offerId, userId) => {
-  console.log('UserId: ', userId);
   const driver = await fetchDriverByUserId(userId);
   if (!driver) throw notFound('driver');
 
   // Atomic update
-  const o = await OfferModel.findOne({ _id: offerId }).lean();
-  console.log('offer: ', o);
   const offer = await OfferModel.findOneAndUpdate(
     { _id: offerId, driver: driver._id, status: 'pending' },
     { status: 'accepted' },
     { new: true }
   );
 
-  if (!offer) throw new AppError('Offer already handled or not yours', 400);
+  if (!offer)
+    throw new AppError(
+      'Offer already handled or not yours',
+      400,
+      ERROR_CODES.OFFER_HANDLED_OR_NOT_YOURS
+    );
+
+  // Update the status of driver
+  driver.status = 'assigned';
+  driver.save();
 
   // Cancel pending timeout job
   await agenda.cancel({ 'data.offerId': offerId });
