@@ -39,12 +39,12 @@ describe('verifyUserEmail', () => {
     expect(fakeUser.save).toHaveBeenCalledTimes(1);
   });
 
-  it('throws INVALID_TOKEN when token is invalid/expired', async () => {
+  it('throws  when token is invalid/expired', async () => {
     UserModel.findOne.mockResolvedValue(null);
 
     await expect(verifyUserEmail('bad-token')).rejects.toMatchObject({
       status: 400,
-      code: ERROR_CODES.INVALID_TOKEN,
+      code: ERROR_CODES.INVALID_EMAIL_VERIFICATION_TOKEN,
       isOperational: true,
     });
   });
