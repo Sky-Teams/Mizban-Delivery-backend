@@ -33,6 +33,20 @@ const queryValidator = z.object({
       .string()
       .refine((val) => mongoose.Types.ObjectId.isValid(val), { message: ERROR_CODES.INVALID_ID })
       .optional(),
+    serviceType: z
+      .enum(['immediate', 'scheduled'], { message: ERROR_CODES.INVALID_SERVICE_TYPE })
+      .optional(),
+    serviceLevel: z
+      .enum(['standard', 'express'], { message: ERROR_CODES.INVALID_SERVICE_LEVEL })
+      .optional(),
+    paymentType: z
+      .enum(['online', 'COD'], { message: ERROR_CODES.INVALID_PAYMENT_TYPE })
+      .optional(),
+    paymentStatus: z
+      .enum(['pending', 'paid', 'failed'], {
+        message: ERROR_CODES.INVALID_PAYMENT_STATUS,
+      })
+      .optional(),
   }),
 });
 
