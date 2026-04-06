@@ -4,11 +4,13 @@ import { RefreshTokenModel } from '../../models/refreshToken.model.js';
 import {
   generateAccessToken,
   generateRefreshToken,
+  hashPassword,
   hashToken,
   REFRESH_TOKEN_EXPIRES_TIME,
 } from '#shared/utils/jwt.js';
-import { AppError, unauthorized } from '#shared/errors/error.js';
+import { AppError, notFound, unauthorized } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import { agenda } from '../../../../config/agenda.js';
 
 //!  Helper Functions
 
@@ -21,7 +23,7 @@ export const doesUserExist = async (fields) => {
 };
 
 // Login helpers
-const getUserByEmail = async (email) => {
+export const getUserByEmail = async (email) => {
   const user = await UserModel.findOne({ email });
   if (!user) {
     throw new AppError('Invalid email or password', 401, ERROR_CODES.INVALID_CREDENTIAL);
@@ -88,9 +90,23 @@ const rotateRefreshToken = async (currentTokenId) => {
 
   return newRefreshToken;
 };
+// -----------
+
+// Forgot password helpers
+const findUserByResetToken = async (resetToken) => {
+  const user = await UserModel.findOne({
+    passwordResetToken: hashToken(resetToken),
+    passwordResetExpires: { $gt: new Date() },
+  });
+
+  if (!user) throw new AppError('Invalid or expired token', 400, ERROR_CODES.INVALID_TOKEN);
+
+  return user;
+};
 
 //!  Services
 
+// Register
 export const registerUser = async (data) => {
   const { email, name, phone, password } = data;
 
@@ -109,6 +125,7 @@ export const registerUser = async (data) => {
   };
 };
 
+// Login
 export const loginService = async ({ email, password }, deviceId) => {
   const user = await getUserByEmail(email);
 
@@ -140,6 +157,7 @@ export const loginService = async ({ email, password }, deviceId) => {
   };
 };
 
+// Refresh Token
 export const refreshService = async ({ refreshToken, deviceId }) => {
   const currentToken = await getStoredRefreshToken({ refreshToken, deviceId });
 
@@ -153,8 +171,64 @@ export const refreshService = async ({ refreshToken, deviceId }) => {
   };
 };
 
+// Forgot Password
+export const forgotPasswordService = async ({ email }) => {
+  const user = await getUserByEmail(email);
+
+  const resetToken = user.createPasswordResetToken();
+  await user.save({ validateBeforeSave: false });
+
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+  await agenda.now('send-reset-password-email', {
+    email: user.email,
+    username: user.name,
+    resetUrl,
+  });
+
+  return { resetUrl };
+};
+
+// Reset Password
+export const resetPasswordService = async ({ resetToken, newPassword }) => {
+  const user = await findUserByResetToken(resetToken);
+
+  user.set({
+    password: await hashPassword(newPassword),
+    passwordResetToken: null,
+    passwordResetExpires: null,
+    changedPasswordAt: new Date(Date.now()),
+  });
+
+  await user.save();
+
+  await RefreshTokenModel.deleteMany({ user: user._id });
+};
+
 export const getAllAdmins = async () => {
   const admins = await UserModel.find({ role: 'admin' });
 
   return admins;
+};
+
+export const changePasswordService = async (userId, { currentPassword, newPassword }) => {
+  const user = await UserModel.findById(userId);
+  if (!user) throw notFound('User');
+
+  const psMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!psMatch) {
+    throw new AppError('Invalid current password', 401, ERROR_CODES.INVALID_CREDENTIAL);
+  }
+
+  user.password = hashPassword(newPassword);
+  user.changedPasswordAt = new Date();
+  await user.save();
+
+  await RefreshTokenModel.deleteMany({ user: user._id });
+};
+
+export const logoutUser = async ({ refreshToken, deviceId }) => {
+  const hashedToken = hashToken(refreshToken);
+
+  await RefreshTokenModel.deleteOne({ token: hashedToken, deviceId });
 };
