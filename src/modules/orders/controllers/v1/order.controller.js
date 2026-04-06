@@ -64,10 +64,14 @@ export const getOrders = async (req, res) => {
 
   const { page, limit } = req.query;
   const searchQuery = {
-    type: req.query.type,
-    priority: req.query.priority,
-    status: req.query.status,
-    driverId: req.query.driverId,
+    type: req.query?.type,
+    priority: req.query?.priority,
+    status: req.query?.status,
+    driverId: req.query?.driverId,
+    serviceType: req.query?.serviceType,
+    serviceLevel: req.query?.serviceLevel,
+    paymentType: req.query?.paymentType,
+    paymentStatus: req.query?.paymentStatus,
   };
 
   const { orders, totalOrders, totalPage } = await getAllOrders(page, limit, searchQuery);

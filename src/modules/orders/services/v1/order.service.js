@@ -4,7 +4,7 @@ import { AppError, noFieldsProvidedForUpdate, notFound } from '#shared/errors/er
 import { eventBus } from '#shared/event-bus/eventBus.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
-import { driverQueryBuilder, orderUpdateQuery } from '#shared/utils/queryBuilder.js';
+import { orderUpdateQuery } from '#shared/utils/queryBuilder.js';
 import { OrderModel } from '../../models/order.model.js';
 
 export const addOrder = async (orderData) => {
