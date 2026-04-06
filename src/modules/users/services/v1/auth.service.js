@@ -9,7 +9,7 @@ import {
   hashToken,
   REFRESH_TOKEN_EXPIRES_TIME,
 } from '#shared/utils/jwt.js';
-import { AppError, unauthorized } from '#shared/errors/error.js';
+import { AppError, notFound, unauthorized } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { verifyGoogleToken } from '#shared/utils/googleOAuth.js';
 import { agenda } from '../../../../config/agenda.js';
@@ -92,6 +92,7 @@ const rotateRefreshToken = async (currentTokenId) => {
 
   return newRefreshToken;
 };
+// -----------
 
 export const createUserFromGoogle = async (googleUserInfo) => {
   //To prevent error assign a randome password for the user
@@ -276,4 +277,26 @@ export const authenticateWithGoogle = async (token, deviceId) => {
     refreshToken,
     role: user.role,
   };
+}
+
+export const changePasswordService = async (userId, { currentPassword, newPassword }) => {
+  const user = await UserModel.findById(userId);
+  if (!user) throw notFound('User');
+
+  const psMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!psMatch) {
+    throw new AppError('Invalid current password', 401, ERROR_CODES.INVALID_CREDENTIAL);
+  }
+
+  user.password = hashPassword(newPassword);
+  user.changedPasswordAt = new Date();
+  await user.save();
+
+  await RefreshTokenModel.deleteMany({ user: user._id });
+};
+
+export const logoutUser = async ({ refreshToken, deviceId }) => {
+  const hashedToken = hashToken(refreshToken);
+
+  await RefreshTokenModel.deleteOne({ token: hashedToken, deviceId });
 };
