@@ -549,4 +549,21 @@ export const ERROR_MESSAGES = {
     fa: 'توکن بازیابی رمز عبور نامعتبر است',
     ps: 'د پټنوم د بیا تنظیم ټوکن ناسم دی',
   },
+  [ERROR_CODES.INVALID_LOG_FILE_TYPE]: {
+    en: 'Invalid log file type',
+    fa: 'نوع فایل لاگ نامعتبر است',
+    ps: 'د لاګ فایل ډول ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_METHOD_OPTIONS]: {
+    en: 'Invalid method options',
+    fa: 'پارامترهای متد نامعتبر است',
+    ps: 'د میتود اختیارونه ناسم دي',
+  },
+
+  [ERROR_CODES.INVALID_LOG_ID]: {
+    en: 'Invalid log id',
+    fa: 'ای دی لاگ نامعتبر هست',
+    ps: 'د لاگ ای دی ناسم دی',
+  },
 };
