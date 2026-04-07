@@ -19,15 +19,7 @@ export const createOffer = async (orderId, driverId) => {
     const orderOffer = { order: orderId, driver: driverId };
     createOfferSchema.parse(orderOffer);
 
-    const orderOfferObject = {
-      order: orderId,
-      driver: driverId,
-      offeredAt: new Date(),
-    };
-
-    const newOrderOffer = await OfferModel.create(orderOfferObject);
-    console.log('Offer Id: ', newOrderOffer._id);
-
+    const newOrderOffer = await OfferModel.create(orderOffer);
     return newOrderOffer;
   } catch (error) {
     console.log('Error creating orderOffer. ', error);
