@@ -43,11 +43,8 @@ export class OfferService {
 
       // For system error, DB error, or other critical errors, its better to stop the process and notify the admin
       console.error('Error in sendOfferToDriver:', error);
-      CustomSocket.emitToAdmins('system-error', {
-        orderId,
-        driverId: driver._id,
-        message: error.message,
-      });
+      const systemErrorPayload = NotificationPayloads.systemError(error.message);
+      CustomSocket.emitToAdmins('system-error', systemErrorPayload);
 
       return; // We explicitly return to stop more processing
     }
