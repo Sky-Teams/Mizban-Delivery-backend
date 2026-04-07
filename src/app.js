@@ -13,7 +13,7 @@ import { businessCustomerRoutes } from '#modules/businessCustomers/index.js';
 import { routeNotFound } from '#shared/errors/error.js';
 import { orderRoutes } from '#modules/orders/index.js';
 import { loggerMiddleware } from '#shared/middleware/loggerMiddleware.js';
-import { logRoutes } from '#modules/logs/index.js';
+import { logRoutes } from '#modules/log/index.js';
 
 const app = express();
 
