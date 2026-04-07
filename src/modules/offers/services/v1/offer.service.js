@@ -64,8 +64,8 @@ export const acceptAnOffer = async (offerId, userId) => {
   driver.status = 'assigned';
   driver.save();
 
-  // Cancel pending timeout job
-  await agenda.cancel({ 'data.offerId': offerId });
+  // Cancel timeout job
+  await agenda.cancel({ name: 'offer:timeout', 'data.offerId': offerId });
 
   return offer;
 };
@@ -79,9 +79,14 @@ export const rejectAnOffer = async (offerId, userId) => {
     { new: true }
   );
 
-  if (!offer) throw new AppError('Offer already handled or not yours', 400);
+  if (!offer)
+    throw new AppError(
+      'Offer already handled or not yours',
+      400,
+      ERROR_CODES.OFFER_HANDLED_OR_NOT_YOURS
+    );
 
-  // trigger next driver
+  // sent offer to next driver
   await OfferService.sendOfferToDriver(offer.order, offer.nextDrivers, offer.nextIndex);
   return offer;
 };
