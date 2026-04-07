@@ -1,7 +1,6 @@
 import { toLogSummary } from '#shared/errors/customCodes.js';
 import { notFound } from '#shared/errors/error.js';
 import { getTopLogs, readLogs } from '#shared/logger/helper.log.js';
-import { date } from 'zod';
 
 //Get All Logs
 export const getAllLogs = async (page = 1, limit = 10, searchQuery = {}) => {

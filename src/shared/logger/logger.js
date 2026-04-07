@@ -2,7 +2,7 @@ import pino from 'pino';
 import path from 'path';
 
 const logsDir = path.join(process.cwd(), 'logs');
-const transportPath= path.join(import.meta.dirname, 'levelFilterTransport.js')
+const transportPath = path.join(import.meta.dirname, 'levelFilterTransport.js');
 
 //create a transport
 const transports = pino.transport({
