@@ -19,17 +19,38 @@ export class OfferService {
     }
 
     const driver = drivers[driverIndex];
-    await createOffer(orderId, driver._id.toString());
+    try {
+      const offer = await createOffer(orderId, driver._id.toString());
+      if (!offer) {
+        return await OfferService.sendOfferToDriver(orderId, drivers, driverIndex + 1);
+      }
+      const offerPayload = NotificationPayloads.orderOffered();
+      CustomSocket.emitToUser(driver.user.toString(), 'offer', offerPayload);
 
-    const offerPayload = NotificationPayloads.orderOffered();
-    CustomSocket.emitToUser(driver.user.toString(), 'offer', offerPayload);
+      // Schedule timeout job. For simulating the process, timeout is set to 4s
+      await agenda.schedule('4s', 'offer:timeout', {
+        orderId,
+        driverIndex,
+        drivers,
+      });
+    } catch (error) {
+      // For validation Error, we send offer to next driver without blocking the recommendation service.
+      if (error.name === 'ZodError') {
+        console.warn(`Validation error for driver ${driver._id}: ${error.message}`);
+        // We send offer to next driver
+        return await OfferService.sendOfferToDriver(orderId, drivers, driverIndex + 1);
+      }
 
-    // Schedule timeout job. For simulating the process, timeout is set to 4s
-    await agenda.schedule('4s', 'offer:timeout', {
-      orderId,
-      driverIndex,
-      drivers,
-    });
+      // For system error, DB error, or other critical errors, its better to stop the process and notify the admin
+      console.error('Error in sendOfferToDriver:', error);
+      CustomSocket.emitToAdmins('system-error', {
+        orderId,
+        driverId: driver._id,
+        message: error.message,
+      });
+
+      return; // We explicitly return to stop more processing
+    }
   }
 
   /**
