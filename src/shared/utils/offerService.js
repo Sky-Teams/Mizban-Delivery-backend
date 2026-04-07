@@ -19,7 +19,7 @@ export class OfferService {
     }
 
     const driver = drivers[driverIndex];
-    await createOffer(orderId, driver._id.toString());
+    const offer = await createOffer(orderId, driver._id.toString());
 
     const offerPayload = NotificationPayloads.orderOffered();
     await NotificationService.send('driver', 'offer', offerPayload, driver.user.toString());
@@ -29,6 +29,7 @@ export class OfferService {
       orderId,
       driverIndex,
       drivers,
+      offerId: offer._id,
     });
   }
 
@@ -40,7 +41,7 @@ export class OfferService {
    * @param {Array} param0.drivers
    */
   static async handleOfferTimeout({ orderId, driverIndex, drivers }) {
-    console.log('Timeout, sending offer to new driver');
+    console.log(`Timeout, sending offer to new driver: ${drivers[driverIndex]._id}`);
     const driver = drivers[driverIndex];
 
     const offer = await getOffer(orderId, driver._id.toString());
