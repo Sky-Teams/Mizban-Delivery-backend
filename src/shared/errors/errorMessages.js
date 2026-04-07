@@ -66,6 +66,12 @@ export const ERROR_MESSAGES = {
     ps: 'پټنوم بدل شوی دی',
   },
 
+  [ERROR_CODES.PASSWORDS_NOT_MATCHES]: {
+    en: 'Passwords do not match',
+    fa: 'رمزهای عبور مطابقت ندارند',
+    ps: 'پټنومونه سره سمون نلري',
+  },
+
   [ERROR_CODES.NO_FIELDS_PROVIDED]: {
     en: 'No fields provided for update',
     fa: ' هیچ فیلدی برای به‌روزرسانی ارائه نشده است.',
@@ -532,6 +538,12 @@ export const ERROR_MESSAGES = {
     ps: 'د نیتی بنه ناسم ده',
   },
 
+  [ERROR_CODES.LOGOUT_INVALID_SESSION]: {
+    en: 'Logout failed. Please try again.',
+    fa: 'خروج انجام نشد، لطفاً دوباره تلاش کنید.',
+    ps: 'وتل ممکن نه شول، مهرباني وکړئ بیا هڅه وکړئ.',
+  },
+  
   [ERROR_CODES.PASSWORD_NOT_MATCHING]: {
     en: 'Passwords do not match',
     fa: 'رمز عبور مطابقت ندارد',
