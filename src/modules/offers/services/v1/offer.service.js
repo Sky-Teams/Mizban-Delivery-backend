@@ -31,6 +31,7 @@ export const createOffer = async (orderId, driverId) => {
     return newOrderOffer;
   } catch (error) {
     console.log('Error creating orderOffer. ', error);
+    throw error;
   }
 };
 

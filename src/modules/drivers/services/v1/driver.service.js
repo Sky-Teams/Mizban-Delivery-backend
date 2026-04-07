@@ -183,6 +183,7 @@ export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, lim
     return nearestDrivers;
   } catch (error) {
     console.error('Error in finding nearest drivers. ', error.message);
+    return [];
   }
 };
 

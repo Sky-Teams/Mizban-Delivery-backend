@@ -22,4 +22,9 @@ export const NotificationPayloads = {
     title: 'No Driver Found',
     message: `No Driver found for order ${orderId}`,
   }),
+  systemError: (message) => ({
+    type: 'SYSTEM-ERROR',
+    title: 'System Error',
+    message,
+  }),
 };
