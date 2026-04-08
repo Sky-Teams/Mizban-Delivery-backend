@@ -19,6 +19,7 @@ export class OfferService {
     }
 
     const driver = drivers[driverIndex];
+    console.log('Send offer to driver: ', driver._id);
 
     try {
       const offer = await createOffer(orderId, driver._id.toString());
@@ -28,7 +29,9 @@ export class OfferService {
       const offerPayload = NotificationPayloads.orderOffered();
       await NotificationService.send('driver', 'offer', offerPayload, driver.user.toString());
 
-      // Schedule timeout job. For simulating the process, timeout is set to 4s
+      console.log('Offer Id: ', offer._id);
+
+      // Schedule timeout job. For simulating the process, timeout is set to 30s
       await agenda.schedule('30s', 'offer:timeout', {
         orderId,
         driverIndex,
