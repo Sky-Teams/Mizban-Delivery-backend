@@ -3,8 +3,6 @@ import { unauthorized } from '#shared/errors/error.js';
 
 export const acceptOffer = async (req, res) => {
   if (!req.user) throw unauthorized();
-  console.log(req.user);
-
   const offer = await acceptAnOffer(req.params.id, req.user._id);
   res.status(200).json({ success: true, data: offer });
 };
