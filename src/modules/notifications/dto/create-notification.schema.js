@@ -2,7 +2,7 @@ import { z } from 'zod';
 import mongoose from 'mongoose';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
-const notificationTypes = ['SYSTEM', 'PAYMENT', 'ORDER'];
+const notificationTypes = ['SYSTEM', 'PAYMENT', 'ORDER', 'NO-DRIVER'];
 
 export const createNotificationSchema = z.object({
   user: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {

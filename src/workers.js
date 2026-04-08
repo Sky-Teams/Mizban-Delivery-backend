@@ -1,12 +1,16 @@
 import 'dotenv/config';
-
 import { agenda } from './config/agenda.js';
-
-import { defineEmailVerificationEmailJobs, defineResetPasswordEmailJobs } from './jobs/email.job.js';
+import { defineOfferJobs } from './jobs/offer.job.js';
+import {
+  defineEmailVerificationEmailJobs,
+  defineResetPasswordEmailJobs,
+} from './jobs/email.job.js';
 
 async function startWorker() {
   // Register the email job so agenda knows how to execute it
+
   await defineResetPasswordEmailJobs(agenda);
+  await defineOfferJobs();
   await defineEmailVerificationEmailJobs(agenda);
 
   // This event runs when a job --fails-- and is retried
@@ -61,7 +65,9 @@ async function startWorker() {
   process.on('SIGINT', graceful);
 }
 
-// Start the worker
-startWorker().catch((err) => {
-  console.error('Failed to start worker:', err);
-});
+export const startAgenda = () => {
+  // Start the worker
+  startWorker().catch((err) => {
+    console.error('Failed to start worker:', err);
+  });
+};

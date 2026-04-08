@@ -5,7 +5,11 @@ import { verifyJWT } from '#shared/utils/jwt.js';
 export class CustomSocket {
   static #io = null;
 
-  // Initialize socket server
+  /**
+   * Initialize socket server only once for entire life of the process
+   * @param {Server} server - Server that is created by http.createServer method
+   * @returns
+   */
   static initialize(server) {
     if (!server) throw new Error('No Server Provided');
     if (this.#io) return; // Already initialized
@@ -49,13 +53,19 @@ export class CustomSocket {
     });
   }
 
-  // Get io instance
+  /**
+   * Return the instance of server socket
+   * @returns Instance of server socket
+   */
   static getIO() {
     if (!this.#io) throw new Error('Socket is not initialized');
     return this.#io;
   }
 
-  // Return number of active users in system
+  /**
+   * Calculate the number of active users
+   * @returns {Number} Total Number of active users
+   */
   static getOnlineUserCount() {
     if (!this.#io) throw new Error('Socket is not initialized');
 
@@ -76,13 +86,35 @@ export class CustomSocket {
     return onlineUsers.size;
   }
 
+  /**
+   * Emit an event to user
+   * @param {String} userId - UserId as string not objectId
+   * @param {String} event - Type of event that should be emit
+   * @param {Object} payload - Payload that should be send to front
+   */
   static emitToUser(userId, event, payload) {
     if (!this.#io) throw new Error('Socket is not initialized');
-
     this.getIO().to(userId).emit(event, payload);
   }
 
+  /**
+   * emit an event to all admins
+   * @param {String} event - Type of event that should be emit
+   * @param {Object} payload - Payload that should be send to front
+   */
   static emitToAdmins(event, payload) {
     this.getIO().to('admins').emit(event, payload);
+  }
+
+  /**
+   * emit an event to all drivers that are in idle status
+   * @param {Array} drivers - Array of drivers object
+   * @param {String} event - Type of event that should be emit
+   * @param {Object} payload - Payload that should be send to front
+   */
+  static emitToDrivers(drivers, event, payload) {
+    for (const driver of drivers) {
+      this.emitToUser(driver.user.toString(), event, payload);
+    }
   }
 }

@@ -8,7 +8,8 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
-    "dev": "concurrently \"npm run dev:api\" \"npm run worker:dev\"",
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
     "dev:api": "nodemon src/server.js",
     "start:api": "node src/server.js",
     "worker:dev": "nodemon src/workers.js",
@@ -23,7 +24,7 @@
     "test:integration": "vitest src/tests/integration",
     "test:e2e": "vitest src/tests/e2e",
     "test:specific": "vitest",
-    "create:admin": "node src/scripts/createAdmin.js"
+    "seed": "node src/scripts/seed.js"
   },
   "imports": {
     "#shared/*": "./src/shared/*",
@@ -39,6 +40,7 @@
   "dependencies": {
     "@agendajs/mongo-backend": "^4.0.0",
     "agenda": "^6.2.3",
+    "axios": "^1.14.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
