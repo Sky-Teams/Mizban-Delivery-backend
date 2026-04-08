@@ -23,6 +23,8 @@ const DriverSchema = new mongoose.Schema(
       maxWeightKg: { type: Number, min: 0, required: true },
       maxPackages: { type: Number, min: 0, required: true },
     },
+    activeOrders: { type: Number, default: 0, min: 0 }, // Number of active orders of a driver
+    maxOrders: { type: Number, default: 5, min: 1 }, // This default values is only for test, we can change it later.
     currentLocation: {
       type: { type: String, enum: ['Point'], default: 'Point' },
       coordinates: { type: [Number], default: [0, 0] },
