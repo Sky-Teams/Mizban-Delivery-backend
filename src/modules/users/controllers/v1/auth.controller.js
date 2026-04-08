@@ -3,6 +3,7 @@ import { ensureDeviceId, getDeviceId } from '#shared/utils/auth.helper.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, unauthorized } from '#shared/errors/error.js';
 import {
+  authenticateWithGoogle,
   logoutUser,
   forgotPasswordService,
   loginService,
@@ -54,6 +55,24 @@ export const refreshAccessToken = async (req, res) => {
   res.status(200).json({
     success: true,
     data: { token: accessToken },
+  });
+};
+
+export const googleLogin = async (req, res) => {
+  const deviceId = ensureDeviceId(req, res);
+  const { id_token } = req.body;
+  if (!id_token) throw new AppError('Invalid google token', 401, ERROR_CODES.INVALID_GOOGLE_TOKEN);
+
+  const { accessToken, refreshToken, id, email, role } = await authenticateWithGoogle(
+    id_token,
+    deviceId
+  );
+
+  res.cookie('refreshToken', refreshToken, cookieOptions);
+
+  res.status(200).json({
+    success: true,
+    data: { token: accessToken, id, email, role },
   });
 };
 

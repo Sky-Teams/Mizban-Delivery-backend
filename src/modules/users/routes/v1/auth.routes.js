@@ -1,6 +1,7 @@
 import express from 'express';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import {
+  googleLogin,
   login,
   logout,
   changePassword,
@@ -36,4 +37,5 @@ router.post(
   asyncHandler(resetPassword)
 );
 
+router.post('/google', asyncHandler(googleLogin));
 export default router;

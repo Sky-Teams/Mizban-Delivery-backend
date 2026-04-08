@@ -46,6 +46,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "google-auth-library": "^10.6.2",
     "jsonwebtoken": "^9.0.3",
     "libphonenumber-js": "^1.12.37",
     "mongodb-memory-server": "^11.0.1",
