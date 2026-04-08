@@ -3,6 +3,7 @@ import { UserModel } from '../../models/user.model.js';
 import { RefreshTokenModel } from '../../models/refreshToken.model.js';
 import {
   generateAccessToken,
+  generateRandomPassword,
   generateRefreshToken,
   hashPassword,
   hashToken,
@@ -11,6 +12,7 @@ import {
 import { AppError, notFound, unauthorized } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { agenda } from '#config/agenda.js';
+import { verifyGoogleToken } from '#shared/utils/googleOAuth.js';
 
 //!  Helper Functions
 
@@ -117,6 +119,36 @@ const findUserByEmailVerificationToken = async (verifyToken) => {
   return user;
 };
 
+export const createUserFromGoogle = async (googleUserInfo) => {
+  //To prevent error assign a randome password for the user
+  const randomPassword = await generateRandomPassword();
+
+  const newUser = await UserModel.create({
+    googleId: googleUserInfo.sub,
+    email: googleUserInfo.email,
+    name: googleUserInfo.name,
+    password: randomPassword,
+    // We can add profile picture in future
+  });
+
+  return newUser;
+};
+
+export const findOrCreateUser = async (userData) => {
+  let user = await UserModel.findOne({
+    $or: [{ googleId: userData.sub }, { email: userData.email }],
+  });
+
+  if (!user) {
+    user = await createUserFromGoogle(userData);
+  } else if (!user.googleId) {
+    user.googleId = userData.sub;
+    await user.save();
+  }
+  return user;
+};
+
+// Forgot password helpers
 const findUserByResetToken = async (resetToken) => {
   const user = await UserModel.findOne({
     passwordResetToken: hashToken(resetToken),
@@ -124,8 +156,30 @@ const findUserByResetToken = async (resetToken) => {
   });
 
   if (!user) throw new AppError('Invalid or expired token', 400, ERROR_CODES.INVALID_TOKEN);
-
   return user;
+};
+
+export const generateTokens = async (user, deviceId) => {
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken();
+
+  await RefreshTokenModel.findOneAndUpdate(
+    { user: user._id, deviceId },
+    {
+      token: hashToken(refreshToken),
+      expireAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRES_TIME),
+    },
+    {
+      upsert: true,
+      new: true,
+      runValidators: true,
+      setDefaultsOnInsert: true,
+    }
+  );
+  return {
+    accessToken,
+    refreshToken,
+  };
 };
 
 //!  Services
@@ -257,6 +311,20 @@ export const getAllAdmins = async () => {
   const admins = await UserModel.find({ role: 'admin' });
 
   return admins;
+};
+
+export const authenticateWithGoogle = async (token, deviceId) => {
+  const googleUserInfo = await verifyGoogleToken(token);
+  const user = await findOrCreateUser(googleUserInfo);
+  const { accessToken, refreshToken } = await generateTokens(user, deviceId);
+
+  return {
+    id: user._id,
+    email: user.email,
+    accessToken,
+    refreshToken,
+    role: user.role,
+  };
 };
 
 export const changePasswordService = async (userId, { currentPassword, newPassword }) => {
