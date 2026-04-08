@@ -1,6 +1,6 @@
 import { logger } from '#shared/logger/logger.js';
 import { loggerMiddleware } from '#shared/middleware/loggerMiddleware.js';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 vi.mock('#shared/logger/logger.js', () => ({
   logger: {
@@ -23,7 +23,7 @@ describe('loggerMiddleware', () => {
     };
     res = {
       statusCode: 200,
-      json :  vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
       locals: {},
       on: vi.fn((event, callback) => {
         if (event === 'finish') {

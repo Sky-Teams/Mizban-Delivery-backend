@@ -543,7 +543,7 @@ export const ERROR_MESSAGES = {
     fa: 'خروج انجام نشد، لطفاً دوباره تلاش کنید.',
     ps: 'وتل ممکن نه شول، مهرباني وکړئ بیا هڅه وکړئ.',
   },
-  
+
   [ERROR_CODES.PASSWORD_NOT_MATCHING]: {
     en: 'Passwords do not match',
     fa: 'رمز عبور مطابقت ندارد',
@@ -565,5 +565,15 @@ export const ERROR_MESSAGES = {
     en: 'Invalid order ID',
     fa: 'آیدی سفارش نامعتبر است',
     ps: 'د امر پېژند ناسم دی',
+  },
+  [ERROR_CODES.EMAIL_NOT_VERIFIED]: {
+    en: 'Email is not verified',
+    fa: 'ایمیل تایید نشده است',
+    ps: 'برېښنالیک تایید شوی نه دی',
+  },
+  [ERROR_CODES.INVALID_EMAIL_VERIFICATION_TOKEN]: {
+    en: 'Invalid email verification token',
+    fa: 'توکن تایید ایمیل نامعتبر است',
+    ps: 'د برېښنالیک د تایید توکن ناسم دی',
   },
 };

@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import crypto from 'crypto';
+import { hashToken } from '#shared/utils/jwt.js';
 
 const UserSchema = new mongoose.Schema(
   {
@@ -13,6 +14,9 @@ const UserSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     passwordResetToken: { type: String, default: null },
     passwordResetExpires: { type: Date, default: null },
+    isVerified: { type: Boolean, default: false },
+    emailVerificationToken: { type: String, default: null },
+    emailVerificationExpires: { type: Date, default: null },
   },
   {
     timestamps: true,
@@ -29,14 +33,23 @@ UserSchema.index(
   }
 );
 
-UserSchema.methods.createPasswordResetToken = function () {
-  const resetToken = crypto.randomBytes(32).toString('hex');
+UserSchema.methods.createToken = function (type) {
+  const token = crypto.randomBytes(32).toString('hex');
 
-  this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  const hashedToken = hashToken(token);
+  const expires = new Date(Date.now() + 10 * 60 * 1000);
 
-  this.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
+  if (type === 'reset') {
+    this.passwordResetToken = hashedToken;
+    this.passwordResetExpires = expires;
+  }
 
-  return resetToken;
+  if (type === 'verify') {
+    this.emailVerificationToken = hashedToken;
+    this.emailVerificationExpires = expires;
+  }
+
+  return token;
 };
 
 export const UserModel = mongoose.model('User', UserSchema);

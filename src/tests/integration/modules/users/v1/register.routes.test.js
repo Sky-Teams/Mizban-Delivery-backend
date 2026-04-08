@@ -21,6 +21,12 @@ describe('User API v1 Integration', () => {
     await clearDB();
   });
 
+  vi.mock('#config/agenda.js', () => ({
+    agenda: {
+      now: vi.fn().mockResolvedValue(true),
+    },
+  }));
+
   describe('POST /api/auth/register', () => {
     let res;
     it('should create new user return success response', async () => {
