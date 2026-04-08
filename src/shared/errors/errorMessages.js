@@ -561,4 +561,14 @@ export const ERROR_MESSAGES = {
     fa: 'توکن بازیابی رمز عبور نامعتبر است',
     ps: 'د پټنوم د بیا تنظیم ټوکن ناسم دی',
   },
+  [ERROR_CODES.EMAIL_NOT_VERIFIED]: {
+    en: 'Email is not verified',
+    fa: 'ایمیل تایید نشده است',
+    ps: 'برېښنالیک تایید شوی نه دی',
+  },
+  [ERROR_CODES.INVALID_EMAIL_VERIFICATION_TOKEN]: {
+    en: 'Invalid email verification token',
+    fa: 'توکن تایید ایمیل نامعتبر است',
+    ps: 'د برېښنالیک د تایید توکن ناسم دی',
+  },
 };

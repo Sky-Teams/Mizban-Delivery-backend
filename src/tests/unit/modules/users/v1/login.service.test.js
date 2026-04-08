@@ -117,6 +117,7 @@ describe('loginService', () => {
       password: 'hashed',
       role: 'driver',
       isActive: true,
+      isVerified: true,
     };
 
     // Simulate successful login flow
