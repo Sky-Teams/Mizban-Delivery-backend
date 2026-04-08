@@ -19,6 +19,19 @@ export const fetchDrivers = async (limit = 8, page = 1, searchQuery = {}) => {
 
   const query = driverQueryBuilder(searchQuery);
 
+  if (searchQuery.searchTerm) {
+    const users = await UserModel.find({
+      $or: [
+        { name: { $regex: searchQuery.searchTerm, $options: 'i' } },
+        { email: { $regex: searchQuery.searchTerm, $options: 'i' } },
+        { phone: { $regex: searchQuery.searchTerm, $options: 'i' } },
+      ],
+    }).select('_id');
+
+    const userIds = users.map((u) => u._id);
+    query.user = { $in: userIds };
+  }
+
   const totalDrivers = await DriverModel.countDocuments(query);
 
   const drivers = await DriverModel.find(query)
