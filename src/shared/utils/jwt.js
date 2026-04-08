@@ -33,3 +33,7 @@ export const hashToken = (token) => {
 export const hashPassword = async (password) => {
   return await bcrypt.hash(password, 12);
 };
+
+export const generateRandomPassword = () => {
+  return crypto.randomBytes(32).toString('hex');
+};

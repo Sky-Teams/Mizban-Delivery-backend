@@ -12,8 +12,12 @@ import {
   pickupOrder,
   updateOrder,
   updateOrderInfo,
+  getOrders,
+  getAllOrders,
+  getOrder,
+  getOrderById,
 } from '#modules/orders/index.js';
-import { notFound } from '#shared/errors/error.js';
+import { AppError, notFound } from '#shared/errors/error.js';
 
 // Mock the service
 vi.mock('#modules/orders/services/v1/order.service.js', () => ({
@@ -23,6 +27,8 @@ vi.mock('#modules/orders/services/v1/order.service.js', () => ({
   pickupOrderWithTransaction: vi.fn(),
   deliverOrderWithTransaction: vi.fn(),
   cancelOrderWithTransaction: vi.fn(),
+  getAllOrders: vi.fn(),
+  getOrderById: vi.fn(),
 }));
 
 describe('Controller Order - create order', () => {
@@ -503,6 +509,152 @@ describe('Controller Order - cancelOrder', () => {
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       data: mockDelivery,
+    });
+  });
+});
+
+describe('Controller Order - getOrders', () => {
+  let req;
+  let res;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    req = {
+      user: { _id: 'user123' },
+      query: { page: 1, limit: 5 },
+    };
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+  });
+
+  it('should throw unauthorized error if user is missing', async () => {
+    req.user = null;
+
+    expect(getOrders(req, res)).rejects.toThrow(AppError);
+  });
+
+  it('should return orders list', async () => {
+    const mockOrders = {
+      orders: [
+        { _id: '3', createdAt: '2026-03-05' },
+        { _id: '2', createdAt: '2026-03-03' },
+        { _id: '1', createdAt: '2026-03-02' },
+      ],
+      totalOrders: 10,
+      totalPage: 2,
+    };
+
+    getAllOrders.mockResolvedValue(mockOrders);
+
+    await getOrders(req, res);
+
+    expect(getAllOrders).toHaveBeenCalledWith(1, 5, {});
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockOrders.orders,
+      totalPage: 2,
+      totalOrders: 10,
+    });
+  });
+
+  it('should return orders list by status: created', async () => {
+    req = {
+      user: { _id: 'user123' },
+      query: { page: 1, limit: 5, status: 'created' },
+    };
+    const mockOrders = {
+      orders: [
+        { _id: '1', status: 'created' },
+        { _id: '2', status: 'created' },
+        { _id: '3', status: 'created' },
+      ],
+      totalOrders: 10,
+      totalPage: 2,
+    };
+
+    getAllOrders.mockResolvedValue(mockOrders);
+
+    await getOrders(req, res);
+
+    expect(getAllOrders).toHaveBeenCalledWith(1, 5, { status: 'created' });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockOrders.orders,
+      totalPage: 2,
+      totalOrders: 10,
+    });
+  });
+
+  it('should return orders list priority = high', async () => {
+    req = {
+      user: { _id: 'user123' },
+      query: { page: 1, limit: 2, priority: 'high' },
+    };
+    const mockOrders = {
+      orders: [
+        { _id: '1', priority: 'high' },
+        { _id: '2', priority: 'high' },
+        { _id: '3', priority: 'high' },
+      ],
+      totalOrders: 10,
+      totalPage: 5,
+    };
+
+    getAllOrders.mockResolvedValue(mockOrders);
+
+    await getOrders(req, res);
+
+    expect(getAllOrders).toHaveBeenCalledWith(1, 2, { priority: 'high' });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockOrders.orders,
+      totalPage: 5,
+      totalOrders: 10,
+    });
+  });
+});
+
+describe('Controller Order - getOrder (By Id)', () => {
+  let req;
+  let res;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    req = {
+      user: { _id: 'user123' },
+      params: { id: 1 },
+    };
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+  });
+
+  it('should throw unauthorized error if user is missing', async () => {
+    req.user = null;
+
+    expect(getOrder(req, res)).rejects.toThrow(AppError);
+  });
+
+  it('should return order list by id', async () => {
+    const mockOrder = { _id: '1', status: 'created', priority: 'high' };
+
+    getOrderById.mockResolvedValue(mockOrder);
+
+    await getOrder(req, res);
+
+    expect(getOrderById).toHaveBeenCalledWith(req.params.id);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockOrder,
     });
   });
 });

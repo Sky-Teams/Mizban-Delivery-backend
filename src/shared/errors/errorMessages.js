@@ -531,21 +531,31 @@ export const ERROR_MESSAGES = {
     fa: 'گزینه مرتب‌سازی نامعتبر است',
     ps: 'د ترتیب انتخاب ناسم دی',
   },
+
+  [ERROR_CODES.INVALID_GOOGLE_TOKEN]: {
+    en: 'Invalid google token',
+    fa: 'توکن گوگل نامعتبر هست',
+    ps: 'د گوگل توکن نامعتبر دی',
+  },
+
   [ERROR_CODES.LOGOUT_INVALID_SESSION]: {
     en: 'Logout failed. Please try again.',
     fa: 'خروج انجام نشد، لطفاً دوباره تلاش کنید.',
     ps: 'وتل ممکن نه شول، مهرباني وکړئ بیا هڅه وکړئ.',
   },
+  
   [ERROR_CODES.PASSWORD_NOT_MATCHING]: {
     en: 'Passwords do not match',
     fa: 'رمز عبور مطابقت ندارد',
     ps: 'پټنومونه سره نه سمون خوري',
   },
+
   [ERROR_CODES.INVALID_TOKEN]: {
     en: 'Invalid token',
     fa: 'توکن نا معتبر است',
     ps: 'توکن ناسم دی',
   },
+
   [ERROR_CODES.INVALID_RESET_PASSWORD_TOKEN]: {
     en: 'The password reset token is invalid',
     fa: 'توکن بازیابی رمز عبور نامعتبر است',

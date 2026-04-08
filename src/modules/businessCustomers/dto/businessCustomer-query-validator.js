@@ -32,6 +32,6 @@ const queryValidator = z.object({
   }),
 });
 
-export const queriesValidator = (req) => {
+export const businessCustomerQueryValidator = (req) => {
   return queryValidator.safeParse({ query: req.query });
 };

@@ -59,9 +59,30 @@ export const addOrder = async (orderData) => {
 
 export const getOrderById = async (orderId) => {
   const order = await OrderModel.findById(orderId);
-  if (!order) throw notFound('DeliveryRequest');
+  if (!order) throw notFound('Order');
 
   return order;
+};
+
+export const getAllOrders = async (page = 1, limit = 10, searchQuery = {}) => {
+  const skip = (page - 1) * limit;
+
+  let query = Object.fromEntries(
+    Object.entries(searchQuery).filter(([_, value]) => value !== null && value !== undefined)
+  );
+
+  const totalOrders = await OrderModel.countDocuments(query);
+  const orders = await OrderModel.find(query)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  return {
+    orders,
+    totalOrders,
+    totalPage: Math.ceil(totalOrders / limit),
+  };
 };
 
 export const updateOrderInfo = async (orderId, orderData) => {
