@@ -9,10 +9,11 @@ import {
   deliverOrderWithTransaction,
   OrderModel,
   pickupOrderWithTransaction,
+  getAllOrders,
 } from '#modules/orders/index.js';
 import mongoose from 'mongoose';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
-import { orderUpdateQuery } from '#shared/utils/queryBuilder.js';
+import { orderUpdateQuery, driverQueryBuilder } from '#shared/utils/queryBuilder.js';
 import { getOrderById, updateOrderInfo } from '#modules/orders/services/v1/order.service.js';
 
 vi.mock('#modules/orders/models/order.model.js', () => ({
@@ -20,6 +21,8 @@ vi.mock('#modules/orders/models/order.model.js', () => ({
     create: vi.fn(),
     findById: vi.fn(),
     findByIdAndUpdate: vi.fn(),
+    find: vi.fn(),
+    countDocuments: vi.fn(),
   },
 }));
 
@@ -39,6 +42,7 @@ vi.mock('#shared/utils/math.helper.js', () => ({
 
 vi.mock('#shared/utils/queryBuilder.js', () => ({
   orderUpdateQuery: vi.fn(),
+  driverQueryBuilder: vi.fn(),
 }));
 
 const fakeSession = {
@@ -213,8 +217,8 @@ describe('assignDriverToOrderWithTransaction', () => {
   it('should abort transaction if order not found', async () => {
     OrderModel.findById.mockResolvedValue(null);
 
-    await expect(assignDriverToOrderWithTransaction('delivery1', 'driver1')).rejects.toThrow(
-      notFound('DeliveryRequest')
+    await expect(assignDriverToOrderWithTransaction('order1', 'driver1')).rejects.toThrow(
+      notFound('Order')
     );
 
     expect(fakeSession.abortTransaction).toHaveBeenCalled();
@@ -301,8 +305,8 @@ describe('pickupOrderWithTransaction', () => {
   it('should abort transaction if order not found', async () => {
     OrderModel.findById.mockResolvedValue(null);
 
-    await expect(pickupOrderWithTransaction('delivery1')).rejects.toThrow(
-      new AppError('DeliveryRequest not found', 404, ERROR_CODES.NOT_FOUND, 'DeliveryRequest')
+    await expect(pickupOrderWithTransaction('order1')).rejects.toThrow(
+      new AppError('Order not found', 404, ERROR_CODES.NOT_FOUND, 'Order')
     );
 
     expect(fakeSession.abortTransaction).toHaveBeenCalled();
@@ -379,7 +383,7 @@ describe('deliverOrderWithTransaction', () => {
     OrderModel.findById.mockResolvedValue(null);
 
     await expect(deliverOrderWithTransaction('delivery1')).rejects.toThrow(
-      new AppError('DeliveryRequest not found', 404, ERROR_CODES.NOT_FOUND, 'DeliveryRequest')
+      new AppError('Order not found', 404, ERROR_CODES.NOT_FOUND, 'Order')
     );
 
     expect(fakeSession.abortTransaction).toHaveBeenCalled();
@@ -538,7 +542,7 @@ describe('updateOrderInfo', () => {
   it('should throw error if order not found', async () => {
     OrderModel.findById.mockResolvedValue(null);
 
-    await expect(updateOrderInfo('notfound', {})).rejects.toThrow(notFound('DeliveryRequest'));
+    await expect(updateOrderInfo('notfound', {})).rejects.toThrow(notFound('Order'));
   });
 
   it('should throw error if no fields provided for update', async () => {
@@ -579,23 +583,71 @@ describe('getOrderById', () => {
   });
 
   it('should return order if found', async () => {
-    const deliveryId = 'delivery123';
-    const mockDelivery = { _id: deliveryId, status: 'created' };
+    const orderId = 'order123';
+    const mockOrder = { _id: orderId, status: 'created' };
 
-    OrderModel.findById.mockResolvedValue(mockDelivery);
+    OrderModel.findById.mockResolvedValue(mockOrder);
 
-    const result = await getOrderById(deliveryId);
+    const result = await getOrderById(orderId);
 
-    expect(OrderModel.findById).toHaveBeenCalledWith(deliveryId);
-    expect(result).toEqual(mockDelivery);
+    expect(OrderModel.findById).toHaveBeenCalledWith(orderId);
+    expect(result).toEqual(mockOrder);
   });
 
   it('should throw notFound error if order does not exist', async () => {
-    const deliveryId = 'notfound';
+    const orderId = 'notfound';
 
     OrderModel.findById.mockResolvedValue(null);
 
-    await expect(getOrderById(deliveryId)).rejects.toThrow(notFound('DeliveryRequest'));
-    expect(OrderModel.findById).toHaveBeenCalledWith(deliveryId);
+    await expect(getOrderById(orderId)).rejects.toThrow(notFound('Order'));
+    expect(OrderModel.findById).toHaveBeenCalledWith(orderId);
+  });
+});
+
+describe('getAllOrders', () => {
+  it('should return orders list', async () => {
+    const mockOrders = [{ _id: '3' }, { _id: '2' }, { _id: '1' }];
+    driverQueryBuilder.mockReturnValue(mockOrders);
+    OrderModel.countDocuments.mockResolvedValue(10);
+    OrderModel.find.mockReturnValue({
+      sort: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue(mockOrders),
+    });
+
+    const result = await getAllOrders(2, 4);
+
+    expect(result).toEqual({
+      orders: mockOrders,
+      totalOrders: 10,
+      totalPage: 3,
+    });
+  });
+
+  it('should return order lists by status: assigned ', async () => {
+    const mockOrders = [
+      { _id: '4', status: 'assigned' },
+      { _id: '2', status: 'assigned' },
+      { _id: '3', status: 'assigned' },
+      { _id: '1', status: 'assigned' },
+    ];
+    driverQueryBuilder.mockReturnValue(mockOrders);
+
+    OrderModel.countDocuments.mockResolvedValue(14);
+    OrderModel.find.mockReturnValue({
+      sort: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue(mockOrders),
+    });
+
+    const result = await getAllOrders(1, 5, { status: 'assigned' });
+
+    expect(result).toEqual({
+      orders: mockOrders,
+      totalOrders: 14,
+      totalPage: 3,
+    });
   });
 });
