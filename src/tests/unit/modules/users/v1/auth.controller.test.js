@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerUser, doesUserExist, authenticateWithGoogle } from '#modules/users/index.js';
 import { register, googleLogin } from '#modules/users/index.js';
 import { AppError } from '#shared/errors/error.js';

@@ -1,9 +1,10 @@
 import request from 'supertest';
 import bcrypt from 'bcryptjs';
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { UserModel } from '#modules/users/models/user.model.js';
 import { connectDB, disconnectDB, clearDB } from '../../../../config/memoryDB.js';
+
 import app from '../../../../../app.js';
 
 describe('POST /api/auth/login Integration', () => {
@@ -92,6 +93,7 @@ describe('POST /api/auth/login Integration', () => {
       email: 'valid@example.com',
       password: '123456',
       role: 'driver',
+      isVerified: true,
     });
 
     const res = await request(app).post(loginUrl).send({

@@ -11,8 +11,8 @@ import {
 } from '#shared/utils/jwt.js';
 import { AppError, notFound, unauthorized } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import { agenda } from '#config/agenda.js';
 import { verifyGoogleToken } from '#shared/utils/googleOAuth.js';
-import { agenda } from '../../../../config/agenda.js';
 
 //!  Helper Functions
 
@@ -42,6 +42,13 @@ const validateLoginUser = async (user, password) => {
   if (!user.isActive) {
     throw new AppError('Account is disabled!', 403, ERROR_CODES.ACCOUNT_DISABLED);
   }
+
+  if (!user.isVerified)
+    throw new AppError(
+      'You email is not verified, please verify your email',
+      403,
+      ERROR_CODES.EMAIL_NOT_VERIFIED
+    );
 };
 
 // Refresh helpers
@@ -94,6 +101,24 @@ const rotateRefreshToken = async (currentTokenId) => {
 };
 // -----------
 
+// password helpers
+
+const findUserByEmailVerificationToken = async (verifyToken) => {
+  const user = await UserModel.findOne({
+    emailVerificationToken: hashToken(verifyToken),
+    emailVerificationExpires: { $gt: new Date() },
+  });
+
+  if (!user)
+    throw new AppError(
+      'Invalid or expired token',
+      400,
+      ERROR_CODES.INVALID_EMAIL_VERIFICATION_TOKEN
+    );
+
+  return user;
+};
+
 export const createUserFromGoogle = async (googleUserInfo) => {
   //To prevent error assign a randome password for the user
   const randomPassword = await generateRandomPassword();
@@ -120,7 +145,6 @@ export const findOrCreateUser = async (userData) => {
     user.googleId = userData.sub;
     await user.save();
   }
-
   return user;
 };
 
@@ -171,6 +195,18 @@ export const registerUser = async (data) => {
     email,
     phone,
     password: hashPassword,
+  });
+
+  const token = user.createToken('verify');
+
+  await user.save({ validateBeforeSave: false });
+
+  const verifyUrl = `${process.env.FRONTEND_URL}/verify-email/${token}`;
+
+  await agenda.now('send-email-verification-token', {
+    email: user.email,
+    username: user.name,
+    verifyUrl,
   });
 
   return {
@@ -229,7 +265,7 @@ export const refreshService = async ({ refreshToken, deviceId }) => {
 export const forgotPasswordService = async ({ email }) => {
   const user = await getUserByEmail(email);
 
-  const resetToken = user.createPasswordResetToken();
+  const resetToken = user.createToken('reset');
   await user.save({ validateBeforeSave: false });
 
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
@@ -259,6 +295,18 @@ export const resetPasswordService = async ({ resetToken, newPassword }) => {
   await RefreshTokenModel.deleteMany({ user: user._id });
 };
 
+export const verifyUserEmail = async (verifyToken) => {
+  const user = await findUserByEmailVerificationToken(verifyToken);
+
+  user.set({
+    isVerified: true,
+    emailVerificationToken: null,
+    emailVerificationExpires: null,
+  });
+
+  await user.save();
+};
+
 export const getAllAdmins = async () => {
   const admins = await UserModel.find({ role: 'admin' });
 
@@ -277,7 +325,7 @@ export const authenticateWithGoogle = async (token, deviceId) => {
     refreshToken,
     role: user.role,
   };
-}
+};
 
 export const changePasswordService = async (userId, { currentPassword, newPassword }) => {
   const user = await UserModel.findById(userId);

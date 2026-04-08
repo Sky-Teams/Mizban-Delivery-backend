@@ -6,9 +6,9 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { hashToken } from '#shared/utils/jwt.js';
 import { UserModel } from '#modules/users/models/user.model.js';
 import { RefreshTokenModel } from '#modules/users/models/refreshToken.model.js';
-import { agenda } from '#root/src/config/agenda.js';
+import { agenda } from '#config/agenda.js';
 
-vi.mock('#root/src/config/agenda.js', () => ({
+vi.mock('#config/agenda.js', () => ({
   agenda: {
     now: vi.fn(),
   },
@@ -104,7 +104,7 @@ describe('Forgot/Reset Password Integration', () => {
         isActive: true,
       });
 
-      const resetToken = user.createPasswordResetToken();
+      const resetToken = user.createToken('reset');
       await user.save({ validateBeforeSave: false });
 
       await RefreshTokenModel.create({
@@ -142,7 +142,7 @@ describe('Forgot/Reset Password Integration', () => {
         isActive: true,
       });
 
-      const resetToken = user.createPasswordResetToken();
+      const resetToken = user.createToken('reset');
       user.passwordResetExpires = new Date(Date.now() - 1000);
       await user.save({ validateBeforeSave: false });
 
