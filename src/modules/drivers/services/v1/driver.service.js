@@ -197,6 +197,8 @@ export const findNearestAndScore = async (pickupCoordinates) => {
 
   if (!drivers.length) return [];
 
+  // Check if drivers has an active job and if they are on the same way.
+
   const driversWithETA = await GeoService.getDistanceMatrix(drivers, pickupCoordinates);
 
   // Attach score to each driver
