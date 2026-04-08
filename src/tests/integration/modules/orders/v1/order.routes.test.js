@@ -9,7 +9,7 @@ import {
   createFakeDriver,
 } from '../../../../config/memoryDB.js';
 import { OrderModel } from '#modules/orders/models/order.model.js';
-import { postWithAuth } from '#tests/utils/testHelpers.js';
+import { getWithAuth, postWithAuth } from '#tests/utils/testHelpers.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import mongoose from 'mongoose';
 import { DriverModel } from '#modules/drivers/index.js';
@@ -492,7 +492,7 @@ describe('Order API v1 Integration', () => {
         .send({ driverId: driver._id });
 
       expect(res.status).toBe(404);
-      expect(res.body.message).toMatch(/DeliveryRequest not found/i);
+      expect(res.body.message).toMatch(/Order not found/i);
     });
 
     it('should fail if driverId is invalid', async () => {
@@ -741,6 +741,82 @@ describe('Order API v1 Integration', () => {
         .send({});
 
       expect(res.status).toBe(409);
+    });
+  });
+
+  describe('GET /api/orders', () => {
+    beforeEach(async () => {
+      await OrderModel.create({
+        _id: new mongoose.Types.ObjectId(),
+        type: 'parcel',
+        serviceType: 'immediate',
+        sender: { name: 'Alice', phone: '0790909090' },
+        receiver: {
+          name: 'Bob',
+          phone: '0790909090',
+          address: 'Herat',
+        },
+        pickupLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+        dropoffLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+        paymentType: 'COD',
+        amountToCollect: 100,
+        deliveryPrice: { total: 20 },
+      });
+    });
+
+    it('should throw unauthorized error if user is missing', async () => {
+      const res = await getWithAuth(app, baseURL);
+
+      expect(res.status).toBe(401);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
+    });
+
+    it('should return orders list', async () => {
+      const res = await getWithAuth(app, baseURL, token);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(1);
+    });
+  });
+
+  describe('GET /api/orders/:id', () => {
+    let order;
+    beforeEach(async () => {
+      order = await OrderModel.create({
+        _id: new mongoose.Types.ObjectId(),
+        type: 'parcel',
+        serviceType: 'immediate',
+        sender: { name: 'Alice', phone: '0790909090' },
+        receiver: {
+          name: 'Bob',
+          phone: '0790909090',
+          address: 'Herat',
+        },
+        pickupLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+        dropoffLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+        paymentType: 'COD',
+        amountToCollect: 100,
+        deliveryPrice: { total: 20 },
+      });
+    });
+
+    it('should throw unauthorized error if user is missing', async () => {
+      const orderId = order._id;
+      const res = await getWithAuth(app, `${baseURL}/${orderId}`);
+
+      expect(res.status).toBe(401);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
+    });
+
+    it('should return orders by id', async () => {
+      const orderId = order._id;
+      const res = await getWithAuth(app, `${baseURL}/${orderId}`, token);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.type).toBe('parcel');
+      expect(res.body.data.serviceType).toBe('immediate');
     });
   });
 });
