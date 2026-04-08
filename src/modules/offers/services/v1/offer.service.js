@@ -1,6 +1,7 @@
 import { agenda } from '#config/agenda.js';
 import { fetchDriverByUserId } from '#modules/drivers/index.js';
 import { OfferModel } from '#modules/offers/models/offer.model.js';
+import { getOrderById } from '#modules/orders/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { OfferService } from '#shared/utils/offerService.js';
@@ -53,9 +54,27 @@ export const acceptAnOffer = async (offerId, userId) => {
       ERROR_CODES.OFFER_HANDLED_OR_NOT_YOURS
     );
 
+  //Update the status of order. TODO => Maybe we dont need to check it, because we checked the offer
+  const order = await getOrderById(offer.order);
+
+  if (order.status !== 'created') {
+    throw new AppError(
+      `Cannot assign driver. Order status is ${order.status}.`,
+      409,
+      ERROR_CODES.DRIVER_ASSIGNMENT_NOT_ALLOWED
+    );
+  }
+
+  order.status = 'assigned';
+  order.driverId = driver._id;
+  await order.save();
+
+  //TODO: Does we need to check the status of the driver in here?
   // Update the status of driver
   driver.status = 'assigned';
-  driver.save();
+  //TODO: Increase the number of active orders
+  driver.activeOrders = driver.activeOrders + 1;
+  await driver.save();
 
   // Cancel timeout job
   await agenda.cancel({ name: 'offer:timeout', 'data.offerId': offerId });
