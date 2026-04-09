@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-const generateTemplate = (username, resetUrl) => {
+const generateResetPasswordTemplate = (username, resetUrl) => {
   const brandName = 'Mizban Delivery System';
   const currentYear = new Date().getFullYear();
   const html = `
@@ -144,7 +144,157 @@ const generateTemplate = (username, resetUrl) => {
   return html;
 };
 
-export const sendEmail = async ({ to, subject, username, resetUrl }) => {
+const generateVerifyEmailTemplate = (username, verifyUrl) => {
+  const brandName = 'Mizban Delivery System';
+  const currentYear = new Date().getFullYear();
+  const html = `
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      @media only screen and (max-width: 600px) {
+        .container {
+          width: 100% !important;
+          padding: 20px !important;
+        }
+        .content {
+          padding: 20px !important;
+        }
+        .btn {
+          width: 100% !important;
+          padding: 15px 0 !important;
+        }
+        .footer {
+          width: 100% !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body style="margin: 0; padding: 0; background-color: #fff7ed; font-family: Arial, Helvetica, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding: 40px 0">
+      <tr>
+        <td align="center">
+          <table
+            class="container"
+            width="100%"
+            cellpadding="0"
+            cellspacing="0"
+            style="
+              max-width: 600px;
+              background: #ffffff;
+              border-radius: 12px;
+              box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+            "
+          >
+            <tr>
+              <td class="content" style="padding: 40px">
+                <h2
+                  style="
+                    margin: 0;
+                    color: #f97316;
+                    font-size: 24px;
+                    text-align: center;
+                  "
+                >
+                  ${brandName}
+                </h2>
+
+                <hr
+                  style="
+                    border: none;
+                    border-top: 1px solid #bbb;
+                    margin: 20px 0;
+                  "
+                />
+
+                <div style="color: #1f2937; font-size: 14px; line-height: 1.7">
+                  <p>Hi ${username},</p>
+
+                  <p>Please verify your email address to activate your account.</p>
+
+                  <div style="text-align: center; margin: 35px 0">
+                    <a
+                      href="${verifyUrl}"
+                      class="btn"
+                      style="
+                        background-color: #f97316;
+                        color: #ffffff;
+                        text-decoration: none;
+                        padding: 15px 30px;
+                        border-radius: 8px;
+                        font-weight: bold;
+                        font-size: 16px;
+                        display: inline-block;
+                      "
+                    >
+                      Verify My Email
+                    </a>
+                  </div>
+
+                  <p>This link will expire in <strong>10 minutes</strong>.</p>
+
+                  <p>If you didn’t create an account, you can ignore this email.</p>
+
+                  <p style="margin-top: 30px">
+                    Thanks,<br />
+                    ${brandName} Team
+                  </p>
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Footer -->
+          <table
+            class="footer"
+            width="100%"
+            cellpadding="0"
+            cellspacing="0"
+            style="
+              max-width: 600px;
+              background-color: #1f2937;
+              border-radius: 0 0 12px 12px;
+            "
+          >
+            <tr>
+              <td
+                style="
+                  text-align: center;
+                  font-size: 12px;
+                  color: #9ca3af;
+                  padding: 20px;
+                "
+              >
+                © ${currentYear} ${brandName}. All rights reserved.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+`;
+  return html;
+};
+
+export const sendEmail = async ({
+  to,
+  subject,
+  username,
+  resetUrl,
+  verifyUrl,
+  template = verifyUrl ? 'verify_email' : 'reset_password',
+}) => {
+  if (template === 'verify_email' && !verifyUrl) {
+    throw new Error('verifyUrl is required for verify_email template');
+  }
+  if (template === 'reset_password' && !resetUrl) {
+    throw new Error('resetUrl is required for reset_password template');
+  }
+
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,
@@ -154,7 +304,10 @@ export const sendEmail = async ({ to, subject, username, resetUrl }) => {
     },
   });
 
-  const html = generateTemplate(username, resetUrl);
+  const html =
+    template === 'verify_email'
+      ? generateVerifyEmailTemplate(username, verifyUrl)
+      : generateResetPasswordTemplate(username, resetUrl);
 
   const emailOption = {
     from: process.env.EMAIL_FROM || 'test@example.com',

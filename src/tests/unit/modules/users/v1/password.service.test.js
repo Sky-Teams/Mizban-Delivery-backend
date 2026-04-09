@@ -5,7 +5,7 @@ import {
   forgotPasswordService,
   resetPasswordService,
 } from '#modules/users/services/v1/auth.service.js';
-import { agenda } from '#root/src/config/agenda.js';
+import { agenda } from '#config/agenda.js';
 import { UserModel } from '#modules/users/models/user.model.js';
 import { RefreshTokenModel } from '#modules/users/models/refreshToken.model.js';
 
@@ -16,7 +16,7 @@ vi.mock('bcryptjs', () => ({
   },
 }));
 
-vi.mock('#root/src/config/agenda.js', () => ({
+vi.mock('#config/agenda.js', () => ({
   agenda: {
     now: vi.fn(),
   },
@@ -46,7 +46,7 @@ describe('Password Services (forgot/reset)', () => {
         _id: 'user-id',
         name: 'Test User',
         email: 'user@example.com',
-        createPasswordResetToken: vi.fn(() => 'reset-token'),
+        createToken: vi.fn(() => 'reset-token'),
         save: vi.fn().mockResolvedValue(true),
       };
 
@@ -56,7 +56,7 @@ describe('Password Services (forgot/reset)', () => {
       const { resetUrl } = await forgotPasswordService({ email: fakeUser.email });
 
       expect(UserModel.findOne).toHaveBeenCalledWith({ email: fakeUser.email });
-      expect(fakeUser.createPasswordResetToken).toHaveBeenCalledTimes(1);
+      expect(fakeUser.createToken).toHaveBeenCalledTimes(1);
       expect(fakeUser.save).toHaveBeenCalledWith({ validateBeforeSave: false });
 
       expect(agenda.now).toHaveBeenCalledWith('send-reset-password-email', {
