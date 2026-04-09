@@ -7,7 +7,7 @@ export {
   deliverOrder,
   cancelOrder,
   getOrders,
-  getOrder
+  getOrder,
 } from './controllers/v1/order.controller.js';
 export {
   addOrder,
@@ -18,5 +18,7 @@ export {
   getOrderById,
   updateOrderInfo,
   getAllOrders,
+  increaseDriverIndex,
+  addDriverIdsInOrder,
 } from './services/v1/order.service.js';
 export { OrderModel } from './models/order.model.js';
