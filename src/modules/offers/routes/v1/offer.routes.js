@@ -4,6 +4,7 @@ import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import express from 'express';
 const router = express.Router();
 
+//TODO: Add validation for :id
 router.post('/:id/accept', authorizeRole('driver'), asyncHandler(acceptOffer));
 router.post('/:id/reject', authorizeRole('driver'), asyncHandler(rejectOffer));
 
