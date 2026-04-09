@@ -1,7 +1,7 @@
 import { agenda } from '#config/agenda.js';
 import { fetchDriverByUserId } from '#modules/drivers/index.js';
 import { OfferModel } from '#modules/offers/models/offer.model.js';
-import { getOrderById } from '#modules/orders/index.js';
+import { getOrderById, increaseDriverIndex, OrderModel } from '#modules/orders/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { OfferService } from '#shared/utils/offerService.js';
@@ -17,7 +17,7 @@ import { createOfferSchema } from '../../dto/create-offer.schema.js';
  */
 export const createOffer = async (orderId, driverId) => {
   try {
-    const orderOffer = { order: orderId, driver: driverId };
+    const orderOffer = { order: orderId.toString(), driver: driverId.toString() }; // We convert to string, because from most places we send objectId
     createOfferSchema.parse(orderOffer);
 
     const newOrderOffer = await OfferModel.create(orderOffer);
@@ -29,7 +29,7 @@ export const createOffer = async (orderId, driverId) => {
 };
 
 export const getOffer = async (orderId, driverId) => {
-  const orderOffer = { order: orderId, driver: driverId };
+  const orderOffer = { order: orderId.toString(), driver: driverId.toString() }; // We convert the orderId and driverId to string because objectId is throw error when validating
   createOfferSchema.parse(orderOffer);
 
   const offer = await OfferModel.findOne(orderOffer);
@@ -76,6 +76,8 @@ export const acceptAnOffer = async (offerId, userId) => {
   driver.activeOrders = driver.activeOrders + 1;
   await driver.save();
 
+  //TODO: Calculate the acceptanceRate
+
   // Cancel timeout job
   await agenda.cancel({ name: 'offer:timeout', 'data.offerId': offerId });
 
@@ -98,7 +100,18 @@ export const rejectAnOffer = async (offerId, userId) => {
       ERROR_CODES.OFFER_HANDLED_OR_NOT_YOURS
     );
 
+  console.log('Rejected by driver: ', driver._id);
+
+  //TODO:Calculate the acceptance Rate
+
+  await increaseDriverIndex(order.offer);
+
+  //TODO: I am not sure about this.Should we cancel it, I think, we need to cancel it.
+
+  await agenda.cancel({ name: 'offer:timeout', 'data.offerId': offerId });
+
   // sent offer to next driver
-  await OfferService.sendOfferToDriver(offer.order, offer.nextDrivers, offer.nextIndex);
+  await OfferService.sendOfferToDriver(offer.order);
+
   return offer;
 };
