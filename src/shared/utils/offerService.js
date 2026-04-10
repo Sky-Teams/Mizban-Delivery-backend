@@ -14,16 +14,14 @@ export class OfferService {
     try {
       const order = await getOrderById(orderId);
 
-      // console.log('Attempting to send offer for order: ', orderId);
-
       // Check if order is still available
-      // ex: Driver accept the offer on last seconds and timeout job is executed.
+      // ex: Driver accept the offer in last seconds and timeout job is executed.
       if (order.status !== 'created') return; // It means order is not in created mode, so we cancel the process
 
       const driversIds = order.recommendedDrivers;
       const currentIndex = order.currentDriverIndex;
 
-      console.log('DriverIds: ', driversIds);
+      console.log(driversIds);
       console.log('currentIndex: ', currentIndex);
 
       if (currentIndex >= driversIds.length) {
@@ -56,7 +54,7 @@ export class OfferService {
       console.log('Offer Id: ', offer._id);
 
       // Schedule timeout job. For simulating the process, timeout is set to 30s
-      await agenda.schedule('35s', 'offer:timeout', {
+      await agenda.schedule('25s', 'offer:timeout', {
         orderId,
         driverId: offer.driver,
         offerId: offer._id,
@@ -73,7 +71,7 @@ export class OfferService {
       // For system error, DB error, or other critical errors, its better to stop the process and notify the admin
       console.error('Error in sendOfferToDriver:', error);
       const systemErrorPayload = NotificationPayloads.systemError(error.message);
-      await NotificationService.send('admin', 'system-error', systemErrorPayload);
+      await NotificationService.send('admins', 'system-error', systemErrorPayload);
 
       return; // We explicitly return to stop more processing
     }
@@ -87,13 +85,6 @@ export class OfferService {
    * @param {Array} param0.drivers
    */
   static async handleOfferTimeout({ orderId, driverId }) {
-    // console.log(`Timeout, sending offer to new driver: ${drivers[driverIndex]._id}`);
-    // const order = await getOrderById(orderId);
-
-    // const driverIds = order.recommendedDrivers;
-    // const currentIndex = order.currentDriverIndex;
-
-    // const driver = drivers[driverIndex];
     console.log('Timeout');
 
     const offer = await getOffer(orderId, driverId);
