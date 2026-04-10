@@ -28,6 +28,7 @@ const createAdmin = async () => {
     email,
     password: hashedPassword,
     role: 'admin',
+    isVerified: true,
   });
   console.log('Admin user created successfully');
 };
@@ -218,6 +219,7 @@ const createFakeDrivers = async () => {
       phone: driver.phone,
       password: driver.password,
       role: 'driver',
+      isVerified: true,
     };
   });
   const newUsers = await UserModel.insertMany(users);
