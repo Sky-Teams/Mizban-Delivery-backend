@@ -210,7 +210,7 @@ export const findNearestAndScore = async (pickupCoordinates) => {
 
   if (!drivers.length) return [];
 
-  // Check if drivers has an active job and if they are on the same way.
+  //TODO: Check if drivers has an active job and if they are on the same way.
 
   const driversWithETA = await GeoService.getDistanceMatrix(drivers, pickupCoordinates);
 
