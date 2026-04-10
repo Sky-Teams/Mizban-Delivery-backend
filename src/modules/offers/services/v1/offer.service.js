@@ -1,10 +1,10 @@
 import { agenda } from '#config/agenda.js';
 import { fetchDriverByUserId } from '#modules/drivers/index.js';
 import { OfferModel } from '#modules/offers/models/offer.model.js';
-import { getOrderById, increaseDriverIndex, OrderModel } from '#modules/orders/index.js';
+import { getOrderById, increaseDriverIndex } from '#modules/orders/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
-import { OfferService } from '#shared/utils/offerService.js';
+import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { createOfferSchema } from '../../dto/create-offer.schema.js';
 
 /**
@@ -36,7 +36,7 @@ export const getOffer = async (orderId, driverId) => {
   return offer;
 };
 
-export const acceptAnOffer = async (offerId, userId) => {
+const acceptAnOffer = async (session, offerId, userId) => {
   const driver = await fetchDriverByUserId(userId);
   if (!driver) throw notFound('driver');
 
@@ -44,7 +44,7 @@ export const acceptAnOffer = async (offerId, userId) => {
   const offer = await OfferModel.findOneAndUpdate(
     { _id: offerId, driver: driver._id, status: 'pending' },
     { status: 'accepted' },
-    { new: true }
+    { new: true, session: true }
   );
 
   if (!offer)
@@ -67,14 +67,14 @@ export const acceptAnOffer = async (offerId, userId) => {
 
   order.status = 'assigned';
   order.driverId = driver._id;
-  await order.save();
+  await order.save({ session });
 
   //TODO: Does we need to check the status of the driver in here?
   // Update the status of driver
   driver.status = 'assigned';
   //TODO: Increase the number of active orders
   driver.activeOrders = driver.activeOrders + 1;
-  await driver.save();
+  await driver.save({ session });
 
   //TODO: Calculate the acceptanceRate
 
@@ -84,13 +84,14 @@ export const acceptAnOffer = async (offerId, userId) => {
   return offer;
 };
 
-export const rejectAnOffer = async (offerId, userId) => {
+const rejectAnOffer = async (session, offerId, userId) => {
   const driver = await fetchDriverByUserId(userId);
   if (!driver) throw notFound('driver');
+
   const offer = await OfferModel.findOneAndUpdate(
     { _id: offerId, driver: driver._id, status: 'pending' },
     { status: 'rejected' },
-    { new: true }
+    { new: true, session }
   );
 
   if (!offer)
@@ -100,18 +101,16 @@ export const rejectAnOffer = async (offerId, userId) => {
       ERROR_CODES.OFFER_HANDLED_OR_NOT_YOURS
     );
 
-  console.log('Rejected by driver: ', driver._id);
-
   //TODO:Calculate the acceptance Rate
 
-  await increaseDriverIndex(order.offer);
+  await increaseDriverIndex(offer.order, session);
 
   //TODO: I am not sure about this.Should we cancel it, I think, we need to cancel it.
 
   await agenda.cancel({ name: 'offer:timeout', 'data.offerId': offerId });
 
-  // sent offer to next driver
-  await OfferService.sendOfferToDriver(offer.order);
-
   return offer;
 };
+
+export const acceptAnOfferWithTransaction = withTransaction(acceptAnOffer);
+export const rejectAnOfferWithTransaction = withTransaction(rejectAnOffer);
