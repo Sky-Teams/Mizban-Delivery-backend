@@ -1,12 +1,17 @@
 import 'dotenv/config';
-
 import { agenda } from './config/agenda.js';
-
-import { defineResetPasswordEmailJobs } from './jobs/email.job.js';
+import { defineOfferJobs } from './jobs/offer.job.js';
+import {
+  defineEmailVerificationEmailJobs,
+  defineResetPasswordEmailJobs,
+} from './jobs/email.job.js';
 
 async function startWorker() {
   // Register the email job so agenda knows how to execute it
+
   await defineResetPasswordEmailJobs(agenda);
+  await defineOfferJobs();
+  await defineEmailVerificationEmailJobs(agenda);
 
   // This event runs when a job --fails-- and is retried
   agenda.on('retry', (job, details) => {
@@ -18,6 +23,18 @@ async function startWorker() {
 
   // This event runs when the reset password email job --succeeds--
   agenda.on('success:send-reset-password-email', (job) => {
+    const { email } = job.attrs.data;
+
+    const startTime = job.attrs.lastRunAt;
+    const endTime = new Date();
+
+    const duration = ((endTime - startTime) / 1000).toFixed(2);
+
+    console.log(`Job ${job.attrs.name} finished in ${duration} seconds.`);
+    console.log(`Email send successful to: ${email}`);
+  });
+
+  agenda.on('success:send-email-verification-token', (job) => {
     const { email } = job.attrs.data;
 
     const startTime = job.attrs.lastRunAt;
@@ -48,7 +65,9 @@ async function startWorker() {
   process.on('SIGINT', graceful);
 }
 
-// Start the worker
-startWorker().catch((err) => {
-  console.error('Failed to start worker:', err);
-});
+export const startAgenda = () => {
+  // Start the worker
+  startWorker().catch((err) => {
+    console.error('Failed to start worker:', err);
+  });
+};

@@ -537,13 +537,18 @@ export const ERROR_MESSAGES = {
     fa: 'فرمت تاریخ نامعتبر هست',
     ps: 'د نیتی بنه ناسم ده',
   },
+  [ERROR_CODES.INVALID_GOOGLE_TOKEN]: {
+    en: 'Invalid google token',
+    fa: 'توکن گوگل نامعتبر هست',
+    ps: 'د گوگل توکن نامعتبر دی',
+  },
 
   [ERROR_CODES.LOGOUT_INVALID_SESSION]: {
     en: 'Logout failed. Please try again.',
     fa: 'خروج انجام نشد، لطفاً دوباره تلاش کنید.',
     ps: 'وتل ممکن نه شول، مهرباني وکړئ بیا هڅه وکړئ.',
   },
-  
+
   [ERROR_CODES.PASSWORD_NOT_MATCHING]: {
     en: 'Passwords do not match',
     fa: 'رمز عبور مطابقت ندارد',
@@ -577,5 +582,20 @@ export const ERROR_MESSAGES = {
     en: 'Invalid log id',
     fa: 'ای دی لاگ نامعتبر هست',
     ps: 'د لاگ ای دی ناسم دی',
+  },
+  [ERROR_CODES.INVALID_ORDER_ID]: {
+    en: 'Invalid order ID',
+    fa: 'آیدی سفارش نامعتبر است',
+    ps: 'د امر پېژند ناسم دی',
+  },
+  [ERROR_CODES.EMAIL_NOT_VERIFIED]: {
+    en: 'Email is not verified',
+    fa: 'ایمیل تایید نشده است',
+    ps: 'برېښنالیک تایید شوی نه دی',
+  },
+  [ERROR_CODES.INVALID_EMAIL_VERIFICATION_TOKEN]: {
+    en: 'Invalid email verification token',
+    fa: 'توکن تایید ایمیل نامعتبر است',
+    ps: 'د برېښنالیک د تایید توکن ناسم دی',
   },
 };

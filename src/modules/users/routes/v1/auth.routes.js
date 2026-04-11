@@ -1,11 +1,13 @@
 import express from 'express';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import {
+  googleLogin,
   login,
   logout,
   changePassword,
   forgotPassword,
   resetPassword,
+  verifyEmail,
   refreshAccessToken,
 } from '../../controllers/v1/auth.controller.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
@@ -35,5 +37,7 @@ router.post(
   validate(resetPasswordValidator),
   asyncHandler(resetPassword)
 );
+router.get('/verify-email/:verifyToken', asyncHandler(verifyEmail));
 
+router.post('/google', asyncHandler(googleLogin));
 export default router;

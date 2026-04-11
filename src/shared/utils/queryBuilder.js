@@ -13,15 +13,6 @@ export const driverQueryBuilder = (searchQuery) => {
     query.isVerified = false;
   }
 
-  // Single search field "searchTerm" for name, email, phone
-  if (searchQuery.searchTerm) {
-    query['$or'] = [
-      { 'user.name': { $regex: searchQuery.searchTerm, $options: 'i' } },
-      { 'user.email': { $regex: searchQuery.searchTerm, $options: 'i' } },
-      { 'user.phone': { $regex: searchQuery.searchTerm, $options: 'i' } },
-    ];
-  }
-
   return query;
 };
 
