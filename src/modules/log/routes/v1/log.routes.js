@@ -9,6 +9,6 @@ const router = express.Router();
 
 router.get('/', validate(logQueryValidator), asyncHandler(getLogs));
 router.get('/log-stats', validate(logQueryValidator), asyncHandler(getLogStats));
-router.get('/:logId', validate(logIdValidator), asyncHandler(getLog));
+router.get('/:logId', validate(logIdValidator), validate(logQueryValidator), asyncHandler(getLog));
 
 export default router;
