@@ -32,7 +32,12 @@ export const getLogs = async (req, res) => {
 export const getLog = async (req, res) => {
   if (!req.user) throw unauthorized();
 
-  const log = await getLogById(req.params.logId);
+  const searchQuery = {
+    date: req.query?.date,
+    type: req.query?.type,
+  };
+
+  const log = await getLogById(req.params.logId, searchQuery);
 
   res.status(200).json({
     success: true,

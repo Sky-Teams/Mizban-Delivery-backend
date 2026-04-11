@@ -32,8 +32,9 @@ export const getAllLogs = async (page = 1, limit = 10, searchQuery = {}) => {
 };
 
 //Get Log By Id
-export const getLogById = async (logId) => {
-  let log = await readLogs({ logId });
+export const getLogById = async (logId, searchQuery = {}) => {
+  const { date, type } = searchQuery;
+  let log = await readLogs({ type, specificDate: date, logId });
 
   if (!log || log.length === 0) throw notFound('Log');
 
