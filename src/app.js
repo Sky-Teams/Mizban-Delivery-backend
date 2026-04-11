@@ -13,6 +13,7 @@ import { businessCustomerRoutes } from '#modules/businessCustomers/index.js';
 import { routeNotFound } from '#shared/errors/error.js';
 import { orderRoutes } from '#modules/orders/index.js';
 import { loggerMiddleware } from '#shared/middleware/loggerMiddleware.js';
+import { logRoutes } from '#modules/log/index.js';
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use('/api/drivers', authorizeRole('admin'), driverRoutes);
 app.use('/api/orders', authorizeRole('admin'), orderRoutes);
 app.use('/api/businesses', authorizeRole('admin'), businessRoutes);
 app.use('/api/business-customers', authorizeRole('admin'), businessCustomerRoutes);
+app.use('/api/logs', authorizeRole('admin'), logRoutes);
 
 //#endregion
 
