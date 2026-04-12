@@ -182,6 +182,9 @@ export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, lim
   try {
     const nearestDrivers = await DriverModel.find({
       status: 'idle',
+      $expr: {
+        $lt: ['$activeOrders', '$maxOrders'],
+      },
       currentLocation: {
         $near: {
           $geometry: { type: 'Point', coordinates: pickupLocation },
@@ -189,7 +192,7 @@ export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, lim
         },
       },
     })
-      .select('_id user status ratingAvg ratingCount acceptanceRate currentLocation')
+      .select('_id user status ratingAvg ratingCount acceptanceRate currentLocation activeOrders')
       .limit(limit)
       .lean();
 
@@ -211,6 +214,19 @@ export const findNearestAndScore = async (pickupCoordinates) => {
   if (!drivers.length) return [];
 
   //TODO: Check if drivers has an active job and if they are on the same way.
+
+  // // Step 1: split active vs idle
+  // const activeDrivers = drivers.filter((d) => d.activeOrders > 0);
+  // const idleDrivers = drivers.filter((d) => d.activeOrders === 0);
+
+  // // Step 2: filter active drivers by route logic
+  // const validActiveDrivers = await GeoService.filterDriversOnSameRoute(
+  //   activeDrivers,
+  //   pickupCoordinates
+  // );
+
+  // // Step 3: combine valid drivers
+  // const eligibleDrivers = [...idleDrivers, ...validActiveDrivers];
 
   const driversWithETA = await GeoService.getDistanceMatrix(drivers, pickupCoordinates);
 
