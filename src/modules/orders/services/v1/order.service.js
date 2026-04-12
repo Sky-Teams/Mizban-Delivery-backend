@@ -253,13 +253,21 @@ export const cancelAnOrder = async (session, orderId, reason) => {
   return order;
 };
 
-export const addDriverIdsInOrder = async (orderId, drivers) => {
+export const addDriversDataInOrder = async (orderId, drivers) => {
   try {
     if (drivers.length === 0) return;
     // Convert the driverIds from ObjectId to string
-    const ids = drivers.map((driver) => driver._id.toString());
+    const driversInfo = drivers.map((driver) => {
+      return {
+        id: driver._id,
+        eta: driver.eta,
+        distance: driver.distance,
+      };
+    });
 
-    const order = await OrderModel.findByIdAndUpdate(orderId, { recommendedDrivers: ids });
+    const order = await OrderModel.findByIdAndUpdate(orderId, {
+      $set: { recommendedDrivers: driversInfo },
+    });
 
     if (!order) throw notFound('order');
 
@@ -269,7 +277,7 @@ export const addDriverIdsInOrder = async (orderId, drivers) => {
   }
 };
 
-// Increase the currentDriverIndex to send offer to next driver
+/**  Increase the currentDriverIndex in order model to send offer to next driver */
 export const increaseDriverIndex = async (orderId, session = null) => {
   try {
     const options = { new: true };
