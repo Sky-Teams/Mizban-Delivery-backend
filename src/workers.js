@@ -5,6 +5,7 @@ import {
   defineEmailVerificationEmailJobs,
   defineResetPasswordEmailJobs,
 } from './jobs/email.job.js';
+import { defineCalculationJobs } from './jobs/calculation.job.js';
 
 async function startWorker() {
   // Register the email job so agenda knows how to execute it
@@ -12,6 +13,7 @@ async function startWorker() {
   await defineResetPasswordEmailJobs(agenda);
   await defineOfferJobs();
   await defineEmailVerificationEmailJobs(agenda);
+  await defineCalculationJobs();
 
   // This event runs when a job --fails-- and is retried
   agenda.on('retry', (job, details) => {
