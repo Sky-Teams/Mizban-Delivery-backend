@@ -21,7 +21,6 @@ export class NotificationService {
         break;
 
       case 'driver':
-      case 'user':
         if (!userId) {
           throw new Error('userId is required for driver/user notifications');
         }
