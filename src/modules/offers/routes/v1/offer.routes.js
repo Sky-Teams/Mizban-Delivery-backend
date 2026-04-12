@@ -6,7 +6,6 @@ import { validate } from '#shared/middleware/validate.js';
 import express from 'express';
 const router = express.Router();
 
-//TODO: Add validation for :id
 router.patch(
   '/:id/accept',
   validate(mongoIdValidator),
