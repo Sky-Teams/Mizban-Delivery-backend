@@ -136,7 +136,15 @@ const OrderSchema = new mongoose.Schema(
       default: null,
     },
 
-    recommendedDrivers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Driver' }], // list of driver IDs in order
+    //List of recommended drivers for this order
+    recommendedDrivers: [
+      {
+        _id: false, // we dont need the auto generated Id for this object
+        id: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver' },
+        eta: { type: Number, default: 0 },
+        distance: { type: Number, default: 0 },
+      },
+    ],
     currentDriverIndex: { type: Number, default: 0 }, // pointer to the next driver to send offer
 
     batchId: {
