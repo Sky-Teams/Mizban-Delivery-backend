@@ -618,6 +618,44 @@ describe('Controller Order - getOrders', () => {
       totalOrders: 10,
     });
   });
+
+  it('should return orders filtered by date range', async () => {
+    req = {
+      user: { _id: 'user123' },
+      query: {
+        page: 1,
+        limit: 5,
+        startDate: '2026-03-01',
+        endDate: '2026-03-10',
+      },
+    };
+
+    const mockOrders = {
+      orders: [
+        { _id: '1', createdAt: '2026-03-05' },
+        { _id: '2', createdAt: '2026-03-07' },
+      ],
+      totalOrders: 2,
+      totalPage: 1,
+    };
+
+    getAllOrders.mockResolvedValue(mockOrders);
+
+    await getOrders(req, res);
+
+    expect(getAllOrders).toHaveBeenCalledWith(1, 5, {
+      startDate: '2026-03-01',
+      endDate: '2026-03-10',
+    });
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockOrders.orders,
+      totalPage: 1,
+      totalOrders: 2,
+    });
+  });
 });
 
 describe('Controller Order - getOrder (By Id)', () => {
