@@ -72,6 +72,8 @@ export const getOrders = async (req, res) => {
     serviceLevel: req.query?.serviceLevel,
     paymentType: req.query?.paymentType,
     paymentStatus: req.query?.paymentStatus,
+    startDate: req.query?.startDate,
+    endDate: req.query?.endDate,
   };
 
   const { orders, totalOrders, totalPage } = await getAllOrders(page, limit, searchQuery);
