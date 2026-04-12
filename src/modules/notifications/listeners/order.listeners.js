@@ -1,5 +1,5 @@
 import { findNearestAndScore } from '#modules/drivers/index.js';
-import { addDriverIdsInOrder } from '#modules/orders/index.js';
+import { addDriversDataInOrder } from '#modules/orders/index.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
 import { NotificationPayloads } from '#shared/utils/notificationPayloadBuilder.js';
 import { NotificationService } from '#shared/utils/notificationService..js';
@@ -14,7 +14,7 @@ export const registerOrderListeners = () => {
 
     const drivers = await findNearestAndScore(data.newOrder.pickupLocation.coordinates);
 
-    await addDriverIdsInOrder(orderId, drivers);
+    await addDriversDataInOrder(orderId, drivers);
     await OfferService.sendOfferToDriver(orderId);
   });
 };
