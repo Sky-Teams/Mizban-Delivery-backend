@@ -2,10 +2,13 @@ import { agenda } from '#config/agenda.js';
 import { fetchDriverByDriverId } from '#modules/drivers/index.js';
 import { createOffer, getOffer } from '#modules/offers/index.js';
 import { getOrderById, increaseDriverIndex } from '#modules/orders/index.js';
+import { DtoService } from './dtoService.js';
 import { NotificationPayloads } from './notificationPayloadBuilder.js';
-import { NotificationService } from './notificationService..js';
+import { NotificationService } from './notificationService.js';
 
 export class OfferService {
+  static #offerExpiresIn = process.env.Offer_Expires_In_Seconds || 30;
+
   /**
    * Send offer to a specific driver
    * @param {string} orderId
@@ -18,23 +21,20 @@ export class OfferService {
       // ex: Driver accept the offer in last seconds and timeout job is executed.
       if (order.status !== 'created') return; // It means order is not in created mode, so we cancel the process
 
-      const driversIds = order.recommendedDrivers;
+      const driversInfo = order.recommendedDrivers;
       const currentIndex = order.currentDriverIndex;
 
-      console.log(driversIds);
-      console.log('currentIndex: ', currentIndex);
-
-      if (currentIndex >= driversIds.length) {
-        console.log('No Driver found');
+      if (currentIndex >= driversInfo.length) {
         // TODO we must search what should we do if no driver found. for now we just send an notification for all admins
         const noDriverFoundPayload = NotificationPayloads.noDriverFound(orderId);
         await NotificationService.send('admins', 'no-driver', noDriverFoundPayload);
         return;
       }
 
-      console.log('Send offer to driver: ', driversIds[currentIndex]);
+      console.log('Send offer to driver: ', driversInfo[currentIndex].id);
 
-      const offer = await createOffer(orderId, driversIds[currentIndex]);
+      //TODO: Does we need to store the info about the order details in offer table?
+      const offer = await createOffer(orderId, driversInfo[currentIndex].id);
 
       if (!offer) {
         await increaseDriverIndex(orderId);
@@ -43,18 +43,24 @@ export class OfferService {
 
       //TODO: Does we need to check if driver is still available? Yes because maybe driver accept another offer during this offer.
       //TODO: We should check if its on the same way of offer
-      const driver = await fetchDriverByDriverId(driversIds[currentIndex]);
+      const driver = await fetchDriverByDriverId(driversInfo[currentIndex].id);
       if (!driver || driver.status !== 'idle' || driver.activeOrders >= driver.maxOrders) {
         await increaseDriverIndex(orderId);
         return await OfferService.sendOfferToDriver(orderId);
       }
-      const offerPayload = NotificationPayloads.orderOffered();
-      await NotificationService.send('driver', 'offer', offerPayload, driver.user.toString());
 
-      console.log('Offer Id: ', offer._id);
+      const orderInfo = DtoService.order(order);
+      orderInfo.expiresIn = this.#offerExpiresIn;
+      orderInfo.eta = driversInfo[currentIndex].eta;
+      orderInfo.distance = driversInfo[currentIndex].distance;
+
+      const offerPayload = NotificationPayloads.orderOffered(orderInfo);
+      await NotificationService.send('driver', 'offer', offerPayload, driver.user._id);
+
+      console.log('Offer Id: ', offer._id); // we need it for test
 
       // Schedule timeout job. For simulating the process, timeout is set to 30s
-      await agenda.schedule('25s', 'offer:timeout', {
+      await agenda.schedule(`${this.#offerExpiresIn}s`, 'offer:timeout', {
         orderId,
         driverId: offer.driver,
         offerId: offer._id,
@@ -71,7 +77,7 @@ export class OfferService {
       // For system error, DB error, or other critical errors, its better to stop the process and notify the admin
       console.error('Error in sendOfferToDriver:', error);
       const systemErrorPayload = NotificationPayloads.systemError(error.message);
-      await NotificationService.send('admins', 'system-error', systemErrorPayload);
+      await NotificationService.send('admins', 'system', systemErrorPayload);
 
       return; // We explicitly return to stop more processing
     }
