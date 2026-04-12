@@ -256,7 +256,7 @@ export const cancelAnOrder = async (session, orderId, reason) => {
 export const addDriversDataInOrder = async (orderId, drivers) => {
   try {
     if (drivers.length === 0) return;
-    // Convert the driverIds from ObjectId to string
+
     const driversInfo = drivers.map((driver) => {
       return {
         id: driver._id,

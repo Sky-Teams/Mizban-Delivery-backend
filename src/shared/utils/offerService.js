@@ -42,7 +42,6 @@ export class OfferService {
       }
 
       //TODO: Does we need to check if driver is still available? Yes because maybe driver accept another offer during this offer.
-      //TODO: We should check if its on the same way of offer
       const driver = await fetchDriverByDriverId(driversInfo[currentIndex].id);
       if (!driver || driver.status !== 'idle' || driver.activeOrders >= driver.maxOrders) {
         await increaseDriverIndex(orderId);

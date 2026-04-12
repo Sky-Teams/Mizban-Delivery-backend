@@ -8,7 +8,7 @@ import { OfferService } from '#shared/utils/offerService.js';
 export const registerOrderListeners = () => {
   eventBus.on('order:created', async (data) => {
     const orderId = data.orderId.toString();
-    //TODO We should create a centralized notification service for sending notification
+
     const payload = NotificationPayloads.orderCreated(orderId);
     await NotificationService.send('admins', 'notification', payload);
 
