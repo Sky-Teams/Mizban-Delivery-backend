@@ -33,6 +33,6 @@ const offerSchema = new mongoose.Schema(
 );
 
 offerSchema.index({ order: 1, driver: 1 });
-offerSchema.index({ status: 1 });
+offerSchema.index({ driver: 1, status: 1 }); // Set index for driver and status to help us in calculating the acceptance rate
 
 export const OfferModel = mongoose.model('Offer', offerSchema);
