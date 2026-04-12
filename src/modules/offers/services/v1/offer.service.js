@@ -44,7 +44,7 @@ const acceptAnOffer = async (session, offerId, userId) => {
   const offer = await OfferModel.findOneAndUpdate(
     { _id: offerId, driver: driver._id, status: 'pending' },
     { status: 'accepted' },
-    { new: true, session: true }
+    { new: true, session }
   );
 
   if (!offer)
