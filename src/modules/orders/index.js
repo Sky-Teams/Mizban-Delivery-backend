@@ -19,6 +19,6 @@ export {
   updateOrderInfo,
   getAllOrders,
   increaseDriverIndex,
-  addDriverIdsInOrder,
+  addDriversDataInOrder,
 } from './services/v1/order.service.js';
 export { OrderModel } from './models/order.model.js';
