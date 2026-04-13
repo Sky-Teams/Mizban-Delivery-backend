@@ -5,6 +5,8 @@ import { getOrderById, increaseDriverIndex } from '#modules/orders/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
+import { DbJobService } from '#shared/utils/dbJob.service.js';
+import { DRIVER_STATUS, OFFER_STATUS, ORDER_STATUS } from '#shared/utils/enums.js';
 import { createOfferSchema } from '../../dto/create-offer.schema.js';
 
 /**
@@ -42,8 +44,8 @@ const acceptAnOffer = async (session, offerId, userId) => {
 
   // Atomic update
   const offer = await OfferModel.findOneAndUpdate(
-    { _id: offerId, driver: driver._id, status: 'pending' },
-    { status: 'accepted' },
+    { _id: offerId, driver: driver._id, status: OFFER_STATUS.PENDING },
+    { status: OFFER_STATUS.ACCEPTED },
     { new: true, session }
   );
 
@@ -54,10 +56,10 @@ const acceptAnOffer = async (session, offerId, userId) => {
       ERROR_CODES.OFFER_HANDLED_OR_NOT_YOURS
     );
 
-  //Update the status of order. TODO => Maybe we dont need to check it, because we checked the offer
+  // Update the status of order.
   const order = await getOrderById(offer.order);
 
-  if (order.status !== 'created') {
+  if (order.status !== ORDER_STATUS.CREATED) {
     throw new AppError(
       `Cannot assign driver. Order status is ${order.status}.`,
       409,
@@ -65,22 +67,20 @@ const acceptAnOffer = async (session, offerId, userId) => {
     );
   }
 
-  order.status = 'assigned';
+  order.status = ORDER_STATUS.ASSIGNED;
   order.driverId = driver._id;
   await order.save({ session });
 
-  //TODO: Does we need to check the status of the driver in here?
+  //TODO: Does we need to check the status of the driver in here? For now, no we dont need it.
+
   // Update the status of driver
-  driver.status = 'assigned';
-  //TODO: Increase the number of active orders
+  driver.status = DRIVER_STATUS.ASSIGNED;
+
+  // Increase the number of active orders
   driver.activeOrders = driver.activeOrders + 1;
   await driver.save({ session });
 
-  //TODO: Calculate the acceptanceRate
-
-  // Cancel timeout job
-  await agenda.cancel({ name: 'offer:timeout', 'data.offerId': offerId });
-
+  await DbJobService.cancelOfferTimeout(offerId);
   return offer;
 };
 
@@ -89,8 +89,8 @@ const rejectAnOffer = async (session, offerId, userId) => {
   if (!driver) throw notFound('driver');
 
   const offer = await OfferModel.findOneAndUpdate(
-    { _id: offerId, driver: driver._id, status: 'pending' },
-    { status: 'rejected' },
+    { _id: offerId, driver: driver._id, status: OFFER_STATUS.PENDING },
+    { status: OFFER_STATUS.REJECTED },
     { new: true, session }
   );
 
@@ -101,13 +101,8 @@ const rejectAnOffer = async (session, offerId, userId) => {
       ERROR_CODES.OFFER_HANDLED_OR_NOT_YOURS
     );
 
-  //TODO:Calculate the acceptance Rate
-
   await increaseDriverIndex(offer.order, session);
-
-  //TODO: I am not sure about this.Should we cancel it, I think, we need to cancel it.
-
-  await agenda.cancel({ name: 'offer:timeout', 'data.offerId': offerId });
+  await DbJobService.cancelOfferTimeout(offerId);
 
   return offer;
 };
