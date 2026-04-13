@@ -253,6 +253,7 @@ export const cancelAnOrder = async (session, orderId, reason) => {
   return order;
 };
 
+/** Add drivers info (id, eta, distance ) in related order record */
 export const addDriversDataInOrder = async (orderId, drivers) => {
   try {
     if (drivers.length === 0) return;
