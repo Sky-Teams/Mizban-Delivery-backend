@@ -38,7 +38,7 @@ export class DateHelper {
 
   /**
    *Validate full ISO (2026-04-12T14:06:10.899Z) or simple date (2026-04-12)
-   * @param {Date | string} val
+   * @param {string} val
    * @returns
    */
   static isValidDate = (val) => {
