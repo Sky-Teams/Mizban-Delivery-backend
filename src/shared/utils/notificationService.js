@@ -4,7 +4,7 @@ import { createNotificationForAdmins } from '#modules/notifications/index.js';
 export class NotificationService {
   /**
    * Central notification sender
-   * @param {'admins'|'driver'|'user'} to
+   * @param {string} to - admins, driver, user
    * @param {string} event
    * @param {Object} payload
    * @param {string|null} userId
@@ -28,7 +28,7 @@ export class NotificationService {
         CustomSocket.emitToUser(userId, event, payload);
 
         if (persist) {
-          // we can store notification in db in here.
+          // we can store notification in db in here if we need it in future
         }
         break;
 
