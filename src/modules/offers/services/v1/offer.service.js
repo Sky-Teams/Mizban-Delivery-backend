@@ -1,4 +1,3 @@
-import { agenda } from '#config/agenda.js';
 import { fetchDriverByUserId } from '#modules/drivers/index.js';
 import { OfferModel } from '#modules/offers/models/offer.model.js';
 import { getOrderById, increaseDriverIndex } from '#modules/orders/index.js';
@@ -69,6 +68,7 @@ const acceptAnOffer = async (session, offerId, userId) => {
 
   order.status = ORDER_STATUS.ASSIGNED;
   order.driverId = driver._id;
+  order.timeline.assignedAt = new Date();
   await order.save({ session });
 
   //TODO: Does we need to check the status of the driver in here? For now, no we dont need it.
