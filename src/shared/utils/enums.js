@@ -1,3 +1,8 @@
+export const ROLES = {
+  ADMIN: 'admin',
+  DRIVER: 'driver',
+};
+
 export const OFFER_STATUS = {
   PENDING: 'pending',
   REJECTED: 'rejected',
