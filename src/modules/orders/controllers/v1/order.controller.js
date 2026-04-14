@@ -40,21 +40,25 @@ export const assignDriver = async (req, res) => {
 export const pickupOrder = async (req, res) => {
   if (!req.user) throw unauthorized();
 
-  const updatedOrder = await pickupOrderWithTransaction(req.params.id);
+  const updatedOrder = await pickupOrderWithTransaction(req.params.id, req.user);
 
   res.status(200).json({ success: true, data: updatedOrder });
 };
 
 export const deliverOrder = async (req, res) => {
   if (!req.user) throw unauthorized();
-  const updatedOrder = await deliverOrderWithTransaction(req.params.id);
+  const updatedOrder = await deliverOrderWithTransaction(req.params.id, req.user);
 
   res.status(200).json({ success: true, data: updatedOrder });
 };
 
 export const cancelOrder = async (req, res) => {
   if (!req.user) throw unauthorized();
-  const updatedOrder = await cancelOrderWithTransaction(req.params.id, req.body?.cancelReason);
+  const updatedOrder = await cancelOrderWithTransaction(
+    req.params.id,
+    req.body?.cancelReason,
+    req.user
+  );
 
   res.status(200).json({ success: true, data: updatedOrder });
 };
