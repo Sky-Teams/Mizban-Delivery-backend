@@ -34,8 +34,6 @@ app.get('/api/health', (req, res) => {
   res.send('Delivery System is running');
 });
 
-process.removeAllListeners('warning');
-
 // Public routes
 app.use('/api/auth', authRoutes);
 
