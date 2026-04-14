@@ -24,6 +24,7 @@ export class DtoService {
       deliveryPrice: order?.deliveryPrice?.total,
       finalPrice: order?.finalPrice,
       items: { ...order?.items },
+      status: order?.status,
     };
 
     return filteredOrderField;
