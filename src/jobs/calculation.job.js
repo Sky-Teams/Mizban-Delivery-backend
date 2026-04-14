@@ -1,6 +1,7 @@
 import { agenda } from '#config/agenda.js';
 import { fetchDriverByUserId } from '#modules/drivers/index.js';
 import { OfferModel } from '#modules/offers/index.js';
+import { OFFER_STATUS } from '#shared/utils/enums.js';
 
 export async function defineCalculationJobs() {
   agenda.define('calculate-acceptance-rate', async (job) => {
@@ -14,7 +15,7 @@ export async function defineCalculationJobs() {
       {
         $match: {
           driver: driver._id,
-          status: { $in: ['accepted', 'rejected', 'expired'] },
+          status: { $in: [OFFER_STATUS.ACCEPTED, OFFER_STATUS.REJECTED, OFFER_STATUS.EXPIRED] },
         },
       },
       {
@@ -23,7 +24,7 @@ export async function defineCalculationJobs() {
           total: { $sum: 1 },
           accepted: {
             $sum: {
-              $cond: [{ $eq: ['$status', 'accepted'] }, 1, 0],
+              $cond: [{ $eq: ['$status', OFFER_STATUS.ACCEPTED] }, 1, 0],
             },
           },
         },
