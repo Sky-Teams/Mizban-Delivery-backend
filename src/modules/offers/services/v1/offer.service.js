@@ -30,7 +30,7 @@ export const createOffer = async (orderId, driverId) => {
 };
 
 export const getOffer = async (orderId, driverId) => {
-  const orderOffer = { order: orderId.toString(), driver: driverId.toString() }; // We convert the orderId and driverId to string because objectId is throw error when validating
+  const orderOffer = { order: orderId.toString(), driver: driverId.toString() }; // We convert to string, because from most places we send objectId
   createOfferSchema.parse(orderOffer);
 
   const offer = await OfferModel.findOne(orderOffer);

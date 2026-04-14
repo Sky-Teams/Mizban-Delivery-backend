@@ -576,4 +576,9 @@ export const ERROR_MESSAGES = {
     fa: 'توکن تایید ایمیل نامعتبر است',
     ps: 'د برېښنالیک د تایید توکن ناسم دی',
   },
+  [ERROR_CODES.OFFER_HANDLED_OR_NOT_YOURS]: {
+    en: 'This offer is already handled or not yours.',
+    fa: 'این پیشنهاد قبلاً بررسی شده یا مربوط به شما نیست.',
+    ps: 'دا وړاندیز مخکې پروسس شوی یا ستاسو نه دی.',
+  },
 };
