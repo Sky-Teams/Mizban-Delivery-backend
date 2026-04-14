@@ -23,3 +23,13 @@ export const DRIVER_STATUS = {
   ASSIGNED: 'assigned',
   DELIVERING: 'delivering',
 };
+
+export const PAYMENT_STATUS = {
+  PENDING: 'pending',
+  PAID: 'paid',
+  FAILED: 'failed',
+};
+
+export const CUSTOM_EVENTS = {
+  ORDER_CREATED: 'order:created',
+};
