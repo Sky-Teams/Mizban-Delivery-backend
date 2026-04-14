@@ -1,8 +1,16 @@
-import { getDriverStatusByDriverId } from '#modules/drivers/index.js';
+import { fetchDriverByUserId, getDriverStatusByDriverId } from '#modules/drivers/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, noFieldsProvidedForUpdate, notFound } from '#shared/errors/error.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
+import { DtoService } from '#shared/utils/dtoService.js';
+import {
+  CUSTOM_EVENTS,
+  DRIVER_STATUS,
+  ORDER_STATUS,
+  PAYMENT_STATUS,
+  ROLES,
+} from '#shared/utils/enums.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
 import { orderUpdateQuery } from '#shared/utils/queryBuilder.js';
 import { OrderModel } from '../../models/order.model.js';
@@ -10,21 +18,21 @@ import { OrderModel } from '../../models/order.model.js';
 export const addOrder = async (orderData) => {
   // orderData is validated by Zod, so no extra fields can exist
 
-  let status = 'created';
+  let status = ORDER_STATUS.CREATED;
   const timeline = {};
 
   // Driver validation
   if (orderData.driverId) {
     const driver = await getDriverStatusByDriverId(orderData.driverId);
 
-    if (driver.status !== 'idle')
+    if (driver.status !== DRIVER_STATUS.IDLE)
       throw new AppError(
         `Driver is not available. Driver status is ${driver.status}`,
         409,
         ERROR_CODES.DRIVER_NOT_IDLE
       );
 
-    status = 'assigned';
+    status = ORDER_STATUS.ASSIGNED;
     timeline.assignedAt = new Date();
   }
 
@@ -48,12 +56,7 @@ export const addOrder = async (orderData) => {
   });
 
   // emit events
-  eventBus.emit('order:created', {
-    orderId: newOrder._id,
-    userId: '69b1be9bf83d53a0cdc7266b', // We can use the sender Id in future to send notification, for now we send admin Id (hardcoded)
-    newOrder,
-  });
-
+  eventBus.emit(CUSTOM_EVENTS.ORDER_CREATED, { orderId: newOrder._id });
   return newOrder;
 };
 
@@ -88,7 +91,7 @@ export const getAllOrders = async (page = 1, limit = 10, searchQuery = {}) => {
 export const updateOrderInfo = async (orderId, orderData) => {
   const order = await getOrderById(orderId);
 
-  if (order.status !== 'created' && order.status !== 'assigned') {
+  if (order.status !== ORDER_STATUS.CREATED && order.status !== ORDER_STATUS.ASSIGNED) {
     throw new AppError(
       `Order Request can not be updated.Order status is ${order.status}`,
       409,
@@ -141,7 +144,7 @@ export const updateOrderInfo = async (orderId, orderData) => {
 export const assignDriver = async (session, orderId, driverId) => {
   const order = await getOrderById(orderId);
 
-  if (order.status !== 'created') {
+  if (order.status !== ORDER_STATUS.CREATED) {
     throw new AppError(
       `Cannot assign driver. Order status is ${order.status}.`,
       409,
@@ -151,7 +154,7 @@ export const assignDriver = async (session, orderId, driverId) => {
 
   const driver = await getDriverStatusByDriverId(driverId);
 
-  if (driver.status !== 'idle')
+  if (driver.status !== DRIVER_STATUS.IDLE)
     throw new AppError(
       `Driver is not available. Driver status is ${driver.status}`,
       409,
@@ -159,10 +162,10 @@ export const assignDriver = async (session, orderId, driverId) => {
     );
 
   order.driverId = driver._id;
-  order.status = 'assigned';
+  order.status = ORDER_STATUS.ASSIGNED;
   order.timeline.assignedAt = new Date();
 
-  driver.status = 'assigned';
+  driver.status = DRIVER_STATUS.ASSIGNED;
 
   await order.save({ session });
   await driver.save({ session });
@@ -170,10 +173,10 @@ export const assignDriver = async (session, orderId, driverId) => {
   return order;
 };
 
-export const pickupAnOrder = async (session, orderId) => {
+export const pickupAnOrder = async (session, orderId, user) => {
   const order = await getOrderById(orderId);
 
-  if (order.status !== 'assigned') {
+  if (order.status !== ORDER_STATUS.ASSIGNED) {
     throw new AppError(
       `Cannot pick up. Order status is ${order.status}.`,
       409,
@@ -181,51 +184,78 @@ export const pickupAnOrder = async (session, orderId) => {
     );
   }
 
-  const driver = await getDriverStatusByDriverId(order.driverId);
+  // const driver = await getDriverStatusByDriverId(order.driverId);
 
-  order.status = 'pickedUp';
+  //TODO: Add validation that if the order is assigned to driver
+
+  // Requested Driver Id must be equal to order.driverId
+
+  const driver = await fetchDriverByUserId(user._id);
+  if (!driver) notFound('driver');
+
+  doesDriverAssginedToOrder(driver._id, order.driverId);
+
+  order.status = ORDER_STATUS.PICKEDUP;
   order.timeline.pickedUpAt = new Date();
 
-  driver.status = 'delivering';
+  driver.status = DRIVER_STATUS.DELIVERING;
 
   await order.save({ session });
   await driver.save({ session });
 
+  console.log(`Order ${orderId} is pickedUp by driver ${order.driverId}`);
+
+  //TODO: We should not send all data to driver if the request is from driver
+  // Return filtered fields to driver
+  if (user.role === ROLES.DRIVER) return DtoService.order(order);
+
+  // Return all fields to admin
   return order;
 };
 
-export const deliverAnOrder = async (session, orderId) => {
+export const deliverAnOrder = async (session, orderId, user) => {
   const order = await getOrderById(orderId);
 
-  if (order.status !== 'pickedUp') {
+  if (order.status !== ORDER_STATUS.PICKEDUP) {
     throw new AppError(
-      `Cannot order. Order status is ${order.status}.`,
+      `Cannot mark as delivered. Order status is ${order.status}.`,
       409,
       ERROR_CODES.DELIVERY_NOT_DELIVERABLE
     );
   }
 
-  const driver = await getDriverStatusByDriverId(order.driverId);
+  // const driver = await getDriverStatusByDriverId(order.driverId);
+  const driver = await fetchDriverByUserId(user._id);
+  if (!driver) notFound('driver');
 
-  order.status = 'delivered';
+  doesDriverAssginedToOrder(driver._id, order.driverId);
+
+  order.status = ORDER_STATUS.DELIVERED;
   order.timeline.deliveredAt = new Date();
 
   //TODO We should add more logic in here in future for transaction of money.
-  order.paymentStatus = 'paid';
+  order.paymentStatus = PAYMENT_STATUS.PAID;
 
-  driver.status = 'idle';
+  driver.status = DRIVER_STATUS.IDLE;
+
+  //TODO: We should decrease the number of activeOrders in driver model
+  driver.activeOrders = Math.max(0, driver.activeOrders - 1);
 
   await order.save({ session });
   await driver.save({ session });
 
+  // Return filtered fields to driver
+  if (user.role === ROLES.DRIVER) return DtoService.order(order);
+
+  // Return all fields to admin
   return order;
 };
 
-export const cancelAnOrder = async (session, orderId, reason) => {
+export const cancelAnOrder = async (session, orderId, reason, user) => {
   const order = await getOrderById(orderId);
 
   // Cannot cancel completed or cancelled orders
-  if (['delivered', 'cancelled'].includes(order.status)) {
+  if ([ORDER_STATUS.DELIVERED, ORDER_STATUS.CANCELLED].includes(order.status)) {
     throw new AppError(
       `Cannot cancel order. Order status is ${order.status}.`,
       409,
@@ -235,14 +265,18 @@ export const cancelAnOrder = async (session, orderId, reason) => {
 
   // Release driver if exists
   if (order.driverId) {
-    const driver = await getDriverStatusByDriverId(order.driverId);
-    driver.status = 'idle';
+    // const driver = await getDriverStatusByDriverId(order.driverId);
+    const driver = await fetchDriverByUserId(user._id);
+    if (!driver) notFound('driver');
+    doesDriverAssginedToOrder(driver._id, order.driverId);
+    driver.status = DRIVER_STATUS.IDLE;
+    driver.activeOrders = Math.max(0, driver.activeOrders - 1);
     await driver.save({ session });
   }
 
-  order.status = 'cancelled';
+  order.status = ORDER_STATUS.CANCELLED;
   order.timeline.cancelledAt = new Date();
-  order.paymentStatus = 'failed'; //TODO We should add more logic in here in future.
+  order.paymentStatus = PAYMENT_STATUS.FAILED; //TODO We should add more logic in here in future.
 
   if (reason) {
     order.cancelReason = reason;
@@ -250,6 +284,10 @@ export const cancelAnOrder = async (session, orderId, reason) => {
 
   await order.save({ session });
 
+  // Return filtered fields to driver
+  if (user.role === ROLES.DRIVER) return DtoService.order(order);
+
+  // Return all fields to admin
   return order;
 };
 
@@ -295,6 +333,19 @@ export const increaseDriverIndex = async (orderId, session = null) => {
   } catch (error) {
     throw error;
   }
+};
+
+/**
+ * Check if the driver is assigned to order
+ * @param {string | ObjectId} driverId - Id of driver in driver collection
+ * @param {string | ObjectId} orderDriverId - DriverId in order collection
+ */
+const doesDriverAssginedToOrder = (driverId, orderDriverId) => {
+  if (driverId.toString() !== orderDriverId.toString()) {
+    throw new AppError('Order is not yours', 400, ERROR_CODES.ORDER_NOT_YOURS);
+  }
+
+  return true;
 };
 
 export const assignDriverToOrderWithTransaction = withTransaction(assignDriver);
