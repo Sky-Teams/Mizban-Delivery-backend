@@ -3,17 +3,46 @@ import { createNotificationSchema } from '../../dto/create-notification.schema.j
 import { AppError, notFound } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { getAllAdmins } from '#modules/users/index.js';
+import admin from "../../../../config/firebase/firebaseAdmin.js";
+import { CustomSocket } from "../../../../config/socket.js";
+import { UserModel } from "../../../../modules/users/models/user.model.js";
+
 
 /**
  * Create a new notification in the system.
  * This function is intended to be used internally by other services,
  * not via an API route, so validation is performed here in the service layer.
  */
+
 export const createNotification = async (userId, type, title, message) => {
   const notification = { user: userId, type, title, message };
   const validatedNotification = createNotificationSchema.parse(notification);
 
   const newNotification = await NotificationModel.create(validatedNotification);
+  
+  const isOnline = CustomSocket.isUserOnline(userId.toString())
+
+  if(isOnline) {
+    CustomSocket.emitToUser(userId.toString(), "notification", {
+      type, title, message
+    })
+  } else {
+    const user = await UserModel.findById(userId)
+
+    if(user?.fcmToken) {
+      try{
+        await admin.messaging().send({
+          token: user.fcmToken,
+          notification: {
+            title, 
+            body: message,
+          }
+        })
+      } catch (err) {
+        console.error("FCM Error:", err.message)
+      }
+    }
+  }
 
   return newNotification;
 };
