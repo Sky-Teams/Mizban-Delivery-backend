@@ -117,4 +117,14 @@ export class CustomSocket {
       this.emitToUser(driver.user.toString(), event, payload);
     }
   }
+
+
+  // checking the users from their related rooms if they are online or not
+  static isUserOnline(userId) {
+    if (!this.#io) throw new Error('Socket is not initialized');
+
+    const room = this.#io.sockets.adapter.rooms.get(userId);
+
+    return room && room.size > 0;
+  }
 }
