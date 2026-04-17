@@ -7,7 +7,7 @@ export {
   deliverOrder,
   cancelOrder,
   getOrders,
-  getOrder
+  getOrder,
 } from './controllers/v1/order.controller.js';
 export {
   addOrder,

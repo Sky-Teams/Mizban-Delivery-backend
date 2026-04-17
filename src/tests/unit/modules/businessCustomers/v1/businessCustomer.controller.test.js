@@ -98,7 +98,7 @@ describe('BusinessCustomer controller - updateBusinessCustomer', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-  
+
     req = {
       user: { _id: 'business1' },
       params: { id: 'customer1' },
