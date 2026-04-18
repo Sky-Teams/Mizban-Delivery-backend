@@ -1,4 +1,6 @@
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import { AppError } from '#shared/errors/error.js';
+import { DateHelper } from '#shared/utils/date.helper.js';
 import mongoose from 'mongoose';
 import z from 'zod';
 
@@ -47,6 +49,19 @@ const queryValidator = z.object({
         message: ERROR_CODES.INVALID_PAYMENT_STATUS,
       })
       .optional(),
+    startDate: z.preprocess((val) => {
+      if (!val) return undefined;
+      if (!DateHelper.isValidDate(val))
+        throw new AppError('Invalid date format', 400, ERROR_CODES.INVALID_PARAMETER_START_DATE);
+      return val;
+    }, z.coerce.date().optional()),
+
+    endDate: z.preprocess((val) => {
+      if (!val) return undefined;
+      if (!DateHelper.isValidDate(val))
+        throw new AppError('Invalid date format', 400, ERROR_CODES.INVALID_PARAMETER_END_DATE);
+      return val;
+    }, z.coerce.date().optional()),
   }),
 });
 

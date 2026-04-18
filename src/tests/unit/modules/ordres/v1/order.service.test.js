@@ -15,6 +15,7 @@ import mongoose from 'mongoose';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { orderUpdateQuery, driverQueryBuilder } from '#shared/utils/queryBuilder.js';
 import { getOrderById, updateOrderInfo } from '#modules/orders/services/v1/order.service.js';
+import { DateHelper } from '#shared/utils/date.helper.js';
 
 vi.mock('#modules/orders/models/order.model.js', () => ({
   OrderModel: {
@@ -43,6 +44,13 @@ vi.mock('#shared/utils/math.helper.js', () => ({
 vi.mock('#shared/utils/queryBuilder.js', () => ({
   orderUpdateQuery: vi.fn(),
   driverQueryBuilder: vi.fn(),
+}));
+
+vi.mock('#shared/utils/date.helper.js', () => ({
+  DateHelper: {
+    getStartDateUTC: vi.fn(),
+    getEndDateUTC: vi.fn(),
+  },
 }));
 
 const fakeSession = {
@@ -607,7 +615,7 @@ describe('getOrderById', () => {
 describe('getAllOrders', () => {
   it('should return orders list', async () => {
     const mockOrders = [{ _id: '3' }, { _id: '2' }, { _id: '1' }];
-    driverQueryBuilder.mockReturnValue(mockOrders);
+
     OrderModel.countDocuments.mockResolvedValue(10);
     OrderModel.find.mockReturnValue({
       sort: vi.fn().mockReturnThis(),
@@ -618,6 +626,7 @@ describe('getAllOrders', () => {
 
     const result = await getAllOrders(2, 4);
 
+    expect(OrderModel.countDocuments).toHaveBeenCalledWith({});
     expect(result).toEqual({
       orders: mockOrders,
       totalOrders: 10,
@@ -625,14 +634,29 @@ describe('getAllOrders', () => {
     });
   });
 
-  it('should return order lists by status: assigned ', async () => {
+  it('should return orders filtered by status + date range', async () => {
     const mockOrders = [
       { _id: '4', status: 'assigned' },
       { _id: '2', status: 'assigned' },
-      { _id: '3', status: 'assigned' },
-      { _id: '1', status: 'assigned' },
     ];
-    driverQueryBuilder.mockReturnValue(mockOrders);
+
+    // Mock date helpers
+    DateHelper.getStartDateUTC.mockReturnValue('2026-01-01T00:00:00Z');
+    DateHelper.getEndDateUTC.mockReturnValue('2026-01-10T23:59:59Z');
+
+    const searchQuery = {
+      status: 'assigned',
+      startDate: '2026-01-01',
+      endDate: '2026-01-10',
+    };
+
+    const expectedQuery = {
+      status: 'assigned',
+      createdAt: {
+        $gte: '2026-01-01T00:00:00Z',
+        $lte: '2026-01-10T23:59:59Z',
+      },
+    };
 
     OrderModel.countDocuments.mockResolvedValue(14);
     OrderModel.find.mockReturnValue({
@@ -642,7 +666,13 @@ describe('getAllOrders', () => {
       lean: vi.fn().mockResolvedValue(mockOrders),
     });
 
-    const result = await getAllOrders(1, 5, { status: 'assigned' });
+    const result = await getAllOrders(1, 5, searchQuery);
+
+    expect(DateHelper.getStartDateUTC).toHaveBeenCalledWith('2026-01-01');
+    expect(DateHelper.getEndDateUTC).toHaveBeenCalledWith('2026-01-10');
+
+    expect(OrderModel.countDocuments).toHaveBeenCalledWith(expectedQuery);
+    expect(OrderModel.find).toHaveBeenCalledWith(expectedQuery);
 
     expect(result).toEqual({
       orders: mockOrders,

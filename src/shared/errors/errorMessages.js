@@ -576,4 +576,15 @@ export const ERROR_MESSAGES = {
     fa: 'توکن تایید ایمیل نامعتبر است',
     ps: 'د برېښنالیک د تایید توکن ناسم دی',
   },
+  [ERROR_CODES.INVALID_PARAMETER_START_DATE]: {
+    en: 'Invalid start date',
+    fa: 'تاریخ شروع نامعتبر است',
+    ps: 'د پیل نیټه ناسمه ده',
+  },
+
+  [ERROR_CODES.INVALID_PARAMETER_END_DATE]: {
+    en: 'Invalid end date',
+    fa: 'تاریخ پایان نامعتبر است',
+    ps: 'د پای نیټه ناسمه ده',
+  },
 };
