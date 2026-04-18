@@ -89,6 +89,13 @@ export const ERROR_CODES = {
   CANCEL_NOT_ALLOWED: 'CANCEL_NOT_ALLOWED',
   INVALID_CANCEL_REASON: 'INVALID_CANCEL_REASON',
   INVALID_ITEM_NAME: 'INVALID_ITEM_NAME',
+  INVALID_DATE_FORMAT: 'INVALID_DATE_FORMAT',
+  INVALID_LOG_FILE_TYPE: 'INVALID_LOG_FILE_TYPE',
+  PASSWORDS_NOT_MATCHES: 'PASSWORDS_NOT_MATCHES',
+  LOGOUT_INVALID_SESSION: 'LOGOUT_INVALID_SESSION',
+  INVALID_RESET_PASSWORD_TOKEN: 'INVALID_RESET_PASSWORD_TOKEN',
+  INVALID_METHOD_OPTIONS: 'INVALID_METHOD_OPTIONS',
+  INVALID_LOG_ID: 'INVALID_LOG_ID',
   INVALID_ORDER_ID: 'INVALID_ORDER_ID',
   INVALID_GOOGLE_TOKEN: 'INVALID_GOOGLE_TOKEN',
   PASSWORDS_NOT_MATCHES: 'PASSWORDS_NOT_MATCHES',
@@ -108,4 +115,19 @@ export const SENSITIVE_KEYS = [
   'messages',
   'refreshToken',
   'accessToken',
+  'id_token',
 ];
+
+export const toLogSummary = (log) => ({
+  logId: log.logId,
+  timestamp: log.time,
+  level: log.level,
+  logType: log.logType,
+  method: log.method,
+  path: log.path,
+  statusCode: log.statusCode,
+  userId: log.userId ?? null,
+  duration: log.duration,
+  clientIp: log.clientIp,
+  userAgent: log.userAgent,
+});

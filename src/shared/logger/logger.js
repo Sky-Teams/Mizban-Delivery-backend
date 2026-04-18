@@ -51,7 +51,7 @@ const transports = pino.transport({
       options: {
         targetLevel: 'info',
         logType: 'AUDIT',
-        file: path.join(logsDir, 'audit-Logs'),
+        file: path.join(logsDir, 'audit'),
         frequency: 604800000, //weekly
         dateFormat: 'yyyy-MM-dd',
         limit: { count: 4, size: '30mb' },
