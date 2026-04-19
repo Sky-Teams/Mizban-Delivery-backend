@@ -1,11 +1,13 @@
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { ensureNumber } from '#shared/utils/ensureNumber.js';
+import { DRIVER_STATUS, VEHICLE_TYPE } from '#shared/utils/enums.js';
+import { getObjectValues } from '#shared/utils/object.helper.js';
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import mongoose from 'mongoose';
 import { z } from 'zod';
 
-const vehicleTypes = ['bike', 'car', 'van', 'motorbike'];
-const driverStatuses = ['offline', 'idle', 'assigned', 'delivering'];
+const vehicleTypes = getObjectValues(VEHICLE_TYPE);
+const driverStatuses = getObjectValues(DRIVER_STATUS);
 const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 const updateDriverSchema = z.object({
