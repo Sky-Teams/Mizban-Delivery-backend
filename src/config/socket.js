@@ -1,6 +1,8 @@
 import { Server } from 'socket.io';
 import { corsOptions } from './cors.js';
 import { verifyJWT } from '#shared/utils/jwt.js';
+import { getAllAdmins } from '#modules/users/index.js';
+import { pushNotification } from '#shared/utils/pushNotification.js';
 
 export class CustomSocket {
   static #io = null;
@@ -102,8 +104,22 @@ export class CustomSocket {
    * @param {String} event - Type of event that should be emit
    * @param {Object} payload - Payload that should be send to front
    */
-  static emitToAdmins(event, payload) {
+  static async emitToAdmins(event, payload) {
     this.getIO().to('admins').emit(event, payload);
+
+    const admins = await getAllAdmins()
+    for (const admin of admins ) {
+      const adminId = admin._id.toString()
+      const isOnline = this.isUserOnline(adminId)
+
+      if (!isOnline && admin.fcmToken) {
+        await pushNotification(
+          admin.fcmToken,
+          payload.title,
+          payload.message
+        )
+      }
+    }
   }
 
   /**
