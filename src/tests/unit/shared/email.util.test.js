@@ -71,4 +71,3 @@ describe('sendEmail', () => {
     ).rejects.toThrow('verifyUrl is required for verify_email template');
   });
 });
-
