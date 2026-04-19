@@ -1,3 +1,5 @@
+import { DRIVER_STATUS, VEHICLE_TYPE } from '#shared/utils/enums.js';
+import { getObjectValues } from '#shared/utils/object.helper.js';
 import mongoose from 'mongoose';
 
 const DriverSchema = new mongoose.Schema(
@@ -10,14 +12,14 @@ const DriverSchema = new mongoose.Schema(
     },
     vehicleType: {
       type: String,
-      enum: ['bike', 'car', 'van', 'motorbike'],
+      enum: getObjectValues(VEHICLE_TYPE),
       required: true,
-      default: 'bike',
+      default: VEHICLE_TYPE.MOTORBIKE,
     },
     status: {
       type: String,
-      enum: ['offline', 'idle', 'assigned', 'delivering'],
-      default: 'offline',
+      enum: getObjectValues(DRIVER_STATUS),
+      default: DRIVER_STATUS.OFFLINE,
     },
     capacity: {
       maxWeightKg: { type: Number, min: 0, required: true },
