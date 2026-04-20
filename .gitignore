@@ -2,6 +2,3 @@ node_modules
 coverage
 package-lock.json
 logs
-
-# Firebase backend's account key
-src/config/firebase/serviceAccountKey.json
