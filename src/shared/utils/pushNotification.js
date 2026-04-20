@@ -1,4 +1,4 @@
-import admin from '#config/firebase/firebaseAdmin.js';
+import admin from '#config/firebaseAdmin.js';
 
 /*
   * push notification with firebase FCM
