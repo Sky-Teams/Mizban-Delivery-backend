@@ -107,17 +107,13 @@ export class CustomSocket {
   static async emitToAdmins(event, payload) {
     this.getIO().to('admins').emit(event, payload);
 
-    const admins = await getAllAdmins()
-    for (const admin of admins ) {
-      const adminId = admin._id.toString()
-      const isOnline = this.isUserOnline(adminId)
+    const admins = await getAllAdmins();
+    for (const admin of admins) {
+      const adminId = admin._id.toString();
+      const isOnline = this.isUserOnline(adminId);
 
       if (!isOnline && admin.fcmToken) {
-        await pushNotification(
-          admin.fcmToken,
-          payload.title,
-          payload.message
-        )
+        await pushNotification(admin.fcmToken, payload.title, payload.message);
       }
     }
   }
@@ -133,7 +129,6 @@ export class CustomSocket {
       this.emitToUser(driver.user.toString(), event, payload);
     }
   }
-
 
   // checking the users from their related rooms if they are online or not
   static isUserOnline(userId) {
