@@ -338,7 +338,7 @@ describe('Controller Order - pickupOrder', () => {
 
     await pickupOrder(req, res);
 
-    expect(pickupOrderWithTransaction).toHaveBeenCalledWith(req.params.id);
+    expect(pickupOrderWithTransaction).toHaveBeenCalledWith(req.params.id, req.user);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -404,7 +404,7 @@ describe('Controller Order - deliverOrder', () => {
 
     await deliverOrder(req, res);
 
-    expect(deliverOrderWithTransaction).toHaveBeenCalledWith(req.params.id);
+    expect(deliverOrderWithTransaction).toHaveBeenCalledWith(req.params.id, req.user);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -474,7 +474,11 @@ describe('Controller Order - cancelOrder', () => {
 
     await cancelOrder(req, res);
 
-    expect(cancelOrderWithTransaction).toHaveBeenCalledWith(req.params.id, req.body.cancelReason);
+    expect(cancelOrderWithTransaction).toHaveBeenCalledWith(
+      req.params.id,
+      req.body.cancelReason,
+      req.user
+    );
 
     expect(res.status).toHaveBeenCalledWith(200);
 
@@ -504,7 +508,7 @@ describe('Controller Order - cancelOrder', () => {
 
     await cancelOrder(req, res);
 
-    expect(cancelOrderWithTransaction).toHaveBeenCalledWith(req.params.id, undefined);
+    expect(cancelOrderWithTransaction).toHaveBeenCalledWith(req.params.id, undefined, req.user);
 
     expect(res.json).toHaveBeenCalledWith({
       success: true,
