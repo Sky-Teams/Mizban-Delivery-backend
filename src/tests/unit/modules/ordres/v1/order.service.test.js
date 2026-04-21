@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { doesDriverExistByDriverId, getDriverStatusByDriverId } from '#modules/drivers/index.js';
+import {
+  doesDriverExistByDriverId,
+  fetchDriverByDriverId,
+  getDriverStatusByDriverId,
+} from '#modules/drivers/index.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
 import {
@@ -15,6 +19,7 @@ import mongoose from 'mongoose';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { orderUpdateQuery, driverQueryBuilder } from '#shared/utils/queryBuilder.js';
 import { getOrderById, updateOrderInfo } from '#modules/orders/services/v1/order.service.js';
+import { ROLES } from '#shared/utils/enums.js';
 
 vi.mock('#modules/orders/models/order.model.js', () => ({
   OrderModel: {
@@ -29,6 +34,7 @@ vi.mock('#modules/orders/models/order.model.js', () => ({
 vi.mock('#modules/drivers/index.js', () => ({
   doesDriverExistByDriverId: vi.fn(),
   getDriverStatusByDriverId: vi.fn(),
+  fetchDriverByDriverId: vi.fn(),
   DriverModel: {
     findById: vi.fn(),
   },
@@ -284,13 +290,19 @@ describe('pickupOrderWithTransaction', () => {
       save: vi.fn(),
     };
 
-    OrderModel.findById.mockResolvedValue(order);
-    getDriverStatusByDriverId.mockResolvedValue(driver);
+    const user = {
+      _id: 'u1',
+      role: ROLES.ADMIN,
+    };
 
-    const result = await pickupOrderWithTransaction('delivery1');
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    const result = await pickupOrderWithTransaction('delivery1', user);
 
     expect(mongoose.startSession).toHaveBeenCalled();
     expect(fakeSession.startTransaction).toHaveBeenCalled();
+    expect(OrderModel.findById).toHaveBeenCalledWith('delivery1');
     expect(order.save).toHaveBeenCalledWith({ session: fakeSession });
     expect(driver.save).toHaveBeenCalledWith({ session: fakeSession });
     expect(fakeSession.commitTransaction).toHaveBeenCalled();
@@ -360,10 +372,15 @@ describe('deliverOrderWithTransaction', () => {
       save: vi.fn(),
     };
 
-    OrderModel.findById.mockResolvedValue(order);
-    getDriverStatusByDriverId.mockResolvedValue(driver);
+    const user = {
+      _id: 'u1',
+      role: ROLES.ADMIN,
+    };
 
-    const result = await deliverOrderWithTransaction('delivery1');
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    const result = await deliverOrderWithTransaction('delivery1', user);
 
     expect(mongoose.startSession).toHaveBeenCalled();
     expect(fakeSession.startTransaction).toHaveBeenCalled();
@@ -406,7 +423,7 @@ describe('deliverOrderWithTransaction', () => {
 
     await expect(deliverOrderWithTransaction('delivery1')).rejects.toThrow(
       new AppError(
-        `Cannot order. Order status is ${order.status}.`,
+        `Cannot mark as delivered. Order status is ${order.status}.`,
         409,
         ERROR_CODES.DELIVERY_NOT_DELIVERABLE
       )
@@ -438,10 +455,15 @@ describe('cancelOrderWithTransaction', () => {
       save: vi.fn(),
     };
 
-    OrderModel.findById.mockResolvedValue(order);
-    getDriverStatusByDriverId.mockResolvedValue(driver);
+    const user = {
+      _id: '123',
+      role: ROLES.ADMIN,
+    };
 
-    const result = await cancelOrderWithTransaction('delivery1', 'Customer requested');
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    const result = await cancelOrderWithTransaction('delivery1', 'Customer requested', user);
 
     expect(mongoose.startSession).toHaveBeenCalled();
     expect(fakeSession.startTransaction).toHaveBeenCalled();
@@ -471,9 +493,14 @@ describe('cancelOrderWithTransaction', () => {
       paymentStatus: 'pending',
     };
 
+    const user = {
+      _id: '123',
+      role: ROLES.ADMIN,
+    };
+
     OrderModel.findById.mockResolvedValue(order);
 
-    await cancelOrderWithTransaction('delivery2', 'No longer needed');
+    await cancelOrderWithTransaction('delivery2', 'No longer needed', user);
 
     expect(order.status).toBe('cancelled');
     expect(order.paymentStatus).toBe('failed');
