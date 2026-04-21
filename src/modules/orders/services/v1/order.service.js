@@ -1,4 +1,4 @@
-import { fetchDriverByUserId, getDriverStatusByDriverId } from '#modules/drivers/index.js';
+import { fetchDriverByDriverId, getDriverStatusByDriverId } from '#modules/drivers/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, noFieldsProvidedForUpdate, notFound } from '#shared/errors/error.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
@@ -186,11 +186,13 @@ export const pickupAnOrder = async (session, orderId, user) => {
 
   // const driver = await getDriverStatusByDriverId(order.driverId);
 
-  //TODO: Add validation that if the order is assigned to driver
+  //TODO: Add validation that if the order is assigned to driver(order related to the driver)
 
   // Requested Driver Id must be equal to order.driverId
 
-  const driver = await fetchDriverByUserId(user._id);
+  // TODO: We should check if the request come from driver or admin
+
+  const driver = await fetchDriverByDriverId(order.driverId);
   if (!driver) notFound('driver');
 
   doesDriverAssginedToOrder(driver._id, order.driverId);
@@ -225,7 +227,7 @@ export const deliverAnOrder = async (session, orderId, user) => {
   }
 
   // const driver = await getDriverStatusByDriverId(order.driverId);
-  const driver = await fetchDriverByUserId(user._id);
+  const driver = await fetchDriverByDriverId(order.driverId);
   if (!driver) notFound('driver');
 
   doesDriverAssginedToOrder(driver._id, order.driverId);
@@ -266,7 +268,7 @@ export const cancelAnOrder = async (session, orderId, reason, user) => {
   // Release driver if exists
   if (order.driverId) {
     // const driver = await getDriverStatusByDriverId(order.driverId);
-    const driver = await fetchDriverByUserId(user._id);
+    const driver = await fetchDriverByDriverId(order.driverId);
     if (!driver) notFound('driver');
     doesDriverAssginedToOrder(driver._id, order.driverId);
     driver.status = DRIVER_STATUS.IDLE;
