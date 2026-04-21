@@ -4,8 +4,6 @@ import { eventBus } from '#shared/event-bus/eventBus.js';
 import { NotificationPayloads } from '#shared/utils/notificationPayloadBuilder.js';
 import { OfferService } from '#shared/utils/offerService.js';
 import { createNotificationForAdmins } from '../services/v1/notification.service.js';
-import { pushNotification } from '#shared/utils/pushNotification.js';
-import { getAllAdmins } from '#modules/users/index.js';
 
 export const registerOrderListeners = () => {
   eventBus.on('order:created', async (data) => {
