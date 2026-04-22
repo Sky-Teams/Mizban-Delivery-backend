@@ -62,7 +62,7 @@ export const createFakeDriver = async () => {
 
   const newDriver = await DriverModel.create({
     user: user._id,
-    vehicleType: 'car',
+    vehicleType: 'motorbike',
     status: 'idle',
     currentLocation: { coordinates: [55, 55] },
     vehicleRegistrationNumber: 'ADM-123',

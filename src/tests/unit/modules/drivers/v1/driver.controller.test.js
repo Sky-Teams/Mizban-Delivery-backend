@@ -43,7 +43,7 @@ describe('Driver Controllers', () => {
           name: 'John',
           email: 'john@example.com',
           phone: '123456789',
-          vehicleType: 'van',
+          vehicleType: 'motorbike',
         },
       };
     });
@@ -109,7 +109,7 @@ describe('Driver Controllers', () => {
     beforeEach(() => {
       req = {
         user: { _id: 'user123' },
-        query: { limit: '5', page: '2', searchTerm: 'John', vehicleType: 'van' },
+        query: { limit: '5', page: '2', searchTerm: 'John', vehicleType: 'motorbike' },
       };
     });
 
@@ -130,7 +130,7 @@ describe('Driver Controllers', () => {
 
       expect(fetchDrivers).toHaveBeenCalledWith(5, 2, {
         searchTerm: 'John',
-        vehicleType: 'van',
+        vehicleType: 'motorbike',
         status: undefined,
         isVerified: undefined,
       });

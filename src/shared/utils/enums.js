@@ -19,3 +19,7 @@ export const DRIVER_STATUS = {
   ASSIGNED: 'assigned',
   DELIVERING: 'delivering',
 };
+
+export const VEHICLE_TYPE = {
+  MOTORBIKE: 'motorbike',
+};

@@ -1,19 +1,26 @@
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { ensureNumber } from '#shared/utils/ensureNumber.js';
+import { DRIVER_STATUS, VEHICLE_TYPE } from '#shared/utils/enums.js';
+import { getObjectValues } from '#shared/utils/object.helper.js';
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import mongoose from 'mongoose';
 import { z } from 'zod';
 
-const vehicleTypes = ['bike', 'car', 'van'];
-const driverStatuses = ['offline', 'idle', 'assigned', 'delivering'];
+const vehicleTypes = getObjectValues(VEHICLE_TYPE);
+const driverStatuses = getObjectValues(DRIVER_STATUS);
 const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 const updateDriverSchema = z.object({
   body: z
     .object({
-      userId: z.string().refine((val) => !val || mongoose.Types.ObjectId.isValid(val), {
-        message: ERROR_CODES.INVALID_USER_ID,
-      }),
+      userId: z
+        .string()
+        .optional()
+        // If userId is null/undefined or its missing, then it will throw a proper error with error messages
+        .transform((val) => (val === '' ? undefined : val))
+        .refine((val) => !val || mongoose.Types.ObjectId.isValid(val), {
+          message: ERROR_CODES.INVALID_USER_ID,
+        }),
       name: z.string().trim().min(3, { message: ERROR_CODES.NAME_TOO_SHORT }).optional(),
       email: z
         .string()

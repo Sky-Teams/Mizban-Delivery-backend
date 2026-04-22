@@ -9,6 +9,7 @@ import { getAllAdmins } from '#modules/users/index.js';
  * This function is intended to be used internally by other services,
  * not via an API route, so validation is performed here in the service layer.
  */
+
 export const createNotification = async (userId, type, title, message) => {
   const notification = { user: userId, type, title, message };
   const validatedNotification = createNotificationSchema.parse(notification);
