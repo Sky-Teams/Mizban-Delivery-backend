@@ -33,3 +33,7 @@ export const PAYMENT_STATUS = {
 export const CUSTOM_EVENTS = {
   ORDER_CREATED: 'order:created',
 };
+
+export const VEHICLE_TYPE = {
+  MOTORBIKE: 'motorbike',
+};

@@ -18,7 +18,7 @@ export const validate = (validatorFn) => (req, res, next) => {
   // This prevents one validator (e.g., params/id validator) from overwriting the actual body data.
   if (result.data.body) req.body = result.data.body;
   if (result.data.params) req.params = result.data.params;
-  // if (result.data.query) req.query = result.data.query;
+  if (result.data.query) Object.assign(req.query, result.data.query);
 
   next();
 };

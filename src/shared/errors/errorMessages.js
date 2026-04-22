@@ -532,6 +532,11 @@ export const ERROR_MESSAGES = {
     ps: 'د ترتیب انتخاب ناسم دی',
   },
 
+  [ERROR_CODES.INVALID_DATE_FORMAT]: {
+    en: 'Invalid date format',
+    fa: 'فرمت تاریخ نامعتبر هست',
+    ps: 'د نیتی بنه ناسم ده',
+  },
   [ERROR_CODES.INVALID_GOOGLE_TOKEN]: {
     en: 'Invalid google token',
     fa: 'توکن گوگل نامعتبر هست',
@@ -561,6 +566,23 @@ export const ERROR_MESSAGES = {
     fa: 'توکن بازیابی رمز عبور نامعتبر است',
     ps: 'د پټنوم د بیا تنظیم ټوکن ناسم دی',
   },
+  [ERROR_CODES.INVALID_LOG_FILE_TYPE]: {
+    en: 'Invalid log file type',
+    fa: 'نوع فایل لاگ نامعتبر است',
+    ps: 'د لاګ فایل ډول ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_METHOD_OPTIONS]: {
+    en: 'Invalid method options',
+    fa: 'پارامترهای متد نامعتبر است',
+    ps: 'د میتود اختیارونه ناسم دي',
+  },
+
+  [ERROR_CODES.INVALID_LOG_ID]: {
+    en: 'Invalid log id',
+    fa: 'ای دی لاگ نامعتبر هست',
+    ps: 'د لاگ ای دی ناسم دی',
+  },
   [ERROR_CODES.INVALID_ORDER_ID]: {
     en: 'Invalid order ID',
     fa: 'آیدی سفارش نامعتبر است',
@@ -585,5 +607,16 @@ export const ERROR_MESSAGES = {
     en: 'This order does not belong to you.',
     fa: 'این سفارش مربوط به شما نیست.',
     ps: 'دا فرمایش ستاسو نه دی.',
+  },
+  [ERROR_CODES.INVALID_PARAMETER_START_DATE]: {
+    en: 'Invalid start date',
+    fa: 'تاریخ شروع نامعتبر است',
+    ps: 'د پیل نیټه ناسمه ده',
+  },
+
+  [ERROR_CODES.INVALID_PARAMETER_END_DATE]: {
+    en: 'Invalid end date',
+    fa: 'تاریخ پایان نامعتبر است',
+    ps: 'د پای نیټه ناسمه ده',
   },
 };

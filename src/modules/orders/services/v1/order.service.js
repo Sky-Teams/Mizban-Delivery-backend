@@ -11,6 +11,7 @@ import {
   PAYMENT_STATUS,
   ROLES,
 } from '#shared/utils/enums.js';
+import { DateHelper } from '#shared/utils/date.helper.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
 import { orderUpdateQuery } from '#shared/utils/queryBuilder.js';
 import { OrderModel } from '../../models/order.model.js';
@@ -76,6 +77,20 @@ export const getAllOrders = async (page = 1, limit = 10, searchQuery = {}) => {
   let query = Object.fromEntries(
     Object.entries(searchQuery).filter(([_, value]) => value !== null && value !== undefined)
   );
+
+  if (searchQuery.startDate || searchQuery.endDate) {
+    query.createdAt = {};
+  }
+
+  if (searchQuery.startDate) {
+    query.createdAt.$gte = DateHelper.getStartDateUTC(searchQuery.startDate);
+    delete query.startDate; // Remove the startDate field from query because we filter based on createdAt
+  }
+
+  if (searchQuery.endDate) {
+    query.createdAt.$lte = DateHelper.getEndDateUTC(searchQuery.endDate);
+    delete query.endDate; // Remove the endDate field from query because we filter based on createdAt
+  }
 
   const totalOrders = await OrderModel.countDocuments(query);
   const orders = await OrderModel.find(query)

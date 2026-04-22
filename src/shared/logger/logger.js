@@ -2,7 +2,7 @@ import pino from 'pino';
 import path from 'path';
 
 const logsDir = path.join(process.cwd(), 'logs');
-const transportPath= path.join(import.meta.dirname, 'levelFilterTransport.js')
+const transportPath = path.join(import.meta.dirname, 'levelFilterTransport.js');
 
 //create a transport
 const transports = pino.transport({
@@ -51,7 +51,7 @@ const transports = pino.transport({
       options: {
         targetLevel: 'info',
         logType: 'AUDIT',
-        file: path.join(logsDir, 'audit-Logs'),
+        file: path.join(logsDir, 'audit'),
         frequency: 604800000, //weekly
         dateFormat: 'yyyy-MM-dd',
         limit: { count: 4, size: '30mb' },

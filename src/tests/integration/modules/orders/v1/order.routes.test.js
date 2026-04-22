@@ -761,6 +761,7 @@ describe('Order API v1 Integration', () => {
         paymentType: 'COD',
         amountToCollect: 100,
         deliveryPrice: { total: 20 },
+        createdAt: new Date('2026-03-05'),
       });
     });
 
@@ -774,6 +775,17 @@ describe('Order API v1 Integration', () => {
     it('should return orders list', async () => {
       const res = await getWithAuth(app, baseURL, token);
 
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(1);
+    });
+
+    it('should return orders filtered by startDate and endDate', async () => {
+      const res = await getWithAuth(
+        app,
+        `${baseURL}?startDate=2026-03-01&endDate=2026-03-10`,
+        token
+      );
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.length).toBe(1);
