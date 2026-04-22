@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { UserModel } from '#modules/users/index.js';
 import { hashPassword } from '#shared/utils/jwt.js';
 import { DriverModel } from '#modules/drivers/index.js';
+import { VEHICLE_TYPE } from '#shared/utils/enums.js';
 
 dotenv.config();
 
@@ -39,7 +40,7 @@ const fakeDrivers = [
     email: 'ahmad.rahimi1@gamil.com',
     phone: '+93700123456',
     password: await hashPassword('driver12345'),
-    vehicleType: 'bike',
+    vehicleType: VEHICLE_TYPE.MOTORBIKE,
     status: 'idle',
     vehicleRegistrationNumber: 'HR-4502312',
     address: 'Herat City, District 2',
@@ -64,7 +65,7 @@ const fakeDrivers = [
     email: 'mahmood.naseri@gamil.com',
     phone: '+93700123457',
     password: await hashPassword('driver12345'),
-    vehicleType: 'bike',
+    vehicleType: VEHICLE_TYPE.MOTORBIKE,
     status: 'idle',
     vehicleRegistrationNumber: 'HR-452312',
     address: 'Herat City, District 2',
@@ -89,7 +90,7 @@ const fakeDrivers = [
     email: 'farid.ahmadi@gamil.com',
     phone: '+93700123458',
     password: await hashPassword('driver12345'),
-    vehicleType: 'bike',
+    vehicleType: VEHICLE_TYPE.MOTORBIKE,
     status: 'idle',
     vehicleRegistrationNumber: 'HR-453001',
     address: 'Herat City, District 3',
@@ -114,7 +115,7 @@ const fakeDrivers = [
     email: 'samiullah.qadiri@gamil.com',
     phone: '+93700123459',
     password: await hashPassword('driver12345'),
-    vehicleType: 'car',
+    vehicleType: VEHICLE_TYPE.MOTORBIKE,
     status: 'idle',
     vehicleRegistrationNumber: 'HR-453002',
     address: 'Herat City, District 4',
@@ -139,7 +140,7 @@ const fakeDrivers = [
     email: 'jawad.karimi@gamil.com',
     phone: '+93700123460',
     password: await hashPassword('driver12345'),
-    vehicleType: 'bike',
+    vehicleType: VEHICLE_TYPE.MOTORBIKE,
     status: 'idle',
     vehicleRegistrationNumber: 'HR-453003',
     address: 'Herat City, District 1',
@@ -164,7 +165,7 @@ const fakeDrivers = [
     email: 'bilal.noori@gamil.com',
     phone: '+93700123461',
     password: await hashPassword('driver12345'),
-    vehicleType: 'bike',
+    vehicleType: VEHICLE_TYPE.MOTORBIKE,
     status: 'idle',
     vehicleRegistrationNumber: 'HR-453004',
     address: 'Herat City, District 5',
@@ -189,7 +190,7 @@ const fakeDrivers = [
     email: 'najeeb.azizi@gamil.com',
     phone: '+93700123462',
     password: await hashPassword('driver12345'),
-    vehicleType: 'car',
+    vehicleType: VEHICLE_TYPE.MOTORBIKE,
     status: 'idle',
     vehicleRegistrationNumber: 'HR-453005',
     address: 'Herat City, District 6',
