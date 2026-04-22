@@ -56,7 +56,10 @@ export const addOrder = async (orderData) => {
   });
 
   // emit events
-  eventBus.emit(CUSTOM_EVENTS.ORDER_CREATED, { orderId: newOrder._id });
+  eventBus.emit(CUSTOM_EVENTS.ORDER_CREATED, {
+    orderId: newOrder._id,
+    pickupLocation: newOrder.pickupLocation,
+  });
   return newOrder;
 };
 
