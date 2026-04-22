@@ -11,6 +11,7 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { GeoService } from '#shared/utils/geoService.js';
 import { DriverScore } from '#shared/utils/scorePrediction.js';
+import { DRIVER_STATUS } from '#shared/utils/enums.js';
 //#region Services
 
 /** Fetch all Drivers with pagination functionality */
@@ -179,7 +180,7 @@ export const addNewDriver = withTransaction(addDriver);
 export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, limit = 10) => {
   try {
     const nearestDrivers = await DriverModel.find({
-      status: 'idle',
+      status: DRIVER_STATUS.IDLE,
       $expr: {
         $lt: ['$activeOrders', '$maxOrders'],
       },

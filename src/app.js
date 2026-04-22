@@ -1,4 +1,5 @@
 import cors from 'cors';
+import 'dotenv/config';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import { corsOptions } from './config/cors.js';

@@ -7,6 +7,7 @@ export const OFFER_STATUS = {
   PENDING: 'pending',
   REJECTED: 'rejected',
   ACCEPTED: 'accepted',
+  EXPIRED: 'expired',
 };
 
 export const ORDER_STATUS = {
