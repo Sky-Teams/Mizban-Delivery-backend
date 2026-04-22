@@ -13,7 +13,7 @@ export const registerOrderListeners = () => {
     const payload = NotificationPayloads.orderCreated(orderId);
     await NotificationService.send('admins', 'notification', payload);
 
-    const drivers = await findNearestAndScore(data.newOrder.pickupLocation.coordinates);
+    const drivers = await findNearestAndScore(data.pickupLocation.coordinates);
 
     await addDriversDataInOrder(orderId, drivers);
     await OfferService.sendOfferToDriver(orderId);
