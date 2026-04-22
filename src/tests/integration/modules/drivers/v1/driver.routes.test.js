@@ -38,7 +38,7 @@ describe('Drivers API v1 Integration', () => {
       name: 'Test Driver',
       email: 'driver@test.com',
       phone: '+93700111222',
-      vehicleType: 'car',
+      vehicleType: 'motorbike',
       status: 'idle',
       vehicleRegistrationNumber: 'ADM-123',
 
@@ -66,7 +66,7 @@ describe('Drivers API v1 Integration', () => {
       const driver = await DriverModel.findById(res.body.data._id);
 
       expect(driver).not.toBeNull();
-      expect(driver.vehicleType).toBe('car');
+      expect(driver.vehicleType).toBe('motorbike');
     });
 
     it('should fail if name missing', async () => {
@@ -207,7 +207,7 @@ describe('Drivers API v1 Integration', () => {
         name: 'Test Driver 1',
         email: 'driver1@test.com',
         phone: '+93700111222',
-        vehicleType: 'car',
+        vehicleType: 'motorbike',
         status: 'idle',
         vehicleRegistrationNumber: 'CAR-1',
         capacity: { maxWeightKg: 100, maxPackages: 5 },
@@ -219,7 +219,7 @@ describe('Drivers API v1 Integration', () => {
         name: 'Test Driver 2',
         email: 'driver2@test.com',
         phone: '+93700111222',
-        vehicleType: 'bike',
+        vehicleType: 'motorbike',
         status: 'offline',
         vehicleRegistrationNumber: 'BIKE-1',
         capacity: { maxWeightKg: 50, maxPackages: 3 },
@@ -246,12 +246,12 @@ describe('Drivers API v1 Integration', () => {
 
     it('should filter by vehicleType', async () => {
       const res = await request(app)
-        .get(`${baseURL}?vehicleType=bike`)
+        .get(`${baseURL}?vehicleType=motorbike`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.data.length).toBe(1);
-      expect(res.body.data[0].vehicleType).toBe('bike');
+      expect(res.body.data.length).toBe(2);
+      expect(res.body.data[0].vehicleType).toBe('motorbike');
     });
 
     it('should fail if unauthorized', async () => {
@@ -267,7 +267,7 @@ describe('Drivers API v1 Integration', () => {
     beforeEach(async () => {
       const driver = await DriverModel.create({
         user: new mongoose.Types.ObjectId(),
-        vehicleType: 'car',
+        vehicleType: 'motorbike',
         status: 'idle',
         vehicleRegistrationNumber: 'CAR-22',
         capacity: { maxWeightKg: 100, maxPackages: 5 },
@@ -322,7 +322,7 @@ describe('Drivers API v1 Integration', () => {
 
       const driver = await DriverModel.create({
         user: user._id,
-        vehicleType: 'car',
+        vehicleType: 'motorbike',
         status: 'idle',
         vehicleRegistrationNumber: `ADM-${Date.now()}`, // unique
         capacity: { maxWeightKg: 100, maxPackages: 5 },
