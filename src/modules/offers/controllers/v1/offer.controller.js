@@ -19,5 +19,5 @@ export const rejectOffer = async (req, res) => {
   const offer = await rejectAnOfferWithTransaction(req.params.id, req.user._id);
   await OfferService.sendOfferToDriver(offer.order.toString());
   await DbJobService.scheduleCalculateAcceptanceRate(req.user._id);
-  res.json({ success: true, offer });
+  res.status(200).json({ success: true, data: offer });
 };
