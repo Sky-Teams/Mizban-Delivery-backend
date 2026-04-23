@@ -30,6 +30,16 @@ export class OfferService {
         return;
       }
 
+      const driver = await fetchDriverByDriverId(driversInfo[currentIndex].id);
+      if (
+        !driver ||
+        driver.status !== DRIVER_STATUS.IDLE ||
+        driver.activeOrders >= driver.maxOrders
+      ) {
+        await increaseDriverIndex(orderId);
+        return await OfferService.sendOfferToDriver(orderId);
+      }
+
       // We need this log for testing purpose
       console.log('Send offer to driver: ', driversInfo[currentIndex].id);
 
@@ -37,16 +47,6 @@ export class OfferService {
       const offer = await createOffer(orderId, driversInfo[currentIndex].id);
 
       if (!offer) {
-        await increaseDriverIndex(orderId);
-        return await OfferService.sendOfferToDriver(orderId);
-      }
-
-      const driver = await fetchDriverByDriverId(driversInfo[currentIndex].id);
-      if (
-        !driver ||
-        driver.status !== DRIVER_STATUS.IDLE ||
-        driver.activeOrders >= driver.maxOrders
-      ) {
         await increaseDriverIndex(orderId);
         return await OfferService.sendOfferToDriver(orderId);
       }
