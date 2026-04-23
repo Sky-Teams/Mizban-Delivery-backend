@@ -101,7 +101,7 @@ export class OfferService {
     switch (offer.status) {
       case OFFER_STATUS.PENDING:
         //TODO: In future we need to take care of race condition if we have more than one process.
-        offer.status = 'expired';
+        offer.status = OFFER_STATUS.EXPIRED;
         await offer.save();
         await increaseDriverIndex(orderId);
         await OfferService.sendOfferToDriver(orderId);
