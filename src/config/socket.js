@@ -96,7 +96,7 @@ export class CustomSocket {
    */
   static emitToUser(userId, event, payload) {
     if (!this.#io) throw new Error('Socket is not initialized');
-    this.getIO().to(userId).emit(event, payload);
+    this.getIO().to(userId.toString()).emit(event, payload);
   }
 
   /**

@@ -268,6 +268,50 @@ export const cancelAnOrder = async (session, orderId, reason) => {
   return order;
 };
 
+/** Add drivers info (id, eta, distance ) in related order record */
+export const addDriversDataInOrder = async (orderId, drivers) => {
+  try {
+    if (drivers.length === 0) return;
+
+    const driversInfo = drivers.map((driver) => {
+      return {
+        id: driver._id,
+        eta: driver.eta,
+        distance: driver.distance,
+      };
+    });
+
+    const order = await OrderModel.findByIdAndUpdate(orderId, {
+      $set: { recommendedDrivers: driversInfo },
+    });
+
+    if (!order) throw notFound('order');
+
+    return order;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**  Increase the currentDriverIndex in order model to send offer to next driver */
+export const increaseDriverIndex = async (orderId, session = null) => {
+  try {
+    const options = { new: true };
+    if (session) options.session = session;
+
+    const order = await OrderModel.findByIdAndUpdate(
+      orderId,
+      { $inc: { currentDriverIndex: 1 } },
+      options
+    );
+    if (!order) throw notFound('Order');
+
+    return order;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const assignDriverToOrderWithTransaction = withTransaction(assignDriver);
 
 export const pickupOrderWithTransaction = withTransaction(pickupAnOrder);

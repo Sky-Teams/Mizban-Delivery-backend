@@ -12,10 +12,11 @@ export const NotificationPayloads = {
     message: `Order ${orderId} has been assigned`,
   }),
 
-  orderOffered: () => ({
+  orderOffered: (metadata) => ({
     type: 'OFFER',
     title: 'New Offer',
     message: 'An offer is ready to pickup',
+    metadata,
   }),
   noDriverFound: (orderId) => ({
     type: 'NO-DRIVER',
@@ -23,7 +24,7 @@ export const NotificationPayloads = {
     message: `No Driver found for order ${orderId}`,
   }),
   systemError: (message) => ({
-    type: 'SYSTEM-ERROR',
+    type: 'SYSTEM',
     title: 'System Error',
     message,
   }),

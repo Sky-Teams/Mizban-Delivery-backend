@@ -136,6 +136,17 @@ const OrderSchema = new mongoose.Schema(
       default: null,
     },
 
+    //List of recommended drivers for this order
+    recommendedDrivers: [
+      {
+        _id: false, // we dont need the auto generated Id for this object
+        id: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver' },
+        eta: { type: Number, default: 0 },
+        distance: { type: Number, default: 0 },
+      },
+    ],
+    currentDriverIndex: { type: Number, default: 0 }, // pointer to the next driver to send offer
+
     batchId: {
       type: mongoose.Schema.Types.ObjectId,
       default: null,
@@ -163,4 +174,4 @@ OrderSchema.index({ dropoffLocation: '2dsphere' });
 OrderSchema.index({ driverId: 1 });
 OrderSchema.index({ status: 1 });
 
-export const OrderModel = mongoose.model('Orders', OrderSchema);
+export const OrderModel = mongoose.model('Order', OrderSchema);

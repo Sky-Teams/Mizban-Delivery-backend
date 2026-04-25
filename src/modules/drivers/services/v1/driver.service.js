@@ -11,6 +11,7 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { GeoService } from '#shared/utils/geoService.js';
 import { DriverScore } from '#shared/utils/scorePrediction.js';
+import { DRIVER_STATUS } from '#shared/utils/enums.js';
 //#region Services
 
 /** Fetch all Drivers with pagination functionality */
@@ -46,13 +47,18 @@ export const fetchDrivers = async (limit = 8, page = 1, searchQuery = {}) => {
 
 /** Fetch a driver by driverId */
 export const fetchDriverByDriverId = async (driverId) => {
-  const drivers = await DriverModel.findOne({ _id: driverId })
+  const driver = await DriverModel.findOne({ _id: driverId })
     .populate({
       path: 'user',
       select: 'name phone email isActive',
     })
     .lean();
-  return drivers;
+  return driver;
+};
+
+export const fetchDriverByUserId = async (userId) => {
+  const driver = await DriverModel.findOne({ user: userId });
+  return driver;
 };
 
 // Return only Driver status
@@ -176,7 +182,10 @@ export const addNewDriver = withTransaction(addDriver);
 export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, limit = 10) => {
   try {
     const nearestDrivers = await DriverModel.find({
-      status: 'idle',
+      status: DRIVER_STATUS.IDLE,
+      $expr: {
+        $lt: ['$activeOrders', '$maxOrders'],
+      },
       currentLocation: {
         $near: {
           $geometry: { type: 'Point', coordinates: pickupLocation },
@@ -184,7 +193,7 @@ export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, lim
         },
       },
     })
-      .select('_id user status ratingAvg ratingCount acceptanceRate currentLocation')
+      .select('_id user status ratingAvg ratingCount acceptanceRate currentLocation activeOrders')
       .limit(limit)
       .lean();
 
@@ -204,6 +213,8 @@ export const findNearestAndScore = async (pickupCoordinates) => {
   const drivers = await findNearestDrivers(pickupCoordinates);
 
   if (!drivers.length) return [];
+
+  //TODO: Check if drivers has an active job and if they are on the same way.
 
   const driversWithETA = await GeoService.getDistanceMatrix(drivers, pickupCoordinates);
 
