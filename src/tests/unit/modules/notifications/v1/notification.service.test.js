@@ -8,6 +8,7 @@ import {
   markAsUnread,
 } from '#modules/notifications/index.js';
 import { getAllAdmins } from '#modules/users/index.js';
+import { NOTIFICATION_TYPE, SOCKET_EVENTS } from '#shared/utils/enums.js';
 
 // Mock only DB layer
 vi.mock('#modules/notifications/models/notification.model.js', () => ({
@@ -32,7 +33,7 @@ describe('Notification Service', () => {
   describe('createNotification', () => {
     it('should create a notification successfully', async () => {
       const userId = '507f1f77bcf86cd799439011';
-      const type = 'SYSTEM';
+      const type = NOTIFICATION_TYPE.SYSTEM;
       const title = 'Test Title';
       const message = 'Test Message';
 
@@ -61,7 +62,7 @@ describe('Notification Service', () => {
 
     it('should throw invalid user id error', async () => {
       await expect(
-        createNotification('invalid-id', 'system', 'title', 'message')
+        createNotification('invalid-id', NOTIFICATION_TYPE.SYSTEM, 'title', 'message')
       ).rejects.toMatchObject({
         issues: expect.arrayContaining([
           expect.objectContaining({
@@ -91,7 +92,7 @@ describe('Notification Service', () => {
       const longTitle = 'a'.repeat(101);
 
       await expect(
-        createNotification(validUserId, 'system', longTitle, 'message')
+        createNotification(validUserId, NOTIFICATION_TYPE.SYSTEM, longTitle, 'message')
       ).rejects.toMatchObject({
         issues: expect.arrayContaining([
           expect.objectContaining({
@@ -106,7 +107,7 @@ describe('Notification Service', () => {
       const validUserId = '507f1f77bcf86cd799439011';
       const longMessage = 'a'.repeat(501);
       await expect(
-        createNotification(validUserId, 'system', 'Valid Title', longMessage)
+        createNotification(validUserId, NOTIFICATION_TYPE.SYSTEM, 'Valid Title', longMessage)
       ).rejects.toMatchObject({
         issues: expect.arrayContaining([
           expect.objectContaining({
@@ -242,7 +243,11 @@ describe('Notification Service', () => {
     it('should handle no admins gracefully', async () => {
       getAllAdmins.mockResolvedValue([]);
 
-      await createNotificationForAdmins('ORDER', 'New Order', 'Order 123 created');
+      await createNotificationForAdmins(
+        SOCKET_EVENTS.ADMIN.SYSTEM,
+        'New Order',
+        'Order 123 created'
+      );
 
       expect(NotificationModel.insertMany).toHaveBeenCalledWith([]);
     });
@@ -251,12 +256,26 @@ describe('Notification Service', () => {
       const admins = [{ _id: '1' }, { _id: '2' }];
       getAllAdmins.mockResolvedValue(admins);
 
-      await createNotificationForAdmins('ORDER', 'New Order', 'Order 123 created');
+      await createNotificationForAdmins(
+        SOCKET_EVENTS.ADMIN.SYSTEM,
+        'New Order',
+        'Order 123 created'
+      );
 
       expect(NotificationModel.insertMany).toHaveBeenCalledTimes(1);
       expect(NotificationModel.insertMany).toHaveBeenCalledWith([
-        { user: '1', type: 'ORDER', title: 'New Order', message: 'Order 123 created' },
-        { user: '2', type: 'ORDER', title: 'New Order', message: 'Order 123 created' },
+        {
+          user: '1',
+          type: SOCKET_EVENTS.ADMIN.SYSTEM,
+          title: 'New Order',
+          message: 'Order 123 created',
+        },
+        {
+          user: '2',
+          type: SOCKET_EVENTS.ADMIN.SYSTEM,
+          title: 'New Order',
+          message: 'Order 123 created',
+        },
       ]);
     });
   });
