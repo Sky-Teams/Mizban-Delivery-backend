@@ -34,6 +34,16 @@ export class OfferService {
         return;
       }
 
+      const driver = await fetchDriverByDriverId(driversInfo[currentIndex].id);
+      if (
+        !driver ||
+        driver.status !== DRIVER_STATUS.IDLE ||
+        driver.activeOrders >= driver.maxOrders
+      ) {
+        await increaseDriverIndex(orderId);
+        return await OfferService.sendOfferToDriver(orderId);
+      }
+
       // We need this log for testing purpose
       console.log('Send offer to driver: ', driversInfo[currentIndex].id);
 
@@ -41,16 +51,6 @@ export class OfferService {
       const offer = await createOffer(orderId, driversInfo[currentIndex].id);
 
       if (!offer) {
-        await increaseDriverIndex(orderId);
-        return await OfferService.sendOfferToDriver(orderId);
-      }
-
-      const driver = await fetchDriverByDriverId(driversInfo[currentIndex].id);
-      if (
-        !driver ||
-        driver.status !== DRIVER_STATUS.IDLE ||
-        driver.activeOrders >= driver.maxOrders
-      ) {
         await increaseDriverIndex(orderId);
         return await OfferService.sendOfferToDriver(orderId);
       }
@@ -110,7 +110,7 @@ export class OfferService {
     switch (offer.status) {
       case OFFER_STATUS.PENDING:
         //TODO: In future we need to take care of race condition if we have more than one process.
-        offer.status = 'expired';
+        offer.status = OFFER_STATUS.EXPIRED;
         await offer.save();
         await increaseDriverIndex(orderId);
         await OfferService.sendOfferToDriver(orderId);

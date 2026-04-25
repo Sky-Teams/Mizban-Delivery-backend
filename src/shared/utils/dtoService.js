@@ -23,7 +23,7 @@ export class DtoService {
       amountToCollect: order?.amountToCollect,
       deliveryPrice: order?.deliveryPrice?.total,
       finalPrice: order?.finalPrice,
-      items: { ...order?.items },
+      items: [...order?.items],
       status: order?.status,
     };
 
