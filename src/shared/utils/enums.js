@@ -31,10 +31,32 @@ export const PAYMENT_STATUS = {
   FAILED: 'failed',
 };
 
-export const CUSTOM_EVENTS = {
+// Event-bus events
+export const EVENT_BUS_EVENTS = {
   ORDER_CREATED: 'order:created',
+  ORDER_PICKEDUP: 'order:pickedUp',
 };
 
 export const VEHICLE_TYPE = {
   MOTORBIKE: 'motorbike',
+};
+
+export const NOTIFICATION_TYPE = {
+  SYSTEM: 'SYSTEM',
+  ORDER: 'ORDER',
+  OFFER: 'OFFER',
+  NO_DRIVER: 'NO_DRIVER',
+  PAYMENT: 'PAYMENT',
+};
+
+// Socket events (events that is emitted to frontend)
+export const SOCKET_EVENTS = {
+  ADMIN: {
+    NOTIFICATION: 'notification',
+    NO_DRIVER: 'no_driver',
+    SYSTEM: 'system',
+  },
+  DRIVER: {
+    OFFER: 'offer',
+  },
 };
