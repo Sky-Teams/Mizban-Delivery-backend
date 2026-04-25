@@ -5,7 +5,7 @@ import { eventBus } from '#shared/event-bus/eventBus.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { DtoService } from '#shared/utils/dtoService.js';
 import {
-  CUSTOM_EVENTS,
+  EVENT_BUS_EVENTS,
   DRIVER_STATUS,
   ORDER_STATUS,
   PAYMENT_STATUS,
@@ -15,6 +15,8 @@ import { DateHelper } from '#shared/utils/date.helper.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
 import { orderUpdateQuery } from '#shared/utils/queryBuilder.js';
 import { OrderModel } from '../../models/order.model.js';
+
+//#region Admin Services
 
 export const addOrder = async (orderData) => {
   // orderData is validated by Zod, so no extra fields can exist
@@ -57,7 +59,7 @@ export const addOrder = async (orderData) => {
   });
 
   // emit events
-  eventBus.emit(CUSTOM_EVENTS.ORDER_CREATED, {
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_CREATED, {
     orderId: newOrder._id,
     pickupLocation: newOrder.pickupLocation,
   });
@@ -188,8 +190,14 @@ export const assignDriver = async (session, orderId, driverId) => {
   await order.save({ session });
   await driver.save({ session });
 
+  // TODO We should send notification to admin and driver
+
   return order;
 };
+
+//#endregion
+
+//#region Admin And Driver Services
 
 export const pickupAnOrder = async (session, orderId, user) => {
   const order = await getOrderById(orderId);
@@ -201,10 +209,6 @@ export const pickupAnOrder = async (session, orderId, user) => {
       ERROR_CODES.PICKUP_NOT_ALLOWED
     );
   }
-
-  // const driver = await getDriverStatusByDriverId(order.driverId);
-
-  //TODO: Add validation that if the order is assigned to driver(order related to the driver)
 
   // Requested Driver Id must be equal to order.driverId
 
@@ -224,6 +228,14 @@ export const pickupAnOrder = async (session, orderId, user) => {
   await driver.save({ session });
 
   console.log(`Order ${orderId} is pickedUp by driver ${order.driverId}`);
+
+  //TODO: We should send notificaiton to admins
+
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_PICKEDUP, {
+    orderId,
+    driverId: driver._id,
+    pickedUpAt: order.timeline.pickedUpAt,
+  });
 
   //TODO: We should not send all data to driver if the request is from driver
   // Return filtered fields to driver
@@ -310,6 +322,8 @@ export const cancelAnOrder = async (session, orderId, reason, user) => {
   // Return all fields to admin
   return order;
 };
+
+//#endregion
 
 /** Add drivers info (id, eta, distance ) in related order record */
 export const addDriversDataInOrder = async (orderId, drivers) => {
