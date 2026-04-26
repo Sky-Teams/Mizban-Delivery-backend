@@ -37,4 +37,9 @@ export const registerOrderListeners = () => {
     );
     await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
   });
+
+  eventBus.on(EVENT_BUS_EVENTS.ORDER_CANCELLED, async (data) => {
+    const payload = NotificationPayloads.orderCancelled(data.orderId, data.reason);
+    await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
+  });
 };
