@@ -35,6 +35,9 @@ export const PAYMENT_STATUS = {
 export const EVENT_BUS_EVENTS = {
   ORDER_CREATED: 'order:created',
   ORDER_PICKEDUP: 'order:pickedUp',
+  ORDER_DELIVERED: 'order:delivered',
+  OFFER_ACCEPTED: 'offer:accepted',
+  OFFER_REJECTED: 'offer:rejected',
 };
 
 export const VEHICLE_TYPE = {
