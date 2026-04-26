@@ -23,9 +23,18 @@ export const registerOrderListeners = () => {
     const payload = NotificationPayloads.orderPickedUp(
       data.orderId,
       data.driverId,
-      order.pickedUpAt
+      data.pickedUpAt
     );
 
+    await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
+  });
+
+  eventBus.on(EVENT_BUS_EVENTS.ORDER_DELIVERED, async (data) => {
+    const payload = NotificationPayloads.orderDelivered(
+      data.orderId,
+      data.driverId,
+      data.deliveredAt
+    );
     await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
   });
 };
