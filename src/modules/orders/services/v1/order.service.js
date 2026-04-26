@@ -229,8 +229,6 @@ export const pickupAnOrder = async (session, orderId, user) => {
 
   console.log(`Order ${orderId} is pickedUp by driver ${order.driverId}`);
 
-  //TODO: We should send notificaiton to admins
-
   eventBus.emit(EVENT_BUS_EVENTS.ORDER_PICKEDUP, {
     orderId,
     driverId: driver._id,
@@ -276,6 +274,12 @@ export const deliverAnOrder = async (session, orderId, user) => {
   await order.save({ session });
   await driver.save({ session });
 
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_DELIVERED, {
+    orderId,
+    driverId: driver._id,
+    deliveredAt: order.timeline.deliveredAt,
+  });
+
   // Return filtered fields to driver
   if (user.role === ROLES.DRIVER) return DtoService.order(order);
 
@@ -297,7 +301,6 @@ export const cancelAnOrder = async (session, orderId, reason, user) => {
 
   // Release driver if exists
   if (order.driverId) {
-    // const driver = await getDriverStatusByDriverId(order.driverId);
     const driver = await fetchDriverByDriverId(order.driverId);
     if (!driver) notFound('driver');
     doesDriverAssginedToOrder(driver._id, order.driverId);
@@ -315,6 +318,7 @@ export const cancelAnOrder = async (session, orderId, reason, user) => {
   }
 
   await order.save({ session });
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_CANCELLED, { orderId, reason });
 
   // Return filtered fields to driver
   if (user.role === ROLES.DRIVER) return DtoService.order(order);
