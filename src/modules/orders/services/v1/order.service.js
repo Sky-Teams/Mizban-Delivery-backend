@@ -194,8 +194,6 @@ export const assignDriver = async (session, orderId, driverId) => {
   await order.save({ session });
   await driver.save({ session });
 
-  // TODO We should send notification to admin and driver
-
   return order;
 };
 
