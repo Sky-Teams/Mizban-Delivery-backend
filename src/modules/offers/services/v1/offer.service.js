@@ -3,9 +3,15 @@ import { OfferModel } from '#modules/offers/models/offer.model.js';
 import { getOrderById, increaseDriverIndex } from '#modules/orders/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
+import { eventBus } from '#shared/event-bus/eventBus.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { DbJobService } from '#shared/utils/dbJob.service.js';
-import { DRIVER_STATUS, OFFER_STATUS, ORDER_STATUS } from '#shared/utils/enums.js';
+import {
+  DRIVER_STATUS,
+  EVENT_BUS_EVENTS,
+  OFFER_STATUS,
+  ORDER_STATUS,
+} from '#shared/utils/enums.js';
 import { createOfferSchema } from '../../dto/create-offer.schema.js';
 
 /**
@@ -81,6 +87,14 @@ const acceptAnOffer = async (session, offerId, userId) => {
   await driver.save({ session });
 
   await DbJobService.cancelOfferTimeout(offerId);
+
+  //TODO We need to send notification to admins.
+
+  eventBus.emit(EVENT_BUS_EVENTS.OFFER_ACCEPTED, {
+    orderId: order._id,
+    driverId: order.driverId,
+  });
+
   return offer;
 };
 
@@ -103,6 +117,11 @@ const rejectAnOffer = async (session, offerId, userId) => {
 
   await increaseDriverIndex(offer.order, session);
   await DbJobService.cancelOfferTimeout(offerId);
+
+  eventBus.emit(EVENT_BUS_EVENTS.OFFER_REJECTED, {
+    orderId: order._id,
+    driverId: order.driverId,
+  });
 
   return offer;
 };

@@ -3,7 +3,7 @@ import { createOffer, getOffer } from '#modules/offers/index.js';
 import { getOrderById, increaseDriverIndex } from '#modules/orders/index.js';
 import { DbJobService } from './dbJob.service.js';
 import { DtoService } from './dtoService.js';
-import { DRIVER_STATUS, OFFER_STATUS, ORDER_STATUS } from './enums.js';
+import { DRIVER_STATUS, OFFER_STATUS, ORDER_STATUS, SOCKET_EVENTS } from './enums.js';
 import { NotificationPayloads } from './notificationPayloadBuilder.js';
 import { NotificationService } from './notificationService.js';
 
@@ -26,7 +26,11 @@ export class OfferService {
       if (currentIndex >= driversInfo.length) {
         // TODO we must search what should we do if no driver found. for now we just send an notification for all admins
         const noDriverFoundPayload = NotificationPayloads.noDriverFound(orderId);
-        await NotificationService.send('admins', 'no-driver', noDriverFoundPayload);
+        await NotificationService.send(
+          'admins',
+          SOCKET_EVENTS.ADMIN.NO_DRIVER,
+          noDriverFoundPayload
+        );
         return;
       }
 
@@ -59,7 +63,12 @@ export class OfferService {
       const offerPayload = NotificationPayloads.orderOffered(orderInfo);
 
       // Send offer to driver
-      await NotificationService.send('driver', 'offer', offerPayload, driver.user._id);
+      await NotificationService.send(
+        'driver',
+        SOCKET_EVENTS.DRIVER.OFFER,
+        offerPayload,
+        driver.user._id
+      );
 
       console.log('Offer Id: ', offer._id); // we need it for test
 
@@ -76,7 +85,7 @@ export class OfferService {
       // For system error, DB error, or other critical errors, its better to stop the process and notify the admin
       console.error('Error in sendOfferToDriver:', error);
       const systemErrorPayload = NotificationPayloads.systemError(error.message);
-      await NotificationService.send('admins', 'system', systemErrorPayload);
+      await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.SYSTEM, systemErrorPayload);
 
       return; // We explicitly return to stop more processing
     }

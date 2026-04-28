@@ -1,3 +1,5 @@
+import { NOTIFICATION_TYPE } from '#shared/utils/enums.js';
+import { getObjectValues } from '#shared/utils/object.helper.js';
 import mongoose from 'mongoose';
 
 const NotificationSchema = new mongoose.Schema(
@@ -5,9 +7,9 @@ const NotificationSchema = new mongoose.Schema(
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     type: {
       type: String,
-      enum: ['SYSTEM', 'PAYMENT', 'ORDER', 'NO-DRIVER'],
+      enum: getObjectValues(NOTIFICATION_TYPE),
       required: true,
-      default: 'SYSTEM',
+      default: NOTIFICATION_TYPE.SYSTEM,
     },
     title: { type: String, required: true, trim: true, minlength: 1, maxlength: 100 },
     message: { type: String, trim: true, maxlength: 500 },

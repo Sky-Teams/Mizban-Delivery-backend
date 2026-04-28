@@ -16,31 +16,51 @@ import { mongoIdValidator } from '#shared/middleware/mongoIdValidator.js';
 import { updateOrderValidator } from '../../dto/update-order.schema.js';
 import { assignDriverValidator, cancelOrderValidator } from '../../dto/order-actions.schema.js';
 import { orderQueryValidator } from '#modules/orders/dto/order-query-validator.js';
+import { authorizeRole } from '#shared/middleware/authorizeRole.js';
+import { ROLES } from '#shared/utils/enums.js';
 
 const router = express.Router();
 
-router.post('/', validate(createOrderValidator), asyncHandler(createOrder));
+router.post(
+  '/',
+  authorizeRole(ROLES.ADMIN),
+  validate(createOrderValidator),
+  asyncHandler(createOrder)
+);
 router.patch(
   '/:id/assign',
+  authorizeRole(ROLES.ADMIN),
   validate(mongoIdValidator),
   validate(assignDriverValidator),
   asyncHandler(assignDriver)
 );
-router.patch('/:id/pickup', validate(mongoIdValidator), asyncHandler(pickupOrder));
-router.patch('/:id/deliver', validate(mongoIdValidator), asyncHandler(deliverOrder));
+router.patch(
+  '/:id/pickup',
+  authorizeRole(ROLES.ADMIN, ROLES.DRIVER),
+  validate(mongoIdValidator),
+  asyncHandler(pickupOrder)
+);
+router.patch(
+  '/:id/deliver',
+  authorizeRole(ROLES.ADMIN, ROLES.DRIVER),
+  validate(mongoIdValidator),
+  asyncHandler(deliverOrder)
+);
 router.patch(
   '/:id/cancel',
+  authorizeRole(ROLES.ADMIN, ROLES.DRIVER),
   validate(mongoIdValidator),
   validate(cancelOrderValidator),
   asyncHandler(cancelOrder)
 );
 router.put(
   '/:id',
+  authorizeRole(ROLES.ADMIN),
   validate(mongoIdValidator),
   validate(updateOrderValidator),
   asyncHandler(updateOrder)
 );
-router.get('/', validate(orderQueryValidator), asyncHandler(getOrders));
-router.get('/:id', validate(mongoIdValidator), asyncHandler(getOrder));
+router.get('/', authorizeRole(ROLES.ADMIN), validate(orderQueryValidator), asyncHandler(getOrders));
+router.get('/:id', authorizeRole(ROLES.ADMIN), validate(mongoIdValidator), asyncHandler(getOrder));
 
 export default router;

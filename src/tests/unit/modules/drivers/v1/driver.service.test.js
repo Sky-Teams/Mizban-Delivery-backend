@@ -137,15 +137,22 @@ describe('Driver Services', () => {
 
   describe('fetchDriverByDriverId', () => {
     it('should return driver by driverId', async () => {
-      const mockedDriver = [{ _id: 'd1', user: 'u1' }];
+      const mockedDriver = { _id: 'd1', user: 'u1' };
+
+      const populateMock = vi.fn().mockResolvedValue(mockedDriver);
+
       DriverModel.findOne.mockReturnValue({
-        populate: vi.fn().mockReturnThis(),
-        lean: vi.fn().mockResolvedValue(mockedDriver),
+        populate: populateMock,
       });
 
       const result = await fetchDriverByDriverId('d1');
+
       expect(result).toEqual(mockedDriver);
       expect(DriverModel.findOne).toHaveBeenCalledWith({ _id: 'd1' });
+      expect(populateMock).toHaveBeenCalledWith({
+        path: 'user',
+        select: 'name phone email isActive',
+      });
     });
   });
 

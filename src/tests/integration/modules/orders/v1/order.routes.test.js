@@ -13,6 +13,7 @@ import { getWithAuth, postWithAuth } from '#tests/utils/testHelpers.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import mongoose from 'mongoose';
 import { DriverModel } from '#modules/drivers/index.js';
+import { DRIVER_STATUS, ORDER_STATUS } from '#shared/utils/enums.js';
 
 const baseURL = '/api/orders';
 let token;
@@ -64,7 +65,7 @@ describe('Order API v1 Integration', () => {
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveProperty('_id');
-      expect(res.body.data.status).toBe('created');
+      expect(res.body.data.status).toBe(ORDER_STATUS.CREATED);
       expect(res.body.data.finalPrice).toBe(120);
 
       // Verify in DB
@@ -171,7 +172,7 @@ describe('Order API v1 Integration', () => {
 
       const res = await postWithAuth(app, baseURL, orderData, token);
       expect(res.status).toBe(201);
-      expect(res.body.data.status).toBe('assigned');
+      expect(res.body.data.status).toBe(ORDER_STATUS.ASSIGNED);
       expect(res.body.data.timeline.assignedAt).toBeDefined();
     });
 
@@ -269,7 +270,7 @@ describe('Order API v1 Integration', () => {
 
       expect(res.status).toBe(201);
       expect(res.body.data.finalPrice).toBe(50);
-      expect(res.body.data.status).toBe('created');
+      expect(res.body.data.status).toBe(ORDER_STATUS.CREATED);
     });
 
     it('should calculate total for each item in the order request', async () => {
@@ -334,7 +335,7 @@ describe('Order API v1 Integration', () => {
         paymentType: 'COD',
         amountToCollect: 100,
         finalPrice: 100,
-        status: 'created',
+        status: ORDER_STATUS.CREATED,
       });
 
       deliveryId = order._id.toString();
@@ -367,7 +368,6 @@ describe('Order API v1 Integration', () => {
         .send({ amountToCollect: 300 });
 
       expect(res.status).toBe(404);
-      console.log(res.body);
       expect(res.body.code).toMatch(ERROR_CODES.NOT_FOUND);
     });
 
@@ -449,7 +449,7 @@ describe('Order API v1 Integration', () => {
         paymentType: 'COD',
         amountToCollect: 100,
         finalPrice: 100,
-        status: 'created',
+        status: ORDER_STATUS.CREATED,
       });
 
       deliveryId = order._id.toString();
@@ -464,9 +464,9 @@ describe('Order API v1 Integration', () => {
       const updatedDriver = await DriverModel.findById(driver._id);
 
       expect(res.status).toBe(200);
-      expect(updatedDriver.status).toBe('assigned');
+      expect(updatedDriver.status).toBe(ORDER_STATUS.ASSIGNED);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.status).toBe('assigned');
+      expect(res.body.data.status).toBe(ORDER_STATUS.ASSIGNED);
       expect(res.body.data.timeline.assignedAt).toBeDefined();
 
       const orderInDB = await OrderModel.findById(deliveryId);
@@ -529,7 +529,7 @@ describe('Order API v1 Integration', () => {
     });
   });
 
-  describe('Order API v1 Integration - pickup order', () => {
+  describe('Order API v1 Integration - pickup order - Admin', () => {
     let deliveryId;
     let driver;
 
@@ -556,7 +556,7 @@ describe('Order API v1 Integration', () => {
         paymentType: 'COD',
         amountToCollect: 100,
         finalPrice: 100,
-        status: 'assigned',
+        status: ORDER_STATUS.ASSIGNED,
         timeline: { assignedAt: new Date() },
       });
 
@@ -571,9 +571,9 @@ describe('Order API v1 Integration', () => {
       const updatedDriver = await DriverModel.findById(driver._id);
 
       expect(res.status).toBe(200);
-      expect(updatedDriver.status).toBe('delivering');
+      expect(updatedDriver.status).toBe(DRIVER_STATUS.DELIVERING);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.status).toBe('pickedUp');
+      expect(res.body.data.status).toBe(ORDER_STATUS.PICKEDUP);
       expect(res.body.data.timeline.pickedUpAt).toBeDefined();
     });
 
@@ -587,7 +587,7 @@ describe('Order API v1 Integration', () => {
 
     it('should fail if order status is not assigned', async () => {
       await OrderModel.findByIdAndUpdate(deliveryId, {
-        status: 'created',
+        status: ORDER_STATUS.CREATED,
       });
 
       const res = await request(app)
@@ -604,7 +604,84 @@ describe('Order API v1 Integration', () => {
     });
   });
 
-  describe('Order API v1 Integration - deliver order', () => {
+  describe('Order API v1 Integration - pickup order - Driver', () => {
+    let order;
+    let driver;
+    let orderId;
+
+    beforeEach(async () => {
+      await clearDB();
+
+      const result = await createFakeUserWithToken('driver');
+      token = result.token;
+
+      driver = await createFakeDriver(result.user);
+
+      order = await OrderModel.create({
+        type: 'parcel',
+        serviceType: 'immediate',
+        driverId: driver._id,
+        sender: { name: 'Alice', phone: '0790909090' },
+        receiver: {
+          name: 'Bob',
+          phone: '0790909090',
+          address: 'Herat',
+        },
+        pickupLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+        dropoffLocation: { type: 'Point', coordinates: [62.3, 34.36] },
+        paymentType: 'COD',
+        amountToCollect: 100,
+        finalPrice: 100,
+        status: ORDER_STATUS.ASSIGNED,
+        timeline: { assignedAt: new Date() },
+        driverId: driver._id,
+      });
+
+      orderId = order._id.toString();
+    });
+
+    it('should pickup successfully', async () => {
+      order.driverId = driver._id;
+      await order.save();
+
+      const res = await request(app)
+        .patch(`${baseURL}/${orderId}/pickup`)
+        .set('Authorization', `Bearer ${token}`);
+
+      const updatedDriver = await DriverModel.findById(driver._id);
+      const updatedOrder = await OrderModel.findById(orderId);
+
+      expect(res.status).toBe(200);
+
+      expect(res.body.data.status).toBe(ORDER_STATUS.PICKEDUP);
+      expect(updatedOrder.status).toBe(ORDER_STATUS.PICKEDUP);
+      expect(updatedDriver.status).toBe(DRIVER_STATUS.DELIVERING);
+    });
+
+    it('should fail if driver not found', async () => {
+      const anotherUser = await createFakeUserWithToken('driver'); // Only has user info and dont have driver info
+
+      const res = await request(app)
+        .patch(`${baseURL}/${orderId}/pickup`)
+        .set('Authorization', `Bearer ${anotherUser.token}`);
+
+      expect(res.status).toBe(404);
+    });
+
+    it('should fail if driver is not assigned to the order', async () => {
+      const anotherDriver = await createFakeUserWithToken('driver');
+      await createFakeDriver(anotherDriver.user);
+
+      const res = await request(app)
+        .patch(`${baseURL}/${orderId}/pickup`)
+        .set('Authorization', `Bearer ${anotherDriver.token}`);
+
+      expect(res.body.code).toBe(ERROR_CODES.ORDER_NOT_YOURS);
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('Order API v1 Integration - deliver order - Admin', () => {
     let deliveryId;
     let driver;
 
@@ -628,7 +705,7 @@ describe('Order API v1 Integration', () => {
         paymentType: 'COD',
         amountToCollect: 100,
         finalPrice: 100,
-        status: 'pickedUp',
+        status: ORDER_STATUS.PICKEDUP,
         timeline: { pickedUpAt: new Date() },
       });
 
@@ -643,8 +720,8 @@ describe('Order API v1 Integration', () => {
       const updatedDriver = await DriverModel.findById(driver._id);
 
       expect(res.status).toBe(200);
-      expect(updatedDriver.status).toBe('idle');
-      expect(res.body.data.status).toBe('delivered');
+      expect(updatedDriver.status).toBe(DRIVER_STATUS.IDLE);
+      expect(res.body.data.status).toBe(ORDER_STATUS.DELIVERED);
       expect(res.body.data.timeline.deliveredAt).toBeDefined();
     });
 
@@ -658,7 +735,7 @@ describe('Order API v1 Integration', () => {
 
     it('should fail if order status is not pickedUp', async () => {
       await OrderModel.findByIdAndUpdate(deliveryId, {
-        status: 'assigned',
+        status: ORDER_STATUS.ASSIGNED,
       });
 
       const res = await request(app)
@@ -675,7 +752,84 @@ describe('Order API v1 Integration', () => {
     });
   });
 
-  describe('Order API v1 Integration - cancel order', () => {
+  describe('Order API v1 Integration - deliver order - Driver', () => {
+    let order;
+    let driver;
+    let orderId;
+
+    beforeEach(async () => {
+      await clearDB();
+
+      const result = await createFakeUserWithToken('driver');
+      token = result.token;
+
+      driver = await createFakeDriver(result.user);
+
+      order = await OrderModel.create({
+        type: 'parcel',
+        serviceType: 'immediate',
+        driverId: driver._id,
+        sender: { name: 'Alice', phone: '0790909090' },
+        receiver: {
+          name: 'Bob',
+          phone: '0790909090',
+          address: 'Herat',
+        },
+        pickupLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+        dropoffLocation: { type: 'Point', coordinates: [62.3, 34.36] },
+        paymentType: 'COD',
+        amountToCollect: 100,
+        finalPrice: 100,
+        status: ORDER_STATUS.PICKEDUP,
+        timeline: { pickedUpAt: new Date() },
+        driverId: driver._id,
+      });
+
+      orderId = order._id.toString();
+    });
+
+    it('should deliver successfully', async () => {
+      order.driverId = driver._id;
+      await order.save();
+
+      const res = await request(app)
+        .patch(`${baseURL}/${orderId}/deliver`)
+        .set('Authorization', `Bearer ${token}`);
+
+      const updatedDriver = await DriverModel.findById(driver._id);
+      const updatedOrder = await OrderModel.findById(orderId);
+
+      expect(res.status).toBe(200);
+
+      expect(res.body.data.status).toBe(ORDER_STATUS.DELIVERED);
+      expect(updatedOrder.status).toBe(ORDER_STATUS.DELIVERED);
+      expect(updatedDriver.status).toBe(DRIVER_STATUS.IDLE);
+    });
+
+    it('should fail if driver not found', async () => {
+      const anotherUser = await createFakeUserWithToken('driver'); // Only has user info and dont have driver info
+
+      const res = await request(app)
+        .patch(`${baseURL}/${orderId}/deliver`)
+        .set('Authorization', `Bearer ${anotherUser.token}`);
+
+      expect(res.status).toBe(404);
+    });
+
+    it('should fail if driver is not assigned to the order', async () => {
+      const anotherDriver = await createFakeUserWithToken('driver');
+      await createFakeDriver(anotherDriver.user);
+
+      const res = await request(app)
+        .patch(`${baseURL}/${orderId}/deliver`)
+        .set('Authorization', `Bearer ${anotherDriver.token}`);
+
+      expect(res.body.code).toBe(ERROR_CODES.ORDER_NOT_YOURS);
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('Order API v1 Integration - cancel order - Admin', () => {
     let deliveryId;
     beforeEach(async () => {
       await clearDB();
@@ -696,7 +850,7 @@ describe('Order API v1 Integration', () => {
         paymentType: 'COD',
         amountToCollect: 100,
         finalPrice: 100,
-        status: 'created',
+        status: ORDER_STATUS.CREATED,
       });
 
       deliveryId = order._id.toString();
@@ -711,7 +865,7 @@ describe('Order API v1 Integration', () => {
         .send({ cancelReason: 'Customer cancelled' });
 
       expect(res.status).toBe(200);
-      expect(res.body.data.status).toBe('cancelled');
+      expect(res.body.data.status).toBe(ORDER_STATUS.CANCELLED);
       expect(res.body.data.cancelReason).toBe('Customer cancelled');
     });
 
@@ -741,6 +895,86 @@ describe('Order API v1 Integration', () => {
         .send({});
 
       expect(res.status).toBe(409);
+    });
+  });
+
+  describe('Order API v1 Integration - cancel order - Driver', () => {
+    let order;
+    let driver;
+    let orderId;
+
+    beforeEach(async () => {
+      await clearDB();
+
+      const result = await createFakeUserWithToken('driver');
+      token = result.token;
+
+      driver = await createFakeDriver(result.user);
+
+      order = await OrderModel.create({
+        type: 'parcel',
+        serviceType: 'immediate',
+        driverId: driver._id,
+        sender: { name: 'Alice', phone: '0790909090' },
+        receiver: {
+          name: 'Bob',
+          phone: '0790909090',
+          address: 'Herat',
+        },
+        pickupLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+        dropoffLocation: { type: 'Point', coordinates: [62.3, 34.36] },
+        paymentType: 'COD',
+        amountToCollect: 100,
+        finalPrice: 100,
+        status: ORDER_STATUS.PICKEDUP,
+        timeline: { pickedUpAt: new Date() },
+        driverId: driver._id,
+      });
+
+      orderId = order._id.toString();
+    });
+
+    it('should cancel successfully', async () => {
+      order.driverId = driver._id;
+      await order.save();
+
+      const res = await request(app)
+        .patch(`${baseURL}/${orderId}/cancel`)
+        .send({ cancelReason: 'Customer not responded' })
+        .set('Authorization', `Bearer ${token}`);
+
+      const updatedDriver = await DriverModel.findById(driver._id);
+      const updatedOrder = await OrderModel.findById(orderId);
+
+      expect(res.status).toBe(200);
+
+      expect(res.body.data.status).toBe(ORDER_STATUS.CANCELLED);
+      expect(updatedOrder.status).toBe(ORDER_STATUS.CANCELLED);
+      expect(updatedDriver.status).toBe(DRIVER_STATUS.IDLE);
+    });
+
+    it('should fail if driver not found', async () => {
+      const anotherUser = await createFakeUserWithToken('driver'); // Only has user info and dont have driver info
+
+      const res = await request(app)
+        .patch(`${baseURL}/${orderId}/cancel`)
+        .send({ cancelReason: 'cancel' })
+        .set('Authorization', `Bearer ${anotherUser.token}`);
+
+      expect(res.status).toBe(404);
+    });
+
+    it('should fail if driver is not assigned to the order', async () => {
+      const anotherDriver = await createFakeUserWithToken('driver');
+      await createFakeDriver(anotherDriver.user);
+
+      const res = await request(app)
+        .patch(`${baseURL}/${orderId}/cancel`)
+        .send({})
+        .set('Authorization', `Bearer ${anotherDriver.token}`);
+
+      expect(res.body.code).toBe(ERROR_CODES.ORDER_NOT_YOURS);
+      expect(res.status).toBe(400);
     });
   });
 

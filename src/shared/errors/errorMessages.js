@@ -603,6 +603,11 @@ export const ERROR_MESSAGES = {
     fa: 'این پیشنهاد قبلاً بررسی شده یا مربوط به شما نیست.',
     ps: 'دا وړاندیز مخکې پروسس شوی یا ستاسو نه دی.',
   },
+  [ERROR_CODES.ORDER_NOT_YOURS]: {
+    en: 'This order does not belong to you.',
+    fa: 'این سفارش مربوط به شما نیست.',
+    ps: 'دا فرمایش ستاسو نه دی.',
+  },
   [ERROR_CODES.INVALID_PARAMETER_START_DATE]: {
     en: 'Invalid start date',
     fa: 'تاریخ شروع نامعتبر است',

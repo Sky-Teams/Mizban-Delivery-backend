@@ -10,6 +10,7 @@ import {
 import { NotificationModel } from '#modules/notifications/models/notification.model.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import mongoose from 'mongoose';
+import { NOTIFICATION_TYPE } from '#shared/utils/enums.js';
 
 const baseURL = '/api/notifications/';
 let token;
@@ -56,7 +57,7 @@ describe('Notifications API Integration', () => {
     beforeEach(async () => {
       const notif = await NotificationModel.create({
         user: testUserId,
-        type: 'SYSTEM',
+        type: NOTIFICATION_TYPE.SYSTEM,
         title: 'Test Notification',
         isRead: false,
       });
@@ -113,7 +114,7 @@ describe('Notifications API Integration', () => {
     beforeEach(async () => {
       const notif = await NotificationModel.create({
         user: testUserId,
-        type: 'SYSTEM',
+        type: NOTIFICATION_TYPE.SYSTEM,
         title: 'Test Notification',
         isRead: true,
       });
@@ -218,20 +219,20 @@ describe('Notifications API Integration', () => {
       const { createNotificationForAdmins } = await import('#modules/notifications/index.js');
 
       // Call the service
-      await createNotificationForAdmins('ORDER', 'New Order', 'Order 123 created');
+      await createNotificationForAdmins(NOTIFICATION_TYPE.ORDER, 'New Order', 'Order 123 created');
 
       // Verify notifications in DB for both admins
       const notifications = await NotificationModel.find({ user: adminId });
 
       expect(notifications.length).toBe(1);
-      expect(notifications[0].type).toBe('ORDER');
+      expect(notifications[0].type).toBe(NOTIFICATION_TYPE.ORDER);
       expect(notifications[0].title).toBe('New Order');
       expect(notifications[0].message).toBe('Order 123 created');
     });
 
     it('admins should retrieve their notifications via API', async () => {
       const { createNotificationForAdmins } = await import('#modules/notifications/index.js');
-      await createNotificationForAdmins('ORDER', 'New Order', 'Order 123 created');
+      await createNotificationForAdmins(NOTIFICATION_TYPE.ORDER, 'New Order', 'Order 123 created');
 
       const res = await request(app)
         .get('/api/notifications/')

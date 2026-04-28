@@ -69,5 +69,10 @@ const DriverSchema = new mongoose.Schema(
 );
 
 DriverSchema.index({ currentLocation: '2dsphere' });
+DriverSchema.methods.releaseFromOrder = async function (session) {
+  this.status = DRIVER_STATUS.IDLE;
+  this.activeOrders = Math.max(0, this.activeOrders - 1);
 
+  return this.save({ session });
+};
 export const DriverModel = mongoose.model('Driver', DriverSchema);
