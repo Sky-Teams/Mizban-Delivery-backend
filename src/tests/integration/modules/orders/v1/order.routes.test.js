@@ -368,7 +368,6 @@ describe('Order API v1 Integration', () => {
         .send({ amountToCollect: 300 });
 
       expect(res.status).toBe(404);
-      console.log(res.body);
       expect(res.body.code).toMatch(ERROR_CODES.NOT_FOUND);
     });
 
