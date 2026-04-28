@@ -1,4 +1,8 @@
-import { fetchDriverByDriverId, getDriverStatusByDriverId } from '#modules/drivers/index.js';
+import {
+  fetchDriverByDriverId,
+  fetchDriverByUserId,
+  getDriverStatusByDriverId,
+} from '#modules/drivers/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, noFieldsProvidedForUpdate, notFound } from '#shared/errors/error.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
@@ -210,14 +214,18 @@ export const pickupAnOrder = async (session, orderId, user) => {
     );
   }
 
-  // Requested Driver Id must be equal to order.driverId
+  // If the request come from admin, we should check the existence of driver from order.driverId
+  // If the request come from driver, we should check the existence of driver from token(user._id)
+  const driver =
+    user.role === ROLES.ADMIN
+      ? await fetchDriverByDriverId(order.driverId)
+      : await fetchDriverByUserId(user._id);
 
-  // TODO: We should check if the request come from driver or admin
+  if (!driver) throw notFound('driver');
 
-  const driver = await fetchDriverByDriverId(order.driverId);
-  if (!driver) notFound('driver');
-
-  doesDriverAssginedToOrder(driver._id, order.driverId);
+  if (user.role === ROLES.DRIVER) {
+    doesDriverAssignedToOrder(driver._id, order.driverId);
+  }
 
   order.status = ORDER_STATUS.PICKEDUP;
   order.timeline.pickedUpAt = new Date();
@@ -235,7 +243,6 @@ export const pickupAnOrder = async (session, orderId, user) => {
     pickedUpAt: order.timeline.pickedUpAt,
   });
 
-  //TODO: We should not send all data to driver if the request is from driver
   // Return filtered fields to driver
   if (user.role === ROLES.DRIVER) return DtoService.order(order);
 
@@ -254,11 +261,18 @@ export const deliverAnOrder = async (session, orderId, user) => {
     );
   }
 
-  // const driver = await getDriverStatusByDriverId(order.driverId);
-  const driver = await fetchDriverByDriverId(order.driverId);
-  if (!driver) notFound('driver');
+  // If the request come from admin, we should check the existence of driver from order.driverId
+  // If the request come from driver, we should check the existence of driver from token(user._id)
+  const driver =
+    user.role === ROLES.ADMIN
+      ? await fetchDriverByDriverId(order.driverId)
+      : await fetchDriverByUserId(user._id);
 
-  doesDriverAssginedToOrder(driver._id, order.driverId);
+  if (!driver) throw notFound('driver');
+
+  if (user.role === ROLES.DRIVER) {
+    doesDriverAssignedToOrder(driver._id, order.driverId);
+  }
 
   order.status = ORDER_STATUS.DELIVERED;
   order.timeline.deliveredAt = new Date();
@@ -266,13 +280,8 @@ export const deliverAnOrder = async (session, orderId, user) => {
   //TODO We should add more logic in here in future for transaction of money.
   order.paymentStatus = PAYMENT_STATUS.PAID;
 
-  driver.status = DRIVER_STATUS.IDLE;
-
-  //TODO: We should decrease the number of activeOrders in driver model
-  driver.activeOrders = Math.max(0, driver.activeOrders - 1);
-
   await order.save({ session });
-  await driver.save({ session });
+  await driver.releaseFromOrder(session);
 
   eventBus.emit(EVENT_BUS_EVENTS.ORDER_DELIVERED, {
     orderId,
@@ -300,18 +309,24 @@ export const cancelAnOrder = async (session, orderId, reason, user) => {
   }
 
   // Release driver if exists
-  if (order.driverId) {
+  if (user.role === ROLES.ADMIN) {
     const driver = await fetchDriverByDriverId(order.driverId);
-    if (!driver) notFound('driver');
-    doesDriverAssginedToOrder(driver._id, order.driverId);
-    driver.status = DRIVER_STATUS.IDLE;
-    driver.activeOrders = Math.max(0, driver.activeOrders - 1);
-    await driver.save({ session });
+    // We do not need to terminate the process of cancelling when driver is not found and the request come from admin.
+    if (driver) await driver.releaseFromOrder(session);
+  }
+
+  if (user.role === ROLES.DRIVER) {
+    const driver = await fetchDriverByUserId(user._id);
+    if (!driver) throw notFound('driver');
+    doesDriverAssignedToOrder(driver._id, order.driverId);
+    await driver.releaseFromOrder(session);
   }
 
   order.status = ORDER_STATUS.CANCELLED;
   order.timeline.cancelledAt = new Date();
   order.paymentStatus = PAYMENT_STATUS.FAILED; //TODO We should add more logic in here in future.
+
+  //TODO: Do we need to add cancelledBy field in DB?
 
   if (reason) {
     order.cancelReason = reason;
@@ -378,8 +393,8 @@ export const increaseDriverIndex = async (orderId, session = null) => {
  * @param {string | ObjectId} driverId - Id of driver in driver collection
  * @param {string | ObjectId} orderDriverId - DriverId in order collection
  */
-const doesDriverAssginedToOrder = (driverId, orderDriverId) => {
-  if (driverId.toString() !== orderDriverId.toString()) {
+const doesDriverAssignedToOrder = (driverId, orderDriverId) => {
+  if (!driverId || !orderDriverId || driverId.toString() !== orderDriverId.toString()) {
     throw new AppError('Order is not yours', 400, ERROR_CODES.ORDER_NOT_YOURS);
   }
 
