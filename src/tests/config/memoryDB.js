@@ -4,7 +4,7 @@ import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import jwt from 'jsonwebtoken';
 import { UserModel } from '#modules/users/index.js';
 import { DriverModel } from '#modules/drivers/index.js';
-
+import { randomUUID } from 'crypto';
 let replSet;
 
 export const connectDB = async () => {
@@ -38,7 +38,7 @@ export const clearDB = async () => {
 export const createFakeUserWithToken = async (role = 'customer') => {
   const user = await UserModel.create({
     name: 'Test User',
-    email: 'test@example.com',
+    email: `test${randomUUID()}@example.com`,
     password: 'hashedpassword123',
     role,
   });
@@ -52,20 +52,23 @@ export const createFakeUserWithToken = async (role = 'customer') => {
   return { testUserId, token, user };
 };
 
-export const createFakeDriver = async () => {
-  const user = await UserModel.create({
-    name: 'Driver',
-    email: 'driver@example.com',
-    password: 'hashedpassword123',
-    role: 'driver',
-  });
+// If we pass a user({_id,name,email}) to this function, it doesn't create a record in user collection and only create a driver record.
+export const createFakeDriver = async (user) => {
+  if (!user) {
+    user = await UserModel.create({
+      name: 'Driver',
+      email: `driver${randomUUID()}@example.com`,
+      password: 'hashedpassword123',
+      role: 'driver',
+    });
+  }
 
   const newDriver = await DriverModel.create({
     user: user._id,
     vehicleType: 'motorbike',
     status: 'idle',
     currentLocation: { coordinates: [55, 55] },
-    vehicleRegistrationNumber: 'ADM-123',
+    vehicleRegistrationNumber: `ADM-${randomUUID()}`,
     capacity: {
       maxWeightKg: 100,
       maxPackages: 5,
