@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   doesDriverExistByDriverId,
   fetchDriverByDriverId,
+  fetchDriverByUserId,
   getDriverStatusByDriverId,
 } from '#modules/drivers/index.js';
 import { AppError, notFound } from '#shared/errors/error.js';
@@ -19,8 +20,16 @@ import mongoose from 'mongoose';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { orderUpdateQuery, driverQueryBuilder } from '#shared/utils/queryBuilder.js';
 import { getOrderById, updateOrderInfo } from '#modules/orders/services/v1/order.service.js';
-import { ROLES } from '#shared/utils/enums.js';
+import {
+  DRIVER_STATUS,
+  EVENT_BUS_EVENTS,
+  ORDER_STATUS,
+  PAYMENT_STATUS,
+  ROLES,
+} from '#shared/utils/enums.js';
 import { DateHelper } from '#shared/utils/date.helper.js';
+import { DtoService } from '#shared/utils/dtoService.js';
+import { eventBus } from '#shared/event-bus/eventBus.js';
 
 vi.mock('#modules/orders/models/order.model.js', () => ({
   OrderModel: {
@@ -36,6 +45,7 @@ vi.mock('#modules/drivers/index.js', () => ({
   doesDriverExistByDriverId: vi.fn(),
   getDriverStatusByDriverId: vi.fn(),
   fetchDriverByDriverId: vi.fn(),
+  fetchDriverByUserId: vi.fn(),
   DriverModel: {
     findById: vi.fn(),
   },
@@ -93,7 +103,7 @@ describe('DeliveryRequest Service', () => {
       ...baseData,
       _id: '1',
       finalPrice: 120,
-      status: 'created',
+      status: ORDER_STATUS.CREATED,
       timeline: {},
     };
     OrderModel.create.mockResolvedValue(mockDeliveryRequest);
@@ -103,7 +113,7 @@ describe('DeliveryRequest Service', () => {
     expect(OrderModel.create).toHaveBeenCalledWith({
       ...baseData,
       finalPrice: 120,
-      status: 'created',
+      status: ORDER_STATUS.CREATED,
       timeline: {},
     });
     expect(result).toEqual(mockDeliveryRequest);
@@ -112,13 +122,13 @@ describe('DeliveryRequest Service', () => {
   it('should assign driver if driverId exists and set status "assigned"', async () => {
     const data = { ...baseData, driverId: 'driver123' };
 
-    getDriverStatusByDriverId.mockResolvedValue({ status: 'idle' });
+    getDriverStatusByDriverId.mockResolvedValue({ status: DRIVER_STATUS.IDLE });
 
     const mockDeliveryRequest = {
       ...data,
       _id: '1',
       finalPrice: 120,
-      status: 'assigned',
+      status: ORDER_STATUS.ASSIGNED,
       timeline: { assignedAt: new Date() },
     };
 
@@ -131,7 +141,7 @@ describe('DeliveryRequest Service', () => {
     expect(OrderModel.create).toHaveBeenCalledWith({
       ...data,
       finalPrice: 120,
-      status: 'assigned',
+      status: ORDER_STATUS.ASSIGNED,
       timeline: expect.objectContaining({
         assignedAt: expect.any(Date),
       }),
@@ -178,7 +188,7 @@ describe('DeliveryRequest Service', () => {
       ...data,
       _id: '1',
       finalPrice: 0,
-      status: 'created',
+      status: ORDER_STATUS.CREATED,
       timeline: {},
     };
     OrderModel.create.mockResolvedValue(mockDeliveryRequest);
@@ -197,7 +207,7 @@ describe('assignDriverToOrderWithTransaction', () => {
   it('should assign driver and commit transaction', async () => {
     const order = {
       _id: 'delivery1',
-      status: 'created',
+      status: ORDER_STATUS.CREATED,
       timeline: {},
       save: vi.fn(),
       driverId: null,
@@ -205,7 +215,7 @@ describe('assignDriverToOrderWithTransaction', () => {
 
     const driver = {
       _id: 'driver1',
-      status: 'idle',
+      status: DRIVER_STATUS.IDLE,
       save: vi.fn(),
     };
 
@@ -222,9 +232,9 @@ describe('assignDriverToOrderWithTransaction', () => {
     expect(fakeSession.endSession).toHaveBeenCalled();
 
     expect(result).toBe(order);
-    expect(order.status).toBe('assigned');
+    expect(order.status).toBe(ORDER_STATUS.ASSIGNED);
     expect(order.driverId).toBe('driver1');
-    expect(driver.status).toBe('assigned');
+    expect(driver.status).toBe(DRIVER_STATUS.ASSIGNED);
     expect(order.timeline.assignedAt).toBeInstanceOf(Date);
   });
 
@@ -240,8 +250,8 @@ describe('assignDriverToOrderWithTransaction', () => {
   });
 
   it('should throw error if driver is not idle', async () => {
-    const order = { _id: 'delivery1', status: 'created', timeline: {}, save: vi.fn() };
-    const driver = { _id: 'driver1', status: 'assigned', save: vi.fn() };
+    const order = { _id: 'delivery1', status: ORDER_STATUS.CREATED, timeline: {}, save: vi.fn() };
+    const driver = { _id: 'driver1', status: ORDER_STATUS.ASSIGNED, save: vi.fn() };
 
     OrderModel.findById.mockResolvedValue(order);
     getDriverStatusByDriverId.mockResolvedValue(driver);
@@ -259,8 +269,8 @@ describe('assignDriverToOrderWithTransaction', () => {
   });
 
   it('should throw error if order status is not "created"', async () => {
-    const order = { _id: 'delivery1', status: 'assigned', timeline: {}, save: vi.fn() };
-    const driver = { _id: 'driver1', status: 'idle', save: vi.fn() };
+    const order = { _id: 'delivery1', status: ORDER_STATUS.ASSIGNED, timeline: {}, save: vi.fn() };
+    const driver = { _id: 'driver1', status: DRIVER_STATUS.IDLE, save: vi.fn() };
 
     OrderModel.findById.mockResolvedValue(order);
     getDriverStatusByDriverId.mockResolvedValue(driver);
@@ -286,7 +296,7 @@ describe('pickupOrderWithTransaction', () => {
   it('should pick up order and commit transaction', async () => {
     const order = {
       _id: 'delivery1',
-      status: 'assigned',
+      status: ORDER_STATUS.ASSIGNED,
       timeline: {},
       save: vi.fn(),
       driverId: 'driver1',
@@ -294,7 +304,7 @@ describe('pickupOrderWithTransaction', () => {
 
     const driver = {
       _id: 'driver1',
-      status: 'idle',
+      status: DRIVER_STATUS.IDLE,
       save: vi.fn(),
     };
 
@@ -317,8 +327,8 @@ describe('pickupOrderWithTransaction', () => {
     expect(fakeSession.endSession).toHaveBeenCalled();
 
     expect(result).toBe(order);
-    expect(order.status).toBe('pickedUp');
-    expect(driver.status).toBe('delivering');
+    expect(order.status).toBe(ORDER_STATUS.PICKEDUP);
+    expect(driver.status).toBe(DRIVER_STATUS.DELIVERING);
     expect(order.timeline.pickedUpAt).toBeInstanceOf(Date);
   });
 
@@ -336,12 +346,12 @@ describe('pickupOrderWithTransaction', () => {
   it('should throw error if order status is not "assigned"', async () => {
     const order = {
       _id: 'delivery1',
-      status: 'created',
+      status: ORDER_STATUS.CREATED,
       timeline: {},
       save: vi.fn(),
       driverId: 'driver1',
     };
-    const driver = { _id: 'driver1', status: 'idle', save: vi.fn() };
+    const driver = { _id: 'driver1', status: DRIVER_STATUS.IDLE, save: vi.fn() };
 
     OrderModel.findById.mockResolvedValue(order);
     getDriverStatusByDriverId.mockResolvedValue(driver);
@@ -357,6 +367,145 @@ describe('pickupOrderWithTransaction', () => {
     expect(fakeSession.abortTransaction).toHaveBeenCalled();
     expect(fakeSession.endSession).toHaveBeenCalled();
   });
+
+  it('should throw error if driver is not assigned to the order', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.ASSIGNED,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+    };
+
+    const driver = {
+      _id: 'driver2',
+      status: DRIVER_STATUS.IDLE,
+      save: vi.fn(),
+    };
+
+    const user = {
+      _id: 'driver2',
+      role: ROLES.DRIVER,
+    };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    await expect(pickupOrderWithTransaction('delivery1', user)).rejects.toThrow();
+
+    expect(fakeSession.abortTransaction).toHaveBeenCalled();
+  });
+
+  it('should return filtered DTO when requested by driver', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.ASSIGNED,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+    };
+
+    const driver = {
+      _id: 'driver1',
+      status: DRIVER_STATUS.IDLE,
+      save: vi.fn(),
+    };
+
+    const user = {
+      _id: 'driver1',
+      role: ROLES.DRIVER,
+    };
+
+    const dtoResult = { id: 'delivery1' };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+    fetchDriverByUserId.mockResolvedValue(driver);
+    DtoService.order = vi.fn().mockReturnValue(dtoResult);
+
+    const result = await pickupOrderWithTransaction('delivery1', user);
+
+    expect(DtoService.order).toHaveBeenCalledWith(order);
+    expect(result).toEqual(dtoResult);
+  });
+
+  it('should return full order when requested by admin', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.ASSIGNED,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+    };
+
+    const driver = {
+      _id: 'driver1',
+      status: DRIVER_STATUS.IDLE,
+      save: vi.fn(),
+    };
+
+    const user = {
+      _id: 'admin1',
+      role: ROLES.ADMIN,
+    };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    const result = await pickupOrderWithTransaction('delivery1', user);
+
+    expect(result).toBe(order);
+  });
+
+  it('should abort if driver not found', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.ASSIGNED,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+    };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(null);
+
+    await expect(pickupOrderWithTransaction('delivery1')).rejects.toThrow();
+
+    expect(fakeSession.abortTransaction).toHaveBeenCalled();
+  });
+
+  it('should emit ORDER_PICKEDUP event', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.ASSIGNED,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+    };
+
+    const driver = {
+      _id: 'driver1',
+      status: DRIVER_STATUS.IDLE,
+      save: vi.fn(),
+    };
+
+    const user = { role: ROLES.ADMIN };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    eventBus.emit = vi.fn();
+
+    await pickupOrderWithTransaction('delivery1', user);
+
+    expect(eventBus.emit).toHaveBeenCalledWith(
+      EVENT_BUS_EVENTS.ORDER_PICKEDUP,
+      expect.objectContaining({
+        orderId: 'delivery1',
+        driverId: 'driver1',
+      })
+    );
+  });
 });
 
 describe('deliverOrderWithTransaction', () => {
@@ -367,17 +516,23 @@ describe('deliverOrderWithTransaction', () => {
   it('should deliver order, update driver status, set paymentStatus, and commit transaction', async () => {
     const order = {
       _id: 'delivery1',
-      status: 'pickedUp',
+      status: ORDER_STATUS.PICKEDUP,
       timeline: {},
       save: vi.fn(),
       driverId: 'driver1',
-      paymentStatus: 'pending',
+      paymentStatus: PAYMENT_STATUS.PENDING,
     };
 
     const driver = {
       _id: 'driver1',
-      status: 'delivering',
+      status: DRIVER_STATUS.DELIVERING,
       save: vi.fn(),
+      activeOrders: 1,
+      releaseFromOrder: vi.fn().mockImplementation(function (session) {
+        this.status = DRIVER_STATUS.IDLE;
+        this.activeOrders = Math.max(0, this.activeOrders - 1);
+        return this.save({ session });
+      }),
     };
 
     const user = {
@@ -390,18 +545,25 @@ describe('deliverOrderWithTransaction', () => {
 
     const result = await deliverOrderWithTransaction('delivery1', user);
 
+    // transaction
     expect(mongoose.startSession).toHaveBeenCalled();
     expect(fakeSession.startTransaction).toHaveBeenCalled();
+
+    // order updates
     expect(order.save).toHaveBeenCalledWith({ session: fakeSession });
+    expect(order.status).toBe(ORDER_STATUS.DELIVERED);
+    expect(order.paymentStatus).toBe(PAYMENT_STATUS.PAID);
+    expect(order.timeline.deliveredAt).toBeInstanceOf(Date);
+
+    expect(driver.releaseFromOrder).toHaveBeenCalledWith(fakeSession);
     expect(driver.save).toHaveBeenCalledWith({ session: fakeSession });
+    expect(driver.status).toBe(DRIVER_STATUS.IDLE);
+
+    // transaction commit
     expect(fakeSession.commitTransaction).toHaveBeenCalled();
     expect(fakeSession.endSession).toHaveBeenCalled();
 
     expect(result).toBe(order);
-    expect(order.status).toBe('delivered');
-    expect(order.paymentStatus).toBe('paid');
-    expect(driver.status).toBe('idle');
-    expect(order.timeline.deliveredAt).toBeInstanceOf(Date);
   });
 
   it('should abort transaction if order not found', async () => {
@@ -418,13 +580,13 @@ describe('deliverOrderWithTransaction', () => {
   it('should throw error if order status is not "pickedUp"', async () => {
     const order = {
       _id: 'delivery1',
-      status: 'assigned',
+      status: ORDER_STATUS.ASSIGNED,
       timeline: {},
       save: vi.fn(),
       driverId: 'driver1',
-      paymentStatus: 'pending',
+      paymentStatus: PAYMENT_STATUS.PENDING,
     };
-    const driver = { _id: 'driver1', status: 'idle', save: vi.fn() };
+    const driver = { _id: 'driver1', status: DRIVER_STATUS.IDLE, save: vi.fn() };
 
     OrderModel.findById.mockResolvedValue(order);
     getDriverStatusByDriverId.mockResolvedValue(driver);
@@ -440,6 +602,199 @@ describe('deliverOrderWithTransaction', () => {
     expect(fakeSession.abortTransaction).toHaveBeenCalled();
     expect(fakeSession.endSession).toHaveBeenCalled();
   });
+
+  it('should throw error if driver is not assigned to the order', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.PICKEDUP,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    const driver = {
+      _id: 'driver2',
+      status: DRIVER_STATUS.DELIVERING,
+      activeOrders: 1,
+      save: vi.fn(),
+    };
+
+    const user = { _id: 'driver2', role: ROLES.DRIVER };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+    fetchDriverByUserId.mockResolvedValue(driver);
+
+    await expect(deliverOrderWithTransaction('delivery1', user)).rejects.toThrow();
+
+    expect(fakeSession.abortTransaction).toHaveBeenCalled();
+  });
+
+  it('should return DTO when requested by driver', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.PICKEDUP,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    const driver = {
+      _id: 'driver1',
+      status: DRIVER_STATUS.DELIVERING,
+      activeOrders: 1,
+      save: vi.fn(),
+      activeOrders: 1,
+      releaseFromOrder: vi.fn().mockImplementation(function (session) {
+        this.status = DRIVER_STATUS.IDLE;
+        this.activeOrders = Math.max(0, this.activeOrders - 1);
+        return this.save({ session });
+      }),
+    };
+
+    const user = { _id: 'driver1', role: ROLES.DRIVER };
+
+    const dto = { id: 'delivery1' };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+    fetchDriverByUserId.mockResolvedValue(driver);
+    DtoService.order = vi.fn().mockReturnValue(dto);
+
+    const result = await deliverOrderWithTransaction('delivery1', user);
+    expect(driver.releaseFromOrder).toHaveBeenCalledWith(fakeSession);
+    expect(driver.save).toHaveBeenCalledWith({ session: fakeSession });
+    expect(driver.status).toBe(DRIVER_STATUS.IDLE);
+    expect(DtoService.order).toHaveBeenCalledWith(order);
+    expect(result).toEqual(dto);
+  });
+
+  it('should abort if driver not found', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.PICKEDUP,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+    };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(null);
+
+    await expect(deliverOrderWithTransaction('delivery1')).rejects.toThrow();
+
+    expect(fakeSession.abortTransaction).toHaveBeenCalled();
+  });
+
+  it('should emit ORDER_DELIVERED event', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.PICKEDUP,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    const driver = {
+      _id: 'driver1',
+      status: DRIVER_STATUS.DELIVERING,
+      activeOrders: 1,
+      save: vi.fn(),
+      releaseFromOrder: vi.fn().mockImplementation(function (session) {
+        this.status = DRIVER_STATUS.IDLE;
+        this.activeOrders = Math.max(0, this.activeOrders - 1);
+        return this.save({ session });
+      }),
+    };
+
+    const user = { role: ROLES.ADMIN };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    eventBus.emit = vi.fn();
+
+    await deliverOrderWithTransaction('delivery1', user);
+
+    expect(driver.releaseFromOrder).toHaveBeenCalledWith(fakeSession);
+    expect(driver.save).toHaveBeenCalledWith({ session: fakeSession });
+    expect(eventBus.emit).toHaveBeenCalledWith(
+      EVENT_BUS_EVENTS.ORDER_DELIVERED,
+      expect.objectContaining({
+        orderId: 'delivery1',
+        driverId: 'driver1',
+      })
+    );
+  });
+
+  it('should decrease driver activeOrders but not below 0', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.PICKEDUP,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    const driver = {
+      _id: 'driver1',
+      status: DRIVER_STATUS.DELIVERING,
+      activeOrders: 0,
+      save: vi.fn(),
+      releaseFromOrder: vi.fn().mockImplementation(function (session) {
+        this.status = DRIVER_STATUS.IDLE;
+        this.activeOrders = Math.max(0, this.activeOrders - 1);
+        return this.save({ session });
+      }),
+    };
+
+    const user = { role: ROLES.ADMIN };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    await deliverOrderWithTransaction('delivery1', user);
+
+    expect(driver.releaseFromOrder).toHaveBeenCalledWith(fakeSession);
+    expect(driver.save).toHaveBeenCalledWith({ session: fakeSession });
+    expect(driver.activeOrders).toBe(0);
+  });
+
+  it('should return full order for admin', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.PICKEDUP,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    const driver = {
+      _id: 'driver1',
+      status: DRIVER_STATUS.DELIVERING,
+      activeOrders: 1,
+      save: vi.fn(),
+      releaseFromOrder: vi.fn().mockImplementation(function (session) {
+        this.status = DRIVER_STATUS.IDLE;
+        this.activeOrders = Math.max(0, this.activeOrders - 1);
+        return this.save({ session });
+      }),
+    };
+
+    const user = { role: ROLES.ADMIN };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    const result = await deliverOrderWithTransaction('delivery1', user);
+
+    expect(result).toBe(order);
+  });
 });
 
 describe('cancelOrderWithTransaction', () => {
@@ -450,17 +805,22 @@ describe('cancelOrderWithTransaction', () => {
   it('should cancel order, release driver, set paymentStatus, and commit transaction', async () => {
     const order = {
       _id: 'delivery1',
-      status: 'assigned',
+      status: ORDER_STATUS.ASSIGNED,
       timeline: {},
       save: vi.fn(),
       driverId: 'driver1',
-      paymentStatus: 'pending',
+      paymentStatus: PAYMENT_STATUS.PENDING,
     };
 
     const driver = {
       _id: 'driver1',
-      status: 'assigned',
+      status: ORDER_STATUS.ASSIGNED,
       save: vi.fn(),
+      releaseFromOrder: vi.fn().mockImplementation(function (session) {
+        this.status = DRIVER_STATUS.IDLE;
+        this.activeOrders = Math.max(0, this.activeOrders - 1);
+        return this.save({ session });
+      }),
     };
 
     const user = {
@@ -476,11 +836,11 @@ describe('cancelOrderWithTransaction', () => {
     expect(mongoose.startSession).toHaveBeenCalled();
     expect(fakeSession.startTransaction).toHaveBeenCalled();
 
-    expect(driver.status).toBe('idle');
+    expect(driver.status).toBe(DRIVER_STATUS.IDLE);
     expect(driver.save).toHaveBeenCalledWith({ session: fakeSession });
 
-    expect(order.status).toBe('cancelled');
-    expect(order.paymentStatus).toBe('failed');
+    expect(order.status).toBe(ORDER_STATUS.CANCELLED);
+    expect(order.paymentStatus).toBe(PAYMENT_STATUS.FAILED);
     expect(order.cancelReason).toBe('Customer requested');
     expect(order.timeline.cancelledAt).toBeInstanceOf(Date);
     expect(order.save).toHaveBeenCalledWith({ session: fakeSession });
@@ -494,11 +854,11 @@ describe('cancelOrderWithTransaction', () => {
   it('should cancel order even if no driver is assigned', async () => {
     const order = {
       _id: 'delivery2',
-      status: 'created',
+      status: ORDER_STATUS.CREATED,
       timeline: {},
       save: vi.fn(),
       driverId: null,
-      paymentStatus: 'pending',
+      paymentStatus: PAYMENT_STATUS.PENDING,
     };
 
     const user = {
@@ -510,8 +870,8 @@ describe('cancelOrderWithTransaction', () => {
 
     await cancelOrderWithTransaction('delivery2', 'No longer needed', user);
 
-    expect(order.status).toBe('cancelled');
-    expect(order.paymentStatus).toBe('failed');
+    expect(order.status).toBe(ORDER_STATUS.CANCELLED);
+    expect(order.paymentStatus).toBe(PAYMENT_STATUS.FAILED);
     expect(order.cancelReason).toBe('No longer needed');
     expect(order.save).toHaveBeenCalledWith({ session: fakeSession });
 
@@ -522,7 +882,7 @@ describe('cancelOrderWithTransaction', () => {
   it('should throw error if order already delivered or cancelled', async () => {
     const order = {
       _id: 'delivery3',
-      status: 'delivered',
+      status: ORDER_STATUS.DELIVERED,
       timeline: {},
       save: vi.fn(),
     };
@@ -540,6 +900,190 @@ describe('cancelOrderWithTransaction', () => {
     expect(fakeSession.abortTransaction).toHaveBeenCalled();
     expect(fakeSession.endSession).toHaveBeenCalled();
   });
+
+  it('should abort if driver not found', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.ASSIGNED,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(null);
+
+    await expect(cancelOrderWithTransaction('delivery1', 'reason')).rejects.toThrow();
+
+    expect(fakeSession.abortTransaction).toHaveBeenCalled();
+    expect(fakeSession.endSession).toHaveBeenCalled();
+  });
+
+  it('should throw if driver is not assigned to the order', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.ASSIGNED,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    const driver = {
+      _id: 'driver2',
+      status: ORDER_STATUS.ASSIGNED,
+      activeOrders: 1,
+      save: vi.fn(),
+    };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    await expect(cancelOrderWithTransaction('delivery1', 'reason')).rejects.toThrow();
+
+    expect(fakeSession.abortTransaction).toHaveBeenCalled();
+  });
+
+  it('should decrement activeOrders but not go below 0', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.ASSIGNED,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    const driver = {
+      _id: 'driver1',
+      status: ORDER_STATUS.ASSIGNED,
+      activeOrders: 0, // edge case
+      save: vi.fn(),
+    };
+
+    const user = {
+      _id: 'driver1',
+      role: ROLES.DRIVER,
+    };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    await cancelOrderWithTransaction('delivery1', 'reason', user);
+
+    expect(driver.activeOrders).toBe(0);
+  });
+
+  it('should emit ORDER_CANCELLED event', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.ASSIGNED,
+      timeline: {},
+      save: vi.fn(),
+      driverId: null,
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    const driver = {
+      _id: 'driver1',
+      status: ORDER_STATUS.ASSIGNED,
+      save: vi.fn(),
+      releaseFromOrder: vi.fn().mockImplementation(function (session) {
+        this.status = DRIVER_STATUS.IDLE;
+        this.activeOrders = Math.max(0, this.activeOrders - 1);
+        return this.save({ session });
+      }),
+    };
+    const user = {
+      _id: 'mahdi123',
+      role: 'admin',
+    };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+    eventBus.emit = vi.fn();
+
+    await cancelOrderWithTransaction('delivery1', 'test reason', user);
+
+    expect(eventBus.emit).toHaveBeenCalledWith(EVENT_BUS_EVENTS.ORDER_CANCELLED, {
+      orderId: 'delivery1',
+      reason: 'test reason',
+    });
+  });
+
+  it('should return DTO when user is driver', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.ASSIGNED,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    const driver = {
+      _id: 'driver1',
+      status: ORDER_STATUS.ASSIGNED,
+      activeOrders: 1,
+      save: vi.fn(),
+      releaseFromOrder: vi.fn().mockImplementation(function (session) {
+        this.status = DRIVER_STATUS.IDLE;
+        this.activeOrders = Math.max(0, this.activeOrders - 1);
+        return this.save({ session });
+      }),
+    };
+
+    const user = {
+      _id: 'driver1',
+      role: ROLES.DRIVER,
+    };
+
+    const dto = { id: 'delivery1' };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByUserId.mockResolvedValue(driver);
+    DtoService.order = vi.fn().mockReturnValue(dto);
+
+    const result = await cancelOrderWithTransaction('delivery1', 'reason', user);
+
+    // DTO check
+    expect(DtoService.order).toHaveBeenCalledWith(order);
+    expect(result).toEqual(dto);
+
+    // driver behavior
+    expect(driver.releaseFromOrder).toHaveBeenCalled();
+
+    // order updates
+    expect(order.status).toBe(ORDER_STATUS.CANCELLED);
+    expect(order.paymentStatus).toBe(PAYMENT_STATUS.FAILED);
+    expect(order.timeline.cancelledAt).toBeInstanceOf(Date);
+
+    // persistence
+    expect(order.save).toHaveBeenCalled();
+  });
+
+  it('should not set cancelReason if not provided', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.ASSIGNED,
+      timeline: {},
+      save: vi.fn(),
+      driverId: null,
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    const user = {
+      _id: 'admin1',
+      role: ROLES.ADMIN,
+    };
+
+    OrderModel.findById.mockResolvedValue(order);
+
+    await cancelOrderWithTransaction('delivery1', null, user);
+
+    expect(order.cancelReason).toBeUndefined();
+  });
 });
 
 describe('updateOrderInfo', () => {
@@ -552,7 +1096,7 @@ describe('updateOrderInfo', () => {
     const deliveryRequestData = { amountToCollect: 200 };
     const existingDelivery = {
       _id: deliveryId,
-      status: 'created',
+      status: ORDER_STATUS.CREATED,
       amountToCollect: 100,
       deliveryPrice: { total: 50 },
     };
@@ -584,7 +1128,7 @@ describe('updateOrderInfo', () => {
     const deliveryId = 'delivery123';
     const existingDelivery = {
       _id: deliveryId,
-      status: 'created',
+      status: ORDER_STATUS.CREATED,
       amountToCollect: 100,
       deliveryPrice: { total: 50 },
     };
@@ -599,7 +1143,7 @@ describe('updateOrderInfo', () => {
     const deliveryId = 'delivery123';
     const existingDelivery = {
       _id: deliveryId,
-      status: 'delivered',
+      status: ORDER_STATUS.DELIVERED,
       amountToCollect: 100,
       deliveryPrice: { total: 50 },
     };
@@ -619,7 +1163,7 @@ describe('getOrderById', () => {
 
   it('should return order if found', async () => {
     const orderId = 'order123';
-    const mockOrder = { _id: orderId, status: 'created' };
+    const mockOrder = { _id: orderId, status: ORDER_STATUS.CREATED };
 
     OrderModel.findById.mockResolvedValue(mockOrder);
 
@@ -663,8 +1207,8 @@ describe('getAllOrders', () => {
 
   it('should return orders filtered by status + date range', async () => {
     const mockOrders = [
-      { _id: '4', status: 'assigned' },
-      { _id: '2', status: 'assigned' },
+      { _id: '4', status: ORDER_STATUS.ASSIGNED },
+      { _id: '2', status: ORDER_STATUS.ASSIGNED },
     ];
 
     // Mock date helpers
@@ -672,13 +1216,13 @@ describe('getAllOrders', () => {
     DateHelper.getEndDateUTC.mockReturnValue('2026-01-10T23:59:59Z');
 
     const searchQuery = {
-      status: 'assigned',
+      status: ORDER_STATUS.ASSIGNED,
       startDate: '2026-01-01',
       endDate: '2026-01-10',
     };
 
     const expectedQuery = {
-      status: 'assigned',
+      status: ORDER_STATUS.ASSIGNED,
       createdAt: {
         $gte: '2026-01-01T00:00:00Z',
         $lte: '2026-01-10T23:59:59Z',
