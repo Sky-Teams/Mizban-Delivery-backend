@@ -51,7 +51,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/businesses', authorizeRole(ROLES.ADMIN), businessRoutes);
 app.use('/api/business-customers', authorizeRole(ROLES.ADMIN), businessCustomerRoutes);
 app.use('/api/offers', offerRoutes);
-app.use('/api/logs', authorizeRole('admin'), logRoutes);
+app.use('/api/logs', authorizeRole(ROLES.ADMIN), logRoutes);
 
 //#endregion
 
