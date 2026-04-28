@@ -244,7 +244,7 @@ describe('Notification Service', () => {
       getAllAdmins.mockResolvedValue([]);
 
       await createNotificationForAdmins(
-        SOCKET_EVENTS.ADMIN.SYSTEM,
+        SOCKET_EVENTS.ADMIN.NOTIFICATION,
         'New Order',
         'Order 123 created'
       );
@@ -257,7 +257,7 @@ describe('Notification Service', () => {
       getAllAdmins.mockResolvedValue(admins);
 
       await createNotificationForAdmins(
-        SOCKET_EVENTS.ADMIN.SYSTEM,
+        SOCKET_EVENTS.ADMIN.NOTIFICATION,
         'New Order',
         'Order 123 created'
       );
@@ -266,13 +266,13 @@ describe('Notification Service', () => {
       expect(NotificationModel.insertMany).toHaveBeenCalledWith([
         {
           user: '1',
-          type: SOCKET_EVENTS.ADMIN.SYSTEM,
+          type: SOCKET_EVENTS.ADMIN.NOTIFICATION,
           title: 'New Order',
           message: 'Order 123 created',
         },
         {
           user: '2',
-          type: SOCKET_EVENTS.ADMIN.SYSTEM,
+          type: SOCKET_EVENTS.ADMIN.NOTIFICATION,
           title: 'New Order',
           message: 'Order 123 created',
         },
