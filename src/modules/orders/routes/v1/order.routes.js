@@ -7,6 +7,7 @@ import {
   getOrders,
   pickupOrder,
   updateOrder,
+  ordersStatistics,
 } from '../../controllers/v1/order.controller.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
 import express from 'express';
@@ -18,6 +19,7 @@ import { assignDriverValidator, cancelOrderValidator } from '../../dto/order-act
 import { orderQueryValidator } from '#modules/orders/dto/order-query-validator.js';
 import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { ROLES } from '#shared/utils/enums.js';
+import { orderStatisticsQueryValidator } from '../../dto/order-statistics-query-validator.js';
 
 const router = express.Router();
 
@@ -60,7 +62,18 @@ router.put(
   validate(updateOrderValidator),
   asyncHandler(updateOrder)
 );
-router.get('/', authorizeRole(ROLES.ADMIN), validate(orderQueryValidator), asyncHandler(getOrders));
+router.get(
+  '/',
+  authorizeRole(ROLES.ADMIN, ROLES.DRIVER),
+  validate(orderQueryValidator),
+  asyncHandler(getOrders)
+);
+router.get(
+  '/statistics',
+  authorizeRole(ROLES.ADMIN, ROLES.DRIVER),
+  validate(orderStatisticsQueryValidator),
+  asyncHandler(ordersStatistics)
+);
 router.get('/:id', authorizeRole(ROLES.ADMIN), validate(mongoIdValidator), asyncHandler(getOrder));
 
 export default router;
