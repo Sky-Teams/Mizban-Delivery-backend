@@ -18,5 +18,6 @@ export default defineConfig({
     testTimeout: 30000,
     hookTimeout: 30000,
     teardownTimeout: 30000,
+    setupFiles: ['./vitest.setup.js'], // This config add the .env in our tests. In future we can add a .env for our tests if needed.
   },
 });
