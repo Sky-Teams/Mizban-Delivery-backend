@@ -14,11 +14,14 @@ import {
   ORDER_STATUS,
   PAYMENT_STATUS,
   ROLES,
+  OFFER_STATUS,
 } from '#shared/utils/enums.js';
 import { DateHelper } from '#shared/utils/date.helper.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
 import { orderUpdateQuery } from '#shared/utils/queryBuilder.js';
 import { OrderModel } from '../../models/order.model.js';
+import mongoose from 'mongoose';
+import { OfferModel } from '#modules/offers/index.js';
 
 //#region Admin Services
 
@@ -340,6 +343,55 @@ export const cancelAnOrder = async (session, orderId, reason, user) => {
   return order;
 };
 
+export const getOrdersStatistics = async (driverId) => {
+  const aggregateQuery = [];
+  if (driverId) {
+    aggregateQuery.push({ $match: { driverId: new mongoose.Types.ObjectId(driverId) } });
+  }
+
+  aggregateQuery.push(
+    {
+      $group: {
+        _id: null,
+        total: { $sum: 1 },
+        created: { $sum: { $cond: [{ $eq: ['$status', ORDER_STATUS.CREATED] }, 1, 0] } },
+        assigned: { $sum: { $cond: [{ $eq: ['$status', ORDER_STATUS.ASSIGNED] }, 1, 0] } },
+        pickedUp: { $sum: { $cond: [{ $eq: ['$status', ORDER_STATUS.PICKEDUP] }, 1, 0] } },
+        delivered: { $sum: { $cond: [{ $eq: ['$status', ORDER_STATUS.DELIVERED] }, 1, 0] } },
+        cancelled: { $sum: { $cond: [{ $eq: ['$status', ORDER_STATUS.CANCELLED] }, 1, 0] } },
+      },
+    },
+    { $project: { _id: 0 } }
+  );
+
+  const statistics = await OrderModel.aggregate(aggregateQuery);
+
+  const offerAggregateQuery = [];
+
+  if (driverId) {
+    offerAggregateQuery.push({ $match: { driver: new mongoose.Types.ObjectId(driverId) } });
+  }
+
+  offerAggregateQuery.push(
+    {
+      $group: {
+        _id: null,
+        totalOffers: { $sum: 1 },
+        accepted: { $sum: { $cond: [{ $eq: ['$status', OFFER_STATUS.ACCEPTED] }, 1, 0] } },
+        rejected: { $sum: { $cond: [{ $eq: ['$status', OFFER_STATUS.REJECTED] }, 1, 0] } },
+        pending: { $sum: { $cond: [{ $eq: ['$status', OFFER_STATUS.PENDING] }, 1, 0] } },
+        expired: { $sum: { $cond: [{ $eq: ['$status', OFFER_STATUS.EXPIRED] }, 1, 0] } },
+      },
+    },
+    { $project: { _id: 0 } }
+  );
+
+  const offerStatistics = await OfferModel.aggregate(offerAggregateQuery);
+
+  const result = [...statistics, ...offerStatistics];
+
+  return result;
+};
 //#endregion
 
 /** Add drivers info (id, eta, distance ) in related order record */
