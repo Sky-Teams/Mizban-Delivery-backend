@@ -1067,7 +1067,7 @@ describe('Order API v1 Integration', () => {
     });
   });
 
-  describe('Integration - Orders Statistics', () => {
+  describe('GET /api/orders/statistics', () => {
     beforeEach(async () => {
       vi.clearAllMocks();
       await clearDB();
@@ -1153,7 +1153,23 @@ describe('Order API v1 Integration', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data).toEqual({});
+
+      expect(res.body.data).toEqual(
+        expect.objectContaining({
+          total: 0,
+          created: 0,
+          assigned: 0,
+          pickedUp: 0,
+          delivered: 0,
+          cancelled: 0,
+
+          totalOffers: 0,
+          accepted: 0,
+          rejected: 0,
+          pending: 0,
+          expired: 0,
+        })
+      );
     });
 
     it('should filter statistics using driverId query (admin)', async () => {
