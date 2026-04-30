@@ -344,12 +344,12 @@ export const cancelAnOrder = async (session, orderId, reason, user) => {
 };
 
 export const getOrdersStatistics = async (driverId) => {
-  const aggregateQuery = [];
-  if (driverId) {
-    aggregateQuery.push({ $match: { driverId: new mongoose.Types.ObjectId(driverId) } });
-  }
+  const matchOrder = driverId ? { driverId: new mongoose.Types.ObjectId(driverId) } : {};
 
-  aggregateQuery.push(
+  const matchOffer = driverId ? { driver: new mongoose.Types.ObjectId(driverId) } : {};
+
+  const [orderStats] = await OrderModel.aggregate([
+    { $match: matchOrder },
     {
       $group: {
         _id: null,
@@ -361,18 +361,11 @@ export const getOrdersStatistics = async (driverId) => {
         cancelled: { $sum: { $cond: [{ $eq: ['$status', ORDER_STATUS.CANCELLED] }, 1, 0] } },
       },
     },
-    { $project: { _id: 0 } }
-  );
+    { $project: { _id: 0 } },
+  ]);
 
-  const statistics = await OrderModel.aggregate(aggregateQuery);
-
-  const offerAggregateQuery = [];
-
-  if (driverId) {
-    offerAggregateQuery.push({ $match: { driver: new mongoose.Types.ObjectId(driverId) } });
-  }
-
-  offerAggregateQuery.push(
+  const [offerStats] = await OfferModel.aggregate([
+    { $match: matchOffer },
     {
       $group: {
         _id: null,
@@ -383,14 +376,23 @@ export const getOrdersStatistics = async (driverId) => {
         expired: { $sum: { $cond: [{ $eq: ['$status', OFFER_STATUS.EXPIRED] }, 1, 0] } },
       },
     },
-    { $project: { _id: 0 } }
-  );
+    { $project: { _id: 0 } },
+  ]);
 
-  const offerStatistics = await OfferModel.aggregate(offerAggregateQuery);
+  return {
+    total: orderStats?.total || 0,
+    created: orderStats?.created || 0,
+    assigned: orderStats?.assigned || 0,
+    pickedUp: orderStats?.pickedUp || 0,
+    delivered: orderStats?.delivered || 0,
+    cancelled: orderStats?.cancelled || 0,
 
-  const result = [...statistics, ...offerStatistics];
-
-  return result;
+    totalOffers: offerStats?.totalOffers || 0,
+    accepted: offerStats?.accepted || 0,
+    rejected: offerStats?.rejected || 0,
+    pending: offerStats?.pending || 0,
+    expired: offerStats?.expired || 0,
+  };
 };
 //#endregion
 
