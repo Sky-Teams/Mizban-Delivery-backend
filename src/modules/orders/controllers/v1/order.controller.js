@@ -7,8 +7,12 @@ import {
   updateOrderInfo,
   getOrderById,
   getAllOrders,
+  getOrdersStatistics,
 } from '../../services/v1/order.service.js';
-import { unauthorized } from '#shared/errors/error.js';
+import { notFound, unauthorized } from '#shared/errors/error.js';
+import { ROLES } from '#shared/utils/enums.js';
+import { fetchDriverByUserId } from '#modules/drivers/index.js';
+import { DtoService } from '#shared/utils/dtoService.js';
 
 export const createOrder = async (req, res) => {
   if (!req.user) throw unauthorized();
@@ -63,6 +67,26 @@ export const cancelOrder = async (req, res) => {
   res.status(200).json({ success: true, data: updatedOrder });
 };
 
+export const ordersStatistics = async (req, res) => {
+  if (!req.user) throw unauthorized();
+
+  let driverId = null;
+  // If request come from driver, we find the current driver Id to ensure that driver only see his own data.
+  if (req.user.role === ROLES.DRIVER) {
+    const driver = await fetchDriverByUserId(req.user._id);
+    if (!driver) throw notFound('driver');
+    driverId = driver._id;
+  }
+  // Request come from admin, so we check the query parameter for driverId, if null, meaning admin want to see all orders statistics data.
+  else if (req.query?.driverId) {
+    driverId = req.query?.driverId;
+  }
+
+  const statistics = await getOrdersStatistics(driverId);
+
+  res.status(200).json({ success: true, data: statistics });
+};
+
 export const getOrders = async (req, res) => {
   if (!req.user) throw unauthorized();
 
@@ -80,7 +104,18 @@ export const getOrders = async (req, res) => {
     endDate: req.query?.endDate,
   };
 
-  const { orders, totalOrders, totalPage } = await getAllOrders(page, limit, searchQuery);
+  const isDriver = req.user.role === ROLES.DRIVER;
+
+  // If the request come from driver, so we inject the current driverId into the searchQuery to ensure that driver only see his own orders
+  if (isDriver) {
+    const driver = await fetchDriverByUserId(req.user._id);
+    if (!driver) throw notFound('driver');
+    searchQuery.driverId = driver._id;
+  }
+
+  let { orders, totalOrders, totalPage } = await getAllOrders(page, limit, searchQuery);
+
+  if (isDriver) orders = orders.map((order) => DtoService.order(order));
 
   res.status(200).json({
     success: true,
