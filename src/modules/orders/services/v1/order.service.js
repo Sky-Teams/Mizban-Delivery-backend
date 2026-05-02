@@ -18,7 +18,7 @@ import {
 } from '#shared/utils/enums.js';
 import { DateHelper } from '#shared/utils/date.helper.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
-import { orderUpdateQuery } from '#shared/utils/queryBuilder.js';
+import { countByStatus, orderUpdateQuery } from '#shared/utils/queryBuilder.js';
 import { OrderModel } from '../../models/order.model.js';
 import mongoose from 'mongoose';
 import { OfferModel } from '#modules/offers/index.js';
@@ -344,56 +344,65 @@ export const cancelAnOrder = async (session, orderId, reason, user) => {
 };
 
 export const getOrdersStatistics = async (driverId) => {
-  const matchOrder = driverId ? { driverId: new mongoose.Types.ObjectId(driverId) } : {};
+  const driverObjectId = driverId ? new mongoose.Types.ObjectId(driverId) : null;
 
-  const matchOffer = driverId ? { driver: new mongoose.Types.ObjectId(driverId) } : {};
+  const filterOrder = driverObjectId ? { driverId: driverObjectId } : {};
+  const filterOffer = driverObjectId ? { driver: driverObjectId } : {};
 
-  const [orderStats] = await OrderModel.aggregate([
-    { $match: matchOrder },
+  const orderAggregateQuery = [
+    { $match: filterOrder },
     {
       $group: {
         _id: null,
         total: { $sum: 1 },
-        created: { $sum: { $cond: [{ $eq: ['$status', ORDER_STATUS.CREATED] }, 1, 0] } },
-        assigned: { $sum: { $cond: [{ $eq: ['$status', ORDER_STATUS.ASSIGNED] }, 1, 0] } },
-        pickedUp: { $sum: { $cond: [{ $eq: ['$status', ORDER_STATUS.PICKEDUP] }, 1, 0] } },
-        delivered: { $sum: { $cond: [{ $eq: ['$status', ORDER_STATUS.DELIVERED] }, 1, 0] } },
-        cancelled: { $sum: { $cond: [{ $eq: ['$status', ORDER_STATUS.CANCELLED] }, 1, 0] } },
+        created: countByStatus(ORDER_STATUS.CREATED),
+        assigned: countByStatus(ORDER_STATUS.ASSIGNED),
+        pickedUp: countByStatus(ORDER_STATUS.PICKEDUP),
+        delivered: countByStatus(ORDER_STATUS.DELIVERED),
+        cancelled: countByStatus(ORDER_STATUS.CANCELLED),
       },
     },
     { $project: { _id: 0 } },
-  ]);
+  ];
 
-  const [offerStats] = await OfferModel.aggregate([
-    { $match: matchOffer },
+  const offerAggregateQuery = [
+    { $match: filterOffer },
     {
       $group: {
         _id: null,
         totalOffers: { $sum: 1 },
-        accepted: { $sum: { $cond: [{ $eq: ['$status', OFFER_STATUS.ACCEPTED] }, 1, 0] } },
-        rejected: { $sum: { $cond: [{ $eq: ['$status', OFFER_STATUS.REJECTED] }, 1, 0] } },
-        pending: { $sum: { $cond: [{ $eq: ['$status', OFFER_STATUS.PENDING] }, 1, 0] } },
-        expired: { $sum: { $cond: [{ $eq: ['$status', OFFER_STATUS.EXPIRED] }, 1, 0] } },
+        accepted: countByStatus(OFFER_STATUS.ACCEPTED),
+        rejected: countByStatus(OFFER_STATUS.REJECTED),
+        pending: countByStatus(OFFER_STATUS.PENDING),
+        expired: countByStatus(OFFER_STATUS.EXPIRED),
       },
     },
     { $project: { _id: 0 } },
+  ];
+
+  const [orderResult, offerResult] = await Promise.all([
+    OrderModel.aggregate(orderAggregateQuery),
+    OfferModel.aggregate(offerAggregateQuery),
   ]);
 
-  return {
-    total: orderStats?.total || 0,
-    created: orderStats?.created || 0,
-    assigned: orderStats?.assigned || 0,
-    pickedUp: orderStats?.pickedUp || 0,
-    delivered: orderStats?.delivered || 0,
-    cancelled: orderStats?.cancelled || 0,
+  const orderStats = orderResult[0] || {};
+  const offerStats = offerResult[0] || {};
 
-    totalOffers: offerStats?.totalOffers || 0,
-    accepted: offerStats?.accepted || 0,
-    rejected: offerStats?.rejected || 0,
-    pending: offerStats?.pending || 0,
-    expired: offerStats?.expired || 0,
+  return {
+    totalOrders: orderStats.total ?? 0,
+    created: orderStats.created ?? 0,
+    assigned: orderStats.assigned ?? 0,
+    pickedUp: orderStats.pickedUp ?? 0,
+    delivered: orderStats.delivered ?? 0,
+    cancelled: orderStats.cancelled ?? 0,
+    totalOffers: offerStats.totalOffers ?? 0,
+    accepted: offerStats.accepted ?? 0,
+    rejected: offerStats.rejected ?? 0,
+    pending: offerStats.pending ?? 0,
+    expired: offerStats.expired ?? 0,
   };
 };
+
 //#endregion
 
 /** Add drivers info (id, eta, distance ) in related order record */
