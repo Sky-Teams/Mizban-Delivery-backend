@@ -1101,7 +1101,7 @@ describe('Order API v1 Integration', () => {
 
       expect(res.body.data).toEqual(
         expect.objectContaining({
-          total: 3,
+          totalOrders: 3,
           created: 1,
           delivered: 1,
           cancelled: 1,
@@ -1139,7 +1139,7 @@ describe('Order API v1 Integration', () => {
 
       expect(res.body.data).toEqual(
         expect.objectContaining({
-          total: 2,
+          totalOrders: 2,
           created: 1,
           delivered: 1,
         })
@@ -1156,7 +1156,7 @@ describe('Order API v1 Integration', () => {
 
       expect(res.body.data).toEqual(
         expect.objectContaining({
-          total: 0,
+          totalOrders: 0,
           created: 0,
           assigned: 0,
           pickedUp: 0,
@@ -1198,7 +1198,7 @@ describe('Order API v1 Integration', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data).toEqual(
         expect.objectContaining({
-          total: 2,
+          totalOrders: 2,
           created: 1,
           delivered: 1,
         })
