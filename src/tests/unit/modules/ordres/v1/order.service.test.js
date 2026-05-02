@@ -68,6 +68,7 @@ vi.mock('#shared/utils/math.helper.js', () => ({
 vi.mock('#shared/utils/queryBuilder.js', () => ({
   orderUpdateQuery: vi.fn(),
   driverQueryBuilder: vi.fn(),
+  countByStatus: vi.fn(() => ({ $sum: 1 })),
 }));
 
 vi.mock('#shared/utils/date.helper.js', () => ({
@@ -1261,7 +1262,7 @@ describe('getAllOrders', () => {
   });
 });
 
-describe.only('getOrdersStatistics', () => {
+describe('getOrdersStatistics', () => {
   it('should return global orders statistics (no driver filter)', async () => {
     const mockAggregateResult = [
       {
@@ -1294,7 +1295,7 @@ describe.only('getOrdersStatistics', () => {
 
     expect(result).toEqual(
       expect.objectContaining({
-        total: 10,
+        totalOrders: 10,
         created: 2,
         assigned: 3,
         pickedUp: 2,
@@ -1336,7 +1337,7 @@ describe.only('getOrdersStatistics', () => {
 
     expect(result).toEqual(
       expect.objectContaining({
-        total: 5,
+        totalOrders: 5,
         created: 1,
         assigned: 1,
         pickedUp: 1,
@@ -1353,7 +1354,7 @@ describe.only('getOrdersStatistics', () => {
 
     expect(result).toEqual(
       expect.objectContaining({
-        total: 0,
+        totalOrders: 0,
         created: 0,
         assigned: 0,
         pickedUp: 0,
