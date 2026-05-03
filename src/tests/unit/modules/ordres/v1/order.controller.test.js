@@ -3,6 +3,7 @@ import {
   assignDriver,
   assignDriverToOrderWithTransaction,
   cancelOrderWithTransaction,
+  returnOrderWithTransaction,
   cancelOrder,
   createOrder,
   addOrder,
@@ -16,8 +17,10 @@ import {
   getAllOrders,
   getOrder,
   getOrderById,
+  returnOrder,
 } from '#modules/orders/index.js';
 import { AppError, notFound } from '#shared/errors/error.js';
+import { ORDER_STATUS } from '#shared/utils/enums.js';
 
 // Mock the service
 vi.mock('#modules/orders/services/v1/order.service.js', () => ({
@@ -27,6 +30,7 @@ vi.mock('#modules/orders/services/v1/order.service.js', () => ({
   pickupOrderWithTransaction: vi.fn(),
   deliverOrderWithTransaction: vi.fn(),
   cancelOrderWithTransaction: vi.fn(),
+  returnOrderWithTransaction: vi.fn(),
   getAllOrders: vi.fn(),
   getOrderById: vi.fn(),
 }));
@@ -78,7 +82,7 @@ describe('Controller Order - create order', () => {
       paymentType: req.body.paymentType,
       amountToCollect: req.body.amountToCollect,
       finalPrice: 100,
-      status: 'created',
+      status: ORDER_STATUS.CREATED,
       timeline: {},
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -103,7 +107,7 @@ describe('Controller Order - create order', () => {
       ...req.body,
       _id: '1',
       finalPrice: 100,
-      status: 'assigned',
+      status: ORDER_STATUS.ASSIGNED,
       timeline: { assignedAt: new Date() },
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -119,7 +123,7 @@ describe('Controller Order - create order', () => {
       success: true,
       data: mockDeliveryRequest,
     });
-    expect(mockDeliveryRequest.status).toBe('assigned');
+    expect(mockDeliveryRequest.status).toBe(ORDER_STATUS.ASSIGNED);
     expect(mockDeliveryRequest.timeline.assignedAt).toBeDefined();
   });
 
@@ -141,7 +145,7 @@ describe('Controller Order - create order', () => {
       items: calculatedItems,
       _id: '1',
       finalPrice: 70, // amountToCollect + deliveryPrice.total
-      status: 'created',
+      status: ORDER_STATUS.CREATED,
       timeline: {},
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -189,7 +193,7 @@ describe('Controller Order - updateOrder', () => {
     req = {
       user: { _id: 'user1' },
       params: { id: 'delivery123' },
-      body: { status: 'assigned' },
+      body: { status: ORDER_STATUS.ASSIGNED },
     };
 
     res = {
@@ -205,7 +209,7 @@ describe('Controller Order - updateOrder', () => {
   });
 
   it('should call service and return 200 response with updated order', async () => {
-    const mockUpdatedDelivery = { _id: 'delivery123', status: 'assigned' };
+    const mockUpdatedDelivery = { _id: 'delivery123', status: ORDER_STATUS.ASSIGNED };
     updateOrderInfo.mockResolvedValue(mockUpdatedDelivery);
 
     await updateOrder(req, res);
@@ -226,8 +230,8 @@ describe('Controller Order - updateOrder', () => {
   });
 
   it('should update order with partial fields', async () => {
-    req.body = { status: 'pickedUp' }; // partial update
-    const mockUpdatedDelivery = { _id: 'delivery123', status: 'pickedUp' };
+    req.body = { status: ORDER_STATUS.PICKEDUP }; // partial update
+    const mockUpdatedDelivery = { _id: 'delivery123', status: ORDER_STATUS.PICKEDUP };
     updateOrderInfo.mockResolvedValue(mockUpdatedDelivery);
 
     await updateOrder(req, res);
@@ -266,7 +270,11 @@ describe('Controller Order - assignDriver', () => {
   });
 
   it('should assign driver and return 200 response', async () => {
-    const mockDelivery = { _id: 'delivery123', driverId: 'driver456', status: 'assigned' };
+    const mockDelivery = {
+      _id: 'delivery123',
+      driverId: 'driver456',
+      status: ORDER_STATUS.ASSIGNED,
+    };
     assignDriverToOrderWithTransaction.mockResolvedValue(mockDelivery);
 
     await assignDriver(req, res);
@@ -291,7 +299,11 @@ describe('Controller Order - assignDriver', () => {
 
   it('should assign driver with a different driverId', async () => {
     req.body.driverId = 'driver789';
-    const mockDelivery = { _id: 'delivery123', driverId: 'driver789', status: 'assigned' };
+    const mockDelivery = {
+      _id: 'delivery123',
+      driverId: 'driver789',
+      status: ORDER_STATUS.ASSIGNED,
+    };
     assignDriverToOrderWithTransaction.mockResolvedValue(mockDelivery);
 
     await assignDriver(req, res);
@@ -331,7 +343,7 @@ describe('Controller Order - pickupOrder', () => {
   it('should pick up delivery and return 200 response', async () => {
     const mockDelivery = {
       _id: 'delivery123',
-      status: 'pickedUp',
+      status: ORDER_STATUS.PICKEDUP,
       timeline: { pickedUpAt: new Date() },
     };
     pickupOrderWithTransaction.mockResolvedValue(mockDelivery);
@@ -355,7 +367,11 @@ describe('Controller Order - pickupOrder', () => {
 
   it('should ensure delivery status is updated to pickedUp', async () => {
     const now = new Date();
-    const mockDelivery = { _id: 'delivery123', status: 'pickedUp', timeline: { pickedUpAt: now } };
+    const mockDelivery = {
+      _id: 'delivery123',
+      status: ORDER_STATUS.PICKEDUP,
+      timeline: { pickedUpAt: now },
+    };
     pickupOrderWithTransaction.mockResolvedValue(mockDelivery);
 
     await pickupOrder(req, res);
@@ -363,7 +379,7 @@ describe('Controller Order - pickupOrder', () => {
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       data: expect.objectContaining({
-        status: 'pickedUp',
+        status: ORDER_STATUS.PICKEDUP,
         timeline: expect.objectContaining({ pickedUpAt: now }),
       }),
     });
@@ -396,7 +412,7 @@ describe('Controller Order - deliverOrder', () => {
   it('should deliver order and return 200 response', async () => {
     const mockDelivery = {
       _id: 'delivery123',
-      status: 'delivered',
+      status: ORDER_STATUS.DELIVERED,
       paymentStatus: 'paid',
     };
 
@@ -422,7 +438,7 @@ describe('Controller Order - deliverOrder', () => {
   it('should return delivered status in response', async () => {
     const mockDelivery = {
       _id: 'delivery123',
-      status: 'delivered',
+      status: ORDER_STATUS.DELIVERED,
       timeline: { deliveredAt: new Date() },
     };
 
@@ -433,7 +449,7 @@ describe('Controller Order - deliverOrder', () => {
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       data: expect.objectContaining({
-        status: 'delivered',
+        status: ORDER_STATUS.DELIVERED,
       }),
     });
   });
@@ -466,7 +482,7 @@ describe('Controller Order - cancelOrder', () => {
   it('should cancel order and return 200 response', async () => {
     const mockDelivery = {
       _id: 'delivery123',
-      status: 'cancelled',
+      status: ORDER_STATUS.CANCELLED,
       cancelReason: 'Customer requested cancellation',
     };
 
@@ -500,7 +516,7 @@ describe('Controller Order - cancelOrder', () => {
 
     const mockDelivery = {
       _id: 'delivery123',
-      status: 'cancelled',
+      status: ORDER_STATUS.CANCELLED,
       cancelReason: null,
     };
 
@@ -509,6 +525,84 @@ describe('Controller Order - cancelOrder', () => {
     await cancelOrder(req, res);
 
     expect(cancelOrderWithTransaction).toHaveBeenCalledWith(req.params.id, undefined, req.user);
+
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockDelivery,
+    });
+  });
+});
+
+describe('Controller Order - returnOrder', () => {
+  let req, res;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    req = {
+      user: { _id: 'user1' },
+      params: { id: 'delivery123' },
+      body: { cancelReason: 'No response from customer' },
+    };
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+  });
+
+  it('should throw unauthorized error if user is missing', async () => {
+    req.user = null;
+
+    await expect(returnOrder(req, res)).rejects.toThrow();
+  });
+
+  it('should cancel order and return 200 response', async () => {
+    const mockDelivery = {
+      _id: 'delivery123',
+      status: ORDER_STATUS.RETURNED,
+      cancelReason: 'No response from customer',
+    };
+
+    returnOrderWithTransaction.mockResolvedValue(mockDelivery);
+
+    await returnOrder(req, res);
+
+    expect(returnOrderWithTransaction).toHaveBeenCalledWith(
+      req.params.id,
+      req.body.cancelReason,
+      req.user
+    );
+
+    expect(res.status).toHaveBeenCalledWith(200);
+
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockDelivery,
+    });
+  });
+
+  it('should propagate error from service', async () => {
+    const error = new Error('Return not allowed');
+    returnOrderWithTransaction.mockRejectedValue(error);
+
+    await expect(returnOrder(req, res)).rejects.toThrow('Return not allowed');
+  });
+
+  it('should return order even if reason is undefined', async () => {
+    req.body = {};
+
+    const mockDelivery = {
+      _id: 'delivery123',
+      status: ORDER_STATUS.RETURNED,
+      cancelReason: null,
+    };
+
+    returnOrderWithTransaction.mockResolvedValue(mockDelivery);
+
+    await returnOrder(req, res);
+
+    expect(returnOrderWithTransaction).toHaveBeenCalledWith(req.params.id, undefined, req.user);
 
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -568,13 +662,13 @@ describe('Controller Order - getOrders', () => {
   it('should return orders list by status: created', async () => {
     req = {
       user: { _id: 'user123' },
-      query: { page: 1, limit: 5, status: 'created' },
+      query: { page: 1, limit: 5, status: ORDER_STATUS.CREATED },
     };
     const mockOrders = {
       orders: [
-        { _id: '1', status: 'created' },
-        { _id: '2', status: 'created' },
-        { _id: '3', status: 'created' },
+        { _id: '1', status: ORDER_STATUS.CREATED },
+        { _id: '2', status: ORDER_STATUS.CREATED },
+        { _id: '3', status: ORDER_STATUS.CREATED },
       ],
       totalOrders: 10,
       totalPage: 2,
@@ -584,7 +678,7 @@ describe('Controller Order - getOrders', () => {
 
     await getOrders(req, res);
 
-    expect(getAllOrders).toHaveBeenCalledWith(1, 5, { status: 'created' });
+    expect(getAllOrders).toHaveBeenCalledWith(1, 5, { status: ORDER_STATUS.CREATED });
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -686,7 +780,7 @@ describe('Controller Order - getOrder (By Id)', () => {
   });
 
   it('should return order list by id', async () => {
-    const mockOrder = { _id: '1', status: 'created', priority: 'high' };
+    const mockOrder = { _id: '1', status: ORDER_STATUS.CREATED, priority: 'high' };
 
     getOrderById.mockResolvedValue(mockOrder);
 
