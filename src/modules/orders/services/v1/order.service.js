@@ -340,6 +340,52 @@ export const cancelAnOrder = async (session, orderId, reason, user) => {
   return order;
 };
 
+export const returnAnOrder = async (session, orderId, reason, user) => {
+  const order = await getOrderById(orderId);
+
+  // Cannot return an order when status is not pickedUp
+  if (order.status !== ORDER_STATUS.PICKEDUP) {
+    throw new AppError(
+      `Cannot return order. Order status is ${order.status}.`,
+      409,
+      ERROR_CODES.RETURN_NOT_ALLOWED
+    );
+  }
+
+  // Release driver if exists
+  if (user.role === ROLES.ADMIN) {
+    const driver = await fetchDriverByDriverId(order.driverId);
+    // We do not need to terminate the process of returning when driver is not found and the request come from admin.
+    if (driver) await driver.releaseFromOrder(session);
+  }
+
+  if (user.role === ROLES.DRIVER) {
+    const driver = await fetchDriverByUserId(user._id);
+    if (!driver) throw notFound('driver');
+    doesDriverAssignedToOrder(driver._id, order.driverId);
+    await driver.releaseFromOrder(session);
+  }
+
+  order.status = ORDER_STATUS.RETURNED;
+  order.timeline.returnedAt = new Date();
+  order.paymentStatus = PAYMENT_STATUS.FAILED; //TODO We should add more logic in here in future and also we should check how to pay to driver when an order is returned.
+
+  // for now we add the returnedReason in cancelReason field, but in future we should find a proper way for handling the reason in a more advanced way
+  // because if we add returnReason field in our model, it make the model too messy and can not help us in analytics and calculation of penalty.
+  if (reason) {
+    order.cancelReason = reason;
+  }
+
+  await order.save({ session });
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_RETURNED, { orderId, reason });
+
+  // Return filtered fields to driver
+  if (user.role === ROLES.DRIVER) return DtoService.order(order);
+
+  // Return all fields to admin
+  return order;
+};
+
 //#endregion
 
 /** Add drivers info (id, eta, distance ) in related order record */
@@ -406,3 +452,5 @@ export const pickupOrderWithTransaction = withTransaction(pickupAnOrder);
 export const deliverOrderWithTransaction = withTransaction(deliverAnOrder);
 
 export const cancelOrderWithTransaction = withTransaction(cancelAnOrder);
+
+export const returnOrderWithTransaction = withTransaction(returnAnOrder);
