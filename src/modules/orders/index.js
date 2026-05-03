@@ -6,6 +6,7 @@ export {
   pickupOrder,
   deliverOrder,
   cancelOrder,
+  returnOrder,
   getOrders,
   getOrder,
 } from './controllers/v1/order.controller.js';
@@ -15,6 +16,7 @@ export {
   pickupOrderWithTransaction,
   deliverOrderWithTransaction,
   cancelOrderWithTransaction,
+  returnOrderWithTransaction,
   getOrderById,
   updateOrderInfo,
   getAllOrders,
