@@ -16,6 +16,7 @@ export const ORDER_STATUS = {
   PICKEDUP: 'pickedUp',
   DELIVERED: 'delivered',
   CANCELLED: 'cancelled',
+  RETURNED: 'returned',
 };
 
 export const DRIVER_STATUS = {
@@ -37,6 +38,7 @@ export const EVENT_BUS_EVENTS = {
   ORDER_PICKEDUP: 'order:pickedUp',
   ORDER_DELIVERED: 'order:delivered',
   ORDER_CANCELLED: 'order:cancelled',
+  ORDER_RETURNED: 'order:returned',
   OFFER_ACCEPTED: 'offer:accepted',
   OFFER_REJECTED: 'offer:rejected',
 };
