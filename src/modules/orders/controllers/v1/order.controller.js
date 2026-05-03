@@ -7,6 +7,7 @@ import {
   updateOrderInfo,
   getOrderById,
   getAllOrders,
+  returnOrderWithTransaction,
 } from '../../services/v1/order.service.js';
 import { unauthorized } from '#shared/errors/error.js';
 
@@ -57,6 +58,17 @@ export const cancelOrder = async (req, res) => {
   const updatedOrder = await cancelOrderWithTransaction(
     req.params.id,
     req.body?.cancelReason,
+    req.user
+  );
+
+  res.status(200).json({ success: true, data: updatedOrder });
+};
+
+export const returnOrder = async (req, res) => {
+  if (!req.user) throw unauthorized();
+  const updatedOrder = await returnOrderWithTransaction(
+    req.params.id,
+    req.body?.cancelReason, //TODO: for now we take the cancelReason as returnReason. In future we should update it to a modern structure
     req.user
   );
 
