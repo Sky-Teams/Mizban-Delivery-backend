@@ -5,6 +5,8 @@ import jwt from 'jsonwebtoken';
 import { UserModel } from '#modules/users/index.js';
 import { DriverModel } from '#modules/drivers/index.js';
 import { randomUUID } from 'crypto';
+import { OrderModel } from '#modules/orders/index.js';
+import { ORDER_STATUS } from '#shared/utils/enums.js';
 let replSet;
 
 export const connectDB = async () => {
@@ -80,4 +82,30 @@ export const createFakeDriver = async (user) => {
   });
 
   return newDriver;
+};
+
+export const createFakeOrder = async (overrides = {}) => {
+  return await OrderModel.create({
+    type: 'parcel',
+    serviceType: 'immediate',
+    status: ORDER_STATUS.CREATED,
+
+    sender: { name: 'Test Sender', phone: '0700000000' },
+    receiver: {
+      name: 'Test Receiver',
+      phone: '0700000000',
+      address: 'Herat',
+    },
+
+    pickupLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+    dropoffLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+
+    paymentType: 'COD',
+    amountToCollect: 100,
+    deliveryPrice: { total: 20 },
+
+    createdAt: new Date(),
+
+    ...overrides,
+  });
 };

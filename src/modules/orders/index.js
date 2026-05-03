@@ -8,6 +8,7 @@ export {
   cancelOrder,
   getOrders,
   getOrder,
+  ordersStatistics,
 } from './controllers/v1/order.controller.js';
 export {
   addOrder,
@@ -20,5 +21,6 @@ export {
   getAllOrders,
   increaseDriverIndex,
   addDriversDataInOrder,
+  getOrdersStatistics,
 } from './services/v1/order.service.js';
 export { OrderModel } from './models/order.model.js';
