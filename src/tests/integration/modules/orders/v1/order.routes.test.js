@@ -7,6 +7,7 @@ import {
   clearDB,
   createFakeUserWithToken,
   createFakeDriver,
+  createFakeOrder,
 } from '../../../../config/memoryDB.js';
 import { OrderModel } from '#modules/orders/models/order.model.js';
 import { getWithAuth, postWithAuth } from '#tests/utils/testHelpers.js';
@@ -1119,6 +1120,145 @@ describe('Order API v1 Integration', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.type).toBe('parcel');
       expect(res.body.data.serviceType).toBe('immediate');
+    });
+  });
+
+  describe('GET /api/orders/statistics', () => {
+    beforeEach(async () => {
+      vi.clearAllMocks();
+      await clearDB();
+    });
+
+    it('should return global statistics when request comes from admin', async () => {
+      const admin = await createFakeUserWithToken('admin');
+
+      const driverUser = await createFakeUserWithToken('driver');
+      const driver = await createFakeDriver(driverUser.testUserId);
+
+      await createFakeOrder({
+        driverId: driver._id,
+        status: ORDER_STATUS.CREATED,
+      });
+
+      await createFakeOrder({
+        driverId: driver._id,
+        status: ORDER_STATUS.DELIVERED,
+      });
+
+      await createFakeOrder({
+        driverId: null,
+        status: ORDER_STATUS.CANCELLED,
+      });
+
+      const res = await getWithAuth(app, `${baseURL}/statistics`, admin.token);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+
+      expect(res.body.data).toEqual(
+        expect.objectContaining({
+          totalOrders: 3,
+          created: 1,
+          delivered: 1,
+          cancelled: 1,
+        })
+      );
+    });
+
+    it('should return only driver statistics when request comes from driver', async () => {
+      const user = await createFakeUserWithToken('driver');
+      const driver = await createFakeDriver(user.testUserId);
+
+      await createFakeOrder({
+        driverId: driver._id,
+        status: ORDER_STATUS.CREATED,
+      });
+
+      await createFakeOrder({
+        driverId: driver._id,
+        status: ORDER_STATUS.DELIVERED,
+      });
+
+      // other driver (must NOT be included)
+      const otherUser = await createFakeUserWithToken('driver');
+      const otherDriver = await createFakeDriver(otherUser.testUserId);
+
+      await createFakeOrder({
+        driverId: otherDriver._id,
+        status: ORDER_STATUS.CREATED,
+      });
+
+      const res = await getWithAuth(app, `${baseURL}/statistics`, user.token);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+
+      expect(res.body.data).toEqual(
+        expect.objectContaining({
+          totalOrders: 2,
+          created: 1,
+          delivered: 1,
+        })
+      );
+    });
+
+    it('should return empty object when no orders exist', async () => {
+      const admin = await createFakeUserWithToken('admin');
+
+      const res = await getWithAuth(app, `${baseURL}/statistics`, admin.token);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+
+      expect(res.body.data).toEqual(
+        expect.objectContaining({
+          totalOrders: 0,
+          created: 0,
+          assigned: 0,
+          pickedUp: 0,
+          delivered: 0,
+          cancelled: 0,
+
+          totalOffers: 0,
+          accepted: 0,
+          rejected: 0,
+          pending: 0,
+          expired: 0,
+        })
+      );
+    });
+
+    it('should filter statistics using driverId query (admin)', async () => {
+      const admin = await createFakeUserWithToken('admin');
+
+      const user = await createFakeUserWithToken('driver');
+      const driver = await createFakeDriver(user.testUserId);
+
+      await createFakeOrder({
+        driverId: driver._id,
+        status: ORDER_STATUS.CREATED,
+      });
+
+      await createFakeOrder({
+        driverId: driver._id,
+        status: ORDER_STATUS.DELIVERED,
+      });
+
+      const res = await getWithAuth(
+        app,
+        `${baseURL}/statistics?driverId=${driver._id}`,
+        admin.token
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toEqual(
+        expect.objectContaining({
+          totalOrders: 2,
+          created: 1,
+          delivered: 1,
+        })
+      );
     });
   });
 });

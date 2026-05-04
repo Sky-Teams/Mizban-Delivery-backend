@@ -142,3 +142,10 @@ export const orderUpdateQuery = (deliveryRequestData, allowedFields) => {
 
   return updateQuery;
 };
+
+// A helper function to return $sum aggregate function based on the order and offer status and reduce the code repetition
+export const countByStatus = (status) => ({
+  $sum: {
+    $cond: [{ $eq: ['$status', status] }, 1, 0],
+  },
+});

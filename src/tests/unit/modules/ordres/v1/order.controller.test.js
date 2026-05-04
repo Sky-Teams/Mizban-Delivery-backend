@@ -18,9 +18,13 @@ import {
   getOrder,
   getOrderById,
   returnOrder,
+  ordersStatistics,
+  getOrdersStatistics,
 } from '#modules/orders/index.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { ORDER_STATUS } from '#shared/utils/enums.js';
+import { ROLES } from '#shared/utils/enums.js';
+import { fetchDriverByUserId } from '#modules/drivers/index.js';
 
 // Mock the service
 vi.mock('#modules/orders/services/v1/order.service.js', () => ({
@@ -33,6 +37,10 @@ vi.mock('#modules/orders/services/v1/order.service.js', () => ({
   returnOrderWithTransaction: vi.fn(),
   getAllOrders: vi.fn(),
   getOrderById: vi.fn(),
+  getOrdersStatistics: vi.fn(),
+}));
+vi.mock('#modules/drivers/services/v1/driver.service.js', () => ({
+  fetchDriverByUserId: vi.fn(),
 }));
 
 describe('Controller Order - create order', () => {
@@ -792,5 +800,102 @@ describe('Controller Order - getOrder (By Id)', () => {
       success: true,
       data: mockOrder,
     });
+  });
+});
+
+describe('Controller Order - ordersStatistics', () => {
+  let req;
+  let res;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    req = {
+      user: { _id: 'user123', role: ROLES.ADMIN },
+      query: {},
+    };
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+  });
+
+  it('should throw unauthorized if user is missing', async () => {
+    req.user = null;
+
+    await expect(ordersStatistics(req, res)).rejects.toThrow(AppError);
+  });
+
+  it('should return statistics for admin (no driverId)', async () => {
+    const mockStats = {
+      total: 10,
+      created: 2,
+      assigned: 3,
+      pickedUp: 2,
+      delivered: 2,
+      cancelled: 1,
+    };
+
+    getOrdersStatistics.mockResolvedValue(mockStats);
+
+    await ordersStatistics(req, res);
+
+    expect(getOrdersStatistics).toHaveBeenCalledWith(null);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockStats,
+    });
+  });
+
+  it('should use driverId from query for admin', async () => {
+    req.query.driverId = 'driver123';
+
+    const mockStats = { total: 5 };
+    getOrdersStatistics.mockResolvedValue(mockStats);
+
+    await ordersStatistics(req, res);
+
+    expect(getOrdersStatistics).toHaveBeenCalledWith('driver123');
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockStats,
+    });
+  });
+
+  it('should use driverId from logged-in driver user', async () => {
+    req.user.role = ROLES.DRIVER;
+
+    const mockDriver = { _id: 'driverId123' };
+    fetchDriverByUserId.mockResolvedValue(mockDriver);
+
+    const mockStats = { total: 7 };
+    getOrdersStatistics.mockResolvedValue(mockStats);
+
+    await ordersStatistics(req, res);
+
+    expect(fetchDriverByUserId).toHaveBeenCalledWith('user123');
+    expect(getOrdersStatistics).toHaveBeenCalledWith('driverId123');
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockStats,
+    });
+  });
+
+  it('should throw notFound if driver does not exist', async () => {
+    req.user.role = ROLES.DRIVER;
+
+    fetchDriverByUserId.mockResolvedValue(null);
+
+    await expect(ordersStatistics(req, res)).rejects.toThrow(AppError);
+
+    expect(fetchDriverByUserId).toHaveBeenCalledWith('user123');
+    expect(getOrdersStatistics).not.toHaveBeenCalled();
   });
 });
