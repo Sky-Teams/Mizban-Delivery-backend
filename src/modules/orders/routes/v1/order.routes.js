@@ -6,6 +6,7 @@ import {
   getOrder,
   getOrders,
   pickupOrder,
+  returnOrder,
   updateOrder,
   ordersStatistics,
 } from '../../controllers/v1/order.controller.js';
@@ -54,6 +55,13 @@ router.patch(
   validate(mongoIdValidator),
   validate(cancelOrderValidator),
   asyncHandler(cancelOrder)
+);
+router.patch(
+  '/:id/return',
+  authorizeRole(ROLES.ADMIN, ROLES.DRIVER),
+  validate(mongoIdValidator),
+  validate(cancelOrderValidator),
+  asyncHandler(returnOrder)
 );
 router.put(
   '/:id',
