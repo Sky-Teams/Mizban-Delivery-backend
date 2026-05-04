@@ -989,7 +989,7 @@ describe('Order API v1 Integration', () => {
       const order = await OrderModel.create({
         type: 'parcel',
         serviceType: 'immediate',
-        sender: { name: 'Alice', phone: '0790909090' },
+        sender: { name: 'Ali', phone: '0790909090' },
         receiver: {
           name: 'Bob',
           phone: '0790909090',
