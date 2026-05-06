@@ -112,8 +112,12 @@ export class CustomSocket {
       const adminId = admin._id.toString();
       const isOnline = this.isUserOnline(adminId);
 
-      if (!isOnline && admin.fcmToken) {
-        await pushNotification(admin.fcmToken, payload.title, payload.message);
+      if (!isOnline && admin.devices.length !== 0) {
+        await Promise.all(
+          admin.devices.map((device) =>
+            pushNotification(device.fcmToken, payload.title, payload.message)
+          )
+        );
       }
     }
   }
