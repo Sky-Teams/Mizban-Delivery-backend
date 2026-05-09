@@ -1,5 +1,6 @@
 import { hashPassword } from './jwt.js';
 import { calculateItemsTotal } from './math.helper.js';
+import { cleanObject } from './object.helper.js';
 
 export const driverQueryBuilder = (searchQuery) => {
   const query = {};
@@ -149,3 +150,24 @@ export const countByStatus = (status) => ({
     $cond: [{ $eq: ['$status', status] }, 1, 0],
   },
 });
+
+export const buildOrderFilter = ({ driverId, startDate, endDate, filters }) => {
+  const orderFilter = {
+    driver: driverId,
+    ...filters,
+  };
+
+  if (startDate || endDate) {
+    orderFilter.createdAt = {};
+
+    if (startDate) {
+      orderFilter.createdAt.$gte = DateHelper.getStartDateUTC(startDate);
+    }
+
+    if (endDate) {
+      orderFilter.createdAt.$lte = DateHelper.getEndDateUTC(endDate);
+    }
+  }
+
+  return cleanObject(orderFilter);
+};
