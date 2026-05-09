@@ -12,3 +12,7 @@ export const getObjectValues = (object) => {
 
   return values;
 };
+
+export const cleanObject = (obj) => {
+  return Object.fromEntries(Object.entries(obj).filter(([_, value]) => value !== undefined));
+};
