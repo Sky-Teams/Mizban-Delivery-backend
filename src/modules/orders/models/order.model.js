@@ -1,3 +1,5 @@
+import { ORDER_STATUS } from '#shared/utils/enums.js';
+import { getObjectValues } from '#shared/utils/object.helper.js';
 import mongoose from 'mongoose';
 
 const ItemSchema = new mongoose.Schema(
@@ -127,8 +129,8 @@ const OrderSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ['created', 'assigned', 'pickedUp', 'delivered', 'cancelled'],
-      default: 'created',
+      enum: getObjectValues(ORDER_STATUS),
+      default: ORDER_STATUS.CREATED,
     },
 
     driverId: {
@@ -157,6 +159,7 @@ const OrderSchema = new mongoose.Schema(
       pickedUpAt: { type: Date, default: null },
       deliveredAt: { type: Date, default: null },
       cancelledAt: { type: Date, default: null },
+      returnedAt: { type: Date, default: null },
     },
     items: {
       type: [ItemSchema],

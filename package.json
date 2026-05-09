@@ -58,7 +58,7 @@
     "pino-abstract-transport": "^3.0.0",
     "pino-roll": "^4.0.0",
     "socket.io": "^4.8.3",
-    "zod": "^4.3.6"
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.18",

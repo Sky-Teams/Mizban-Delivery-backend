@@ -397,7 +397,7 @@ describe('Order API v1 Integration', () => {
 
     it('should fail if order is already delivered', async () => {
       await OrderModel.findByIdAndUpdate(deliveryId, {
-        status: 'delivered',
+        status: ORDER_STATUS.DELIVERED,
       });
 
       const res = await request(app)
@@ -887,7 +887,7 @@ describe('Order API v1 Integration', () => {
 
     it('should fail if order already delivered', async () => {
       await OrderModel.findByIdAndUpdate(deliveryId, {
-        status: 'delivered',
+        status: ORDER_STATUS.DELIVERED,
       });
 
       const res = await request(app)
@@ -976,6 +976,62 @@ describe('Order API v1 Integration', () => {
 
       expect(res.body.code).toBe(ERROR_CODES.ORDER_NOT_YOURS);
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe('Order API v1 Integration - return order - Admin', () => {
+    let deliveryId;
+    beforeEach(async () => {
+      await clearDB();
+      const result = await createFakeUserWithToken('admin');
+      token = result.token;
+
+      const order = await OrderModel.create({
+        type: 'parcel',
+        serviceType: 'immediate',
+        sender: { name: 'Ali', phone: '0790909090' },
+        receiver: {
+          name: 'Bob',
+          phone: '0790909090',
+          address: 'Herat',
+        },
+        pickupLocation: { type: 'Point', coordinates: [62.2, 34.35] },
+        dropoffLocation: { type: 'Point', coordinates: [62.3, 34.36] },
+        paymentType: 'COD',
+        amountToCollect: 100,
+        finalPrice: 100,
+        status: ORDER_STATUS.CREATED,
+      });
+
+      deliveryId = order._id.toString();
+    });
+
+    it('should return order without reason', async () => {
+      const res = await request(app)
+        .patch(`${baseURL}/${deliveryId}/return`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+    });
+
+    it('should fail if order does not exist', async () => {
+      const res = await request(app)
+        .patch(`${baseURL}/${new mongoose.Types.ObjectId()}/return`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+      expect(res.status).toBe(404);
+    });
+
+    it('should fail if order already delivered', async () => {
+      await OrderModel.findByIdAndUpdate(deliveryId, {
+        status: ORDER_STATUS.DELIVERED,
+      });
+
+      const res = await request(app)
+        .patch(`${baseURL}/${deliveryId}/return`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      expect(res.status).toBe(409);
     });
   });
 
