@@ -25,8 +25,28 @@ export class DtoService {
       finalPrice: order?.finalPrice,
       items: [...order?.items],
       status: order?.status,
+      offer: order?.offer,
     };
 
     return filteredOrderField;
   }
+
+  /**
+   * Map offers with their orders
+   * @param {Array} offers
+   * @returns mapped orders
+   */
+  static mapOfferOrders = (offers) => {
+    // First we filter those offers that have order which is populated from order collection.
+    const filteredOffers = offers.filter((offer) => offer.order);
+    return filteredOffers.map((offer) => ({
+      ...offer.order,
+      offer: {
+        _id: offer._id,
+        status: offer.status,
+        offeredAt: offer.offeredAt,
+        respondedAt: offer.respondedAt,
+      },
+    }));
+  };
 }
