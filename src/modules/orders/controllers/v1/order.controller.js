@@ -9,6 +9,7 @@ import {
   getAllOrders,
   returnOrderWithTransaction,
   getOrdersStatistics,
+  getDriverOrders,
 } from '../../services/v1/order.service.js';
 import { notFound, unauthorized } from '#shared/errors/error.js';
 import { ROLES } from '#shared/utils/enums.js';
@@ -107,7 +108,6 @@ export const getOrders = async (req, res) => {
     type: req.query?.type,
     priority: req.query?.priority,
     status: req.query?.status,
-    driverId: req.query?.driverId,
     serviceType: req.query?.serviceType,
     serviceLevel: req.query?.serviceLevel,
     paymentType: req.query?.paymentType,
@@ -117,24 +117,52 @@ export const getOrders = async (req, res) => {
   };
 
   const isDriver = req.user.role === ROLES.DRIVER;
+  const isAdmin = req.user.role === ROLES.ADMIN;
 
-  // If the request come from driver, so we inject the current driverId into the searchQuery to ensure that driver only see his own orders
   if (isDriver) {
     const driver = await fetchDriverByUserId(req.user._id);
     if (!driver) throw notFound('driver');
-    searchQuery.driverId = driver._id;
+
+    const result = await getDriverOrders(page, limit, {
+      ...searchQuery,
+      driverId: driver._id,
+    });
+
+    const orders = result.data.map(DtoService.order);
+
+    return res.status(200).json({
+      success: true,
+      data: orders,
+      totalOrders: result.total,
+      totalPage: result.totalPage,
+    });
   }
 
-  let { orders, totalOrders, totalPage } = await getAllOrders(page, limit, searchQuery);
+  // -----------------------------
+  // ADMIN FLOW
+  // -----------------------------
+  // if (isAdmin) {
+  //   const result = await getAdminOrders(page, limit, searchQuery);
 
-  if (isDriver) orders = orders.map((order) => DtoService.order(order));
+  //   return res.status(200).json({
+  //     success: true,
+  //     data: result.orders,
+  //     totalOrders: result.totalOrders,
+  //     totalPage: result.totalPage,
+  //   });
+  // }
 
-  res.status(200).json({
-    success: true,
-    data: orders,
-    totalOrders,
-    totalPage,
-  });
+  // // -----------------------------
+  // // DEFAULT (fallback user if needed)
+  // // -----------------------------
+  // const result = await getUserOrders(page, limit, searchQuery);
+
+  // return res.status(200).json({
+  //   success: true,
+  //   data: result.orders,
+  //   totalOrders: result.totalOrders,
+  //   totalPage: result.totalPage,
+  // });
 };
 
 export const getOrder = async (req, res) => {
