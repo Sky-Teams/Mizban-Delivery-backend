@@ -1,3 +1,4 @@
+import { DateHelper } from './date.helper.js';
 import { hashPassword } from './jwt.js';
 import { calculateItemsTotal } from './math.helper.js';
 import { cleanObject } from './object.helper.js';
@@ -153,7 +154,27 @@ export const countByStatus = (status) => ({
 
 export const buildOrderFilter = ({ driverId, startDate, endDate, filters }) => {
   const orderFilter = {
-    driver: driverId,
+    driverId,
+    ...filters,
+  };
+
+  if (startDate || endDate) {
+    orderFilter.createdAt = {};
+
+    if (startDate) {
+      orderFilter.createdAt.$gte = DateHelper.getStartDateUTC(startDate);
+    }
+
+    if (endDate) {
+      orderFilter.createdAt.$lte = DateHelper.getEndDateUTC(endDate);
+    }
+  }
+
+  return cleanObject(orderFilter);
+};
+
+export const buildOfferFilter = ({ startDate, endDate, filters }) => {
+  const orderFilter = {
     ...filters,
   };
 
