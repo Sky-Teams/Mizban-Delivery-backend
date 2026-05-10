@@ -108,6 +108,7 @@ export const getOrders = async (req, res) => {
     type: req.query?.type,
     priority: req.query?.priority,
     status: req.query?.status,
+    driverId: req.query?.driverId,
     serviceType: req.query?.serviceType,
     serviceLevel: req.query?.serviceLevel,
     paymentType: req.query?.paymentType,
@@ -138,31 +139,16 @@ export const getOrders = async (req, res) => {
     });
   }
 
-  // -----------------------------
-  // ADMIN FLOW
-  // -----------------------------
-  // if (isAdmin) {
-  //   const result = await getAdminOrders(page, limit, searchQuery);
+  if (isAdmin) {
+    const result = await getAllOrders(page, limit, searchQuery);
 
-  //   return res.status(200).json({
-  //     success: true,
-  //     data: result.orders,
-  //     totalOrders: result.totalOrders,
-  //     totalPage: result.totalPage,
-  //   });
-  // }
-
-  // // -----------------------------
-  // // DEFAULT (fallback user if needed)
-  // // -----------------------------
-  // const result = await getUserOrders(page, limit, searchQuery);
-
-  // return res.status(200).json({
-  //   success: true,
-  //   data: result.orders,
-  //   totalOrders: result.totalOrders,
-  //   totalPage: result.totalPage,
-  // });
+    return res.status(200).json({
+      success: true,
+      data: result.data,
+      totalOrders: result.total,
+      totalPage: result.totalPage,
+    });
+  }
 };
 
 export const getOrder = async (req, res) => {
