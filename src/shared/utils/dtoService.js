@@ -37,9 +37,7 @@ export class DtoService {
    * @returns mapped orders
    */
   static mapOfferOrders = (offers) => {
-    // First we filter those offers that have order which is populated from order collection.
-    const filteredOffers = offers.filter((offer) => offer.order);
-    return filteredOffers.map((offer) => ({
+    return offers.map((offer) => ({
       ...offer.order,
       offer: {
         _id: offer._id,
