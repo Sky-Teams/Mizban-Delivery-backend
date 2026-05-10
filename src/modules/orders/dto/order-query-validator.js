@@ -1,6 +1,8 @@
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError } from '#shared/errors/error.js';
 import { DateHelper } from '#shared/utils/date.helper.js';
+import { ORDER_STATUS } from '#shared/utils/enums.js';
+import { getObjectValues } from '#shared/utils/object.helper.js';
 import mongoose from 'mongoose';
 import z from 'zod';
 
@@ -17,7 +19,7 @@ const queryValidator = z.object({
       .positive({ message: ERROR_CODES.LIMIT_PARAMETER_MUST_BE_POSITIVE })
       .optional(),
     status: z
-      .enum(['created', 'assigned', 'pickedUp', 'delivered', 'cancelled'], {
+      .enum(getObjectValues(ORDER_STATUS), {
         message: ERROR_CODES.INVALID_STATUS,
       })
       .optional(),

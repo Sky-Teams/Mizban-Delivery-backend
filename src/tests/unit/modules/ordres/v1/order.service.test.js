@@ -10,6 +10,7 @@ import { calculateItemsTotal } from '#shared/utils/math.helper.js';
 import {
   assignDriverToOrderWithTransaction,
   cancelOrderWithTransaction,
+  returnOrderWithTransaction,
   addOrder,
   deliverOrderWithTransaction,
   OrderModel,
@@ -1090,6 +1091,254 @@ describe('cancelOrderWithTransaction', () => {
     OrderModel.findById.mockResolvedValue(order);
 
     await cancelOrderWithTransaction('delivery1', null, user);
+
+    expect(order.cancelReason).toBeUndefined();
+  });
+});
+
+describe('returnOrderWithTransaction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should return order, release driver, set paymentStatus, and commit transaction', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.PICKEDUP,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    const driver = {
+      _id: 'driver1',
+      status: ORDER_STATUS.ASSIGNED,
+      save: vi.fn(),
+      releaseFromOrder: vi.fn().mockImplementation(function (session) {
+        this.status = DRIVER_STATUS.IDLE;
+        this.activeOrders = Math.max(0, this.activeOrders - 1);
+        return this.save({ session });
+      }),
+    };
+
+    const user = {
+      _id: '123',
+      role: ROLES.ADMIN,
+    };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    const result = await returnOrderWithTransaction('delivery1', 'No Response from driver', user);
+
+    expect(mongoose.startSession).toHaveBeenCalled();
+    expect(fakeSession.startTransaction).toHaveBeenCalled();
+
+    expect(driver.status).toBe(DRIVER_STATUS.IDLE);
+    expect(driver.save).toHaveBeenCalledWith({ session: fakeSession });
+
+    expect(order.status).toBe(ORDER_STATUS.RETURNED);
+    expect(order.paymentStatus).toBe(PAYMENT_STATUS.FAILED);
+    expect(order.cancelReason).toBe('No Response from driver');
+    expect(order.timeline.returnedAt).toBeInstanceOf(Date);
+    expect(order.save).toHaveBeenCalledWith({ session: fakeSession });
+
+    expect(fakeSession.commitTransaction).toHaveBeenCalled();
+    expect(fakeSession.endSession).toHaveBeenCalled();
+
+    expect(result).toBe(order);
+  });
+
+  it('should throw error if order already delivered or cancelled', async () => {
+    const order = {
+      _id: 'delivery3',
+      status: ORDER_STATUS.DELIVERED,
+      timeline: {},
+      save: vi.fn(),
+    };
+
+    OrderModel.findById.mockResolvedValue(order);
+
+    await expect(returnOrderWithTransaction('delivery3', 'Late')).rejects.toThrow(
+      new AppError(
+        `Cannot return order. Order status is ${order.status}.`,
+        409,
+        ERROR_CODES.RETURN_NOT_ALLOWED
+      )
+    );
+
+    expect(fakeSession.abortTransaction).toHaveBeenCalled();
+    expect(fakeSession.endSession).toHaveBeenCalled();
+  });
+
+  it('should throw if driver is not assigned to the order', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.PICKEDUP,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    const driver = {
+      _id: 'driver2',
+      status: ORDER_STATUS.ASSIGNED,
+      activeOrders: 1,
+      save: vi.fn(),
+    };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    await expect(returnOrderWithTransaction('delivery1', 'reason')).rejects.toThrow();
+
+    expect(fakeSession.abortTransaction).toHaveBeenCalled();
+  });
+
+  it('should decrement activeOrders but not go below 0', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.PICKEDUP,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+      paymentStatus: PAYMENT_STATUS.PENDING,
+      items: [],
+    };
+
+    const driver = {
+      _id: 'driver1',
+      status: ORDER_STATUS.ASSIGNED,
+      activeOrders: 0,
+      save: vi.fn(),
+      releaseFromOrder: vi.fn().mockImplementation(function (session) {
+        this.status = DRIVER_STATUS.IDLE;
+        this.activeOrders = Math.max(0, this.activeOrders - 1);
+        return this.save({ session });
+      }),
+    };
+
+    const user = {
+      _id: 'driver1',
+      role: ROLES.DRIVER,
+    };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByUserId.mockResolvedValue(driver);
+
+    await returnOrderWithTransaction('delivery1', 'reason', user);
+
+    expect(driver.activeOrders).toBe(0);
+  });
+
+  it('should emit ORDER_RETURNED event', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.PICKEDUP,
+      timeline: {},
+      save: vi.fn(),
+      driverId: null,
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    const driver = {
+      _id: 'driver1',
+      status: ORDER_STATUS.ASSIGNED,
+      save: vi.fn(),
+      releaseFromOrder: vi.fn().mockImplementation(function (session) {
+        this.status = DRIVER_STATUS.IDLE;
+        this.activeOrders = Math.max(0, this.activeOrders - 1);
+        return this.save({ session });
+      }),
+    };
+    const user = {
+      _id: 'mahdi123',
+      role: 'admin',
+    };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+    eventBus.emit = vi.fn();
+
+    await returnOrderWithTransaction('delivery1', 'test reason', user);
+
+    expect(eventBus.emit).toHaveBeenCalledWith(EVENT_BUS_EVENTS.ORDER_RETURNED, {
+      orderId: 'delivery1',
+      reason: 'test reason',
+    });
+  });
+
+  it('should return DTO when user is driver', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.PICKEDUP,
+      timeline: {},
+      save: vi.fn(),
+      driverId: 'driver1',
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    const driver = {
+      _id: 'driver1',
+      status: ORDER_STATUS.ASSIGNED,
+      activeOrders: 1,
+      save: vi.fn(),
+      releaseFromOrder: vi.fn().mockImplementation(function (session) {
+        this.status = DRIVER_STATUS.IDLE;
+        this.activeOrders = Math.max(0, this.activeOrders - 1);
+        return this.save({ session });
+      }),
+    };
+
+    const user = {
+      _id: 'driver1',
+      role: ROLES.DRIVER,
+    };
+
+    const dto = { id: 'delivery1' };
+
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByUserId.mockResolvedValue(driver);
+    DtoService.order = vi.fn().mockReturnValue(dto);
+
+    const result = await returnOrderWithTransaction('delivery1', 'reason', user);
+
+    // DTO check
+    expect(DtoService.order).toHaveBeenCalledWith(order);
+    expect(result).toEqual(dto);
+
+    // driver behavior
+    expect(driver.releaseFromOrder).toHaveBeenCalled();
+
+    // order updates
+    expect(order.status).toBe(ORDER_STATUS.RETURNED);
+    expect(order.paymentStatus).toBe(PAYMENT_STATUS.FAILED);
+    expect(order.timeline.returnedAt).toBeInstanceOf(Date);
+
+    // persistence
+    expect(order.save).toHaveBeenCalled();
+  });
+
+  it('should not set cancelReason if not provided', async () => {
+    const order = {
+      _id: 'delivery1',
+      status: ORDER_STATUS.PICKEDUP,
+      timeline: {},
+      save: vi.fn(),
+      driverId: null,
+      paymentStatus: PAYMENT_STATUS.PENDING,
+    };
+
+    const user = {
+      _id: 'admin1',
+      role: ROLES.ADMIN,
+    };
+
+    OrderModel.findById.mockResolvedValue(order);
+
+    await returnOrderWithTransaction('delivery1', null, user);
 
     expect(order.cancelReason).toBeUndefined();
   });
