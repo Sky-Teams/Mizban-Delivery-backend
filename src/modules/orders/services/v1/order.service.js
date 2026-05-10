@@ -16,13 +16,17 @@ import {
   ROLES,
   OFFER_STATUS,
 } from '#shared/utils/enums.js';
-import { DateHelper } from '#shared/utils/date.helper.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
-import { buildOrderFilter, countByStatus, orderUpdateQuery } from '#shared/utils/queryBuilder.js';
+import {
+  buildOfferFilter,
+  buildOrderFilter,
+  countByStatus,
+  orderUpdateQuery,
+} from '#shared/utils/queryBuilder.js';
 import { OrderModel } from '../../models/order.model.js';
 import mongoose from 'mongoose';
 import { OfferModel } from '#modules/offers/index.js';
-import { getObjectValues, cleanObject } from '#shared/utils/object.helper.js';
+import { getObjectValues } from '#shared/utils/object.helper.js';
 import { buildPaginatedResponse } from '#shared/utils/pagination.js';
 
 //#region Admin Services
@@ -82,131 +86,98 @@ export const getOrderById = async (orderId) => {
   return order;
 };
 
+const dedupeById = (arr) => {
+  const map = new Map();
+  arr.forEach((item) => map.set(item._id.toString(), item));
+  return Array.from(map.values());
+};
+
 export const getAllOrders = async (page = 1, limit = 10, searchQuery = {}) => {
   const skip = (page - 1) * limit;
 
-  let query = Object.fromEntries(
-    Object.entries(searchQuery).filter(([_, value]) => value !== null && value !== undefined)
-  );
+  const { driverId, status, startDate, endDate, ...filters } = searchQuery;
 
-  if (searchQuery.startDate || searchQuery.endDate) {
-    query.createdAt = {};
-  }
+  const orderFilter = buildOrderFilter({
+    driverId,
+    startDate,
+    endDate,
+    filters,
+  });
 
-  if (searchQuery.startDate) {
-    query.createdAt.$gte = DateHelper.getStartDateUTC(searchQuery.startDate);
-    delete query.startDate; // Remove the startDate field from query because we filter based on createdAt
-  }
+  const isOfferStatus = status === OFFER_STATUS.REJECTED || status === OFFER_STATUS.EXPIRED;
 
-  if (searchQuery.endDate) {
-    query.createdAt.$lte = DateHelper.getEndDateUTC(searchQuery.endDate);
-    delete query.endDate; // Remove the endDate field from query because we filter based on createdAt
-  }
+  const isOrderStatus = getObjectValues(ORDER_STATUS).includes(status);
 
-  console.log('Status: ', searchQuery.status);
+  // No status:
+  // get all normal orders +
+  // rejected/expired orders from offers collection
+  if (!status) {
+    const offerFilter = buildOfferFilter({
+      startDate,
+      endDate,
+      filters,
+    });
 
-  // =====================================================
-  // OFFER BASED STATUSES (REJECTED / EXPIRED)
-  // =====================================================
-  if (searchQuery.status === OFFER_STATUS.REJECTED || searchQuery.status === OFFER_STATUS.EXPIRED) {
-    const offerQuery = {
-      status: searchQuery.status,
-    };
+    const [orders, offerOrders] = await Promise.all([
+      OrderModel.find(orderFilter).sort({ createdAt: -1 }).lean(),
 
-    if (searchQuery.driverId) {
-      offerQuery.driver = searchQuery.driverId;
-    }
-
-    const offers = await OfferModel.find(offerQuery).populate('order').lean();
-
-    const orders = offers
-      .filter((offer) => offer.order)
-      .map((offer) => ({
-        ...offer.order,
-        offer: {
-          _id: offer._id,
-          status: offer.status,
-          offeredAt: offer.offeredAt,
-          respondedAt: offer.respondedAt,
+      getOffersWithOrders({
+        filter: offerFilter,
+        status: {
+          $in: [OFFER_STATUS.REJECTED, OFFER_STATUS.EXPIRED],
         },
-      }));
+      }),
+    ]);
 
-    return {
-      orders,
-      totalOrders: orders.length,
-      totalPage: Math.ceil(orders.length / limit),
+    const deduplicatedValues = dedupeById([...orders, ...offerOrders]);
+
+    const mergedOrders = deduplicatedValues.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    const paginatedOrders = mergedOrders.slice(skip, skip + limit);
+
+    return buildPaginatedResponse(paginatedOrders, mergedOrders.length, limit);
+  }
+
+  // Order statuses:
+  // data comes directly from orders collection
+  if (isOrderStatus) {
+    const query = {
+      ...orderFilter,
+      status,
     };
+
+    const [orders, totalOrders] = await Promise.all([
+      OrderModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+
+      OrderModel.countDocuments(query),
+    ]);
+
+    return buildPaginatedResponse(orders, totalOrders, limit);
   }
 
-  // =====================================================
-  // NORMAL ORDERS (ALL STATUSES)
-  // =====================================================
+  // Offer statuses:
+  // data comes from offers collection
+  if (isOfferStatus) {
+    const offerFilter = buildOfferFilter({
+      startDate,
+      endDate,
+      filters,
+    });
 
-  const totalOrders = await OrderModel.countDocuments(query);
+    const offerOrders = await getOffersWithOrders({
+      driverId,
+      filter: offerFilter,
+      status,
+    });
 
-  const normalOrders = await OrderModel.find(query)
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean();
+    //TODO: in here we need to deduplicate if we dont deduplicate inside the getOffersWithOrders
 
-  // =====================================================
-  // ADMIN MODE (NO DRIVER FILTER)
-  // Add rejected + expired offers globally
-  // =====================================================
+    const paginatedOrders = offerOrders.slice(skip, skip + limit);
 
-  const offerQuery = {
-    status: {
-      $in: [OFFER_STATUS.REJECTED, OFFER_STATUS.EXPIRED],
-    },
-  };
-
-  if (searchQuery.driverId) {
-    offerQuery.driver = searchQuery.driverId;
+    return buildPaginatedResponse(paginatedOrders, offerOrders.length, limit);
   }
-
-  const offers = await OfferModel.find(offerQuery).populate('order').lean();
-
-  const offerOrders = offers
-    .filter((offer) => offer.order)
-    .map((offer) => ({
-      ...offer.order,
-      offer: {
-        _id: offer._id,
-        status: offer.status,
-        offeredAt: offer.offeredAt,
-        respondedAt: offer.respondedAt,
-      },
-    }));
-
-  // =====================================================
-  // MERGE + REMOVE DUPLICATES (IMPORTANT FIX)
-  // =====================================================
-
-  const allOrders = [...normalOrders, ...offerOrders];
-
-  const uniqueMap = new Map();
-
-  for (const order of allOrders) {
-    const id = order._id.toString();
-
-    if (!uniqueMap.has(id)) {
-      uniqueMap.set(id, order);
-    }
-  }
-
-  const uniqueOrders = Array.from(uniqueMap.values());
-
-  // sort after merge
-  uniqueOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-  const paginatedOrders = uniqueOrders.slice(skip, skip + limit);
-
-  return {
-    orders: paginatedOrders,
-    totalOrders: uniqueOrders.length,
-    totalPage: Math.ceil(uniqueOrders.length / limit),
-  };
 };
 
 export const updateOrderInfo = async (orderId, orderData) => {
@@ -543,18 +514,36 @@ export const getOrdersStatistics = async (driverId) => {
   };
 };
 
-const getOffersWithOrders = async ({ driverId, orderFilter, status }) => {
-  console.log('Offer filters: ', orderFilter);
-  const offers = await OfferModel.find({
-    driver: driverId,
-    ...(status && { status }), // if status exist, it include in query.
-  })
+const getOffersWithOrders = async ({ driverId, filter, status }) => {
+  const query = {};
+
+  if (driverId) {
+    query.driver = driverId;
+  }
+
+  if (status) {
+    query.status = status;
+  }
+
+  const offers = await OfferModel.find(query)
     .populate({
       path: 'order',
-      match: orderFilter,
+      match: filter,
     })
     .lean();
-  return DtoService.mapOfferOrders(offers);
+
+  const filteredOffers = offers.filter((offer) => offer.order);
+
+  const mappedOrders = DtoService.mapOfferOrders(filteredOffers);
+
+  // remove duplicate orders
+  const uniqueOrdersMap = new Map();
+
+  mappedOrders.forEach((order) => {
+    uniqueOrdersMap.set(order._id.toString(), order);
+  });
+
+  return Array.from(uniqueOrdersMap.values());
 };
 
 //#endregion
@@ -579,11 +568,16 @@ export const getDriverOrders = async (page = 1, limit = 10, searchQuery = {}) =>
   // No status: We should find orders from orders collection and offer collection(rejected/expired offers) and then
   // join them together
   if (!status) {
+    const offerFilter = buildOfferFilter({
+      startDate,
+      endDate,
+      filters,
+    });
     const [orders, offerOrders] = await Promise.all([
       OrderModel.find(orderFilter).sort({ createdAt: -1 }).lean(),
       getOffersWithOrders({
         driverId,
-        orderFilter: cleanObject(filters),
+        filter: offerFilter,
         status: {
           $in: [OFFER_STATUS.REJECTED, OFFER_STATUS.EXPIRED],
         },
@@ -617,10 +611,14 @@ export const getDriverOrders = async (page = 1, limit = 10, searchQuery = {}) =>
   //Offer status: When status is expired/rejected (from OFFER_STATUS), so we take data from offers collection and join
   // with the order collection
   if (isOfferStatus) {
-    const filter = cleanObject(filters);
+    const offerFilter = buildOfferFilter({
+      startDate,
+      endDate,
+      filters,
+    });
     const offerOrders = await getOffersWithOrders({
       driverId,
-      filter,
+      filter: offerFilter,
       status,
     });
 
