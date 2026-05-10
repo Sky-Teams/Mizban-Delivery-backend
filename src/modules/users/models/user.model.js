@@ -49,6 +49,16 @@ UserSchema.index(
   }
 );
 
+UserSchema.index(
+  { 'devices.deviceId': 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      'devices.deviceId': { $exists: true },
+    },
+  }
+);
+
 UserSchema.methods.createToken = function (type) {
   const token = crypto.randomBytes(32).toString('hex');
 
