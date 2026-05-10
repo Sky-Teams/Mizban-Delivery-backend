@@ -42,4 +42,9 @@ export const registerOrderListeners = () => {
     const payload = NotificationPayloads.orderCancelled(data.orderId, data.reason);
     await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
   });
+
+  eventBus.on(EVENT_BUS_EVENTS.ORDER_RETURNED, async (data) => {
+    const payload = NotificationPayloads.orderReturned(data.orderId, data.reason);
+    await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
+  });
 };

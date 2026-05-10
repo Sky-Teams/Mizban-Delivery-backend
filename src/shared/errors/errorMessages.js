@@ -485,6 +485,12 @@ export const ERROR_MESSAGES = {
     ps: 'لغوه اجازه نه لري',
   },
 
+  [ERROR_CODES.RETURN_NOT_ALLOWED]: {
+    en: 'Return not allowed',
+    fa: 'مرجوع کردن مجاز نیست',
+    ps: 'بېرته ګرځول اجازه نشته',
+  },
+
   [ERROR_CODES.INVALID_CANCEL_REASON]: {
     en: 'Invalid cancel reason',
     fa: 'دلیل لغو نامعتبر است',

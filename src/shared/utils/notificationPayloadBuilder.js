@@ -49,6 +49,12 @@ export const NotificationPayloads = {
     message: `Order (${orderId}) is cancelled. Reason ${cancelReason}`,
   }),
 
+  orderReturned: (orderId, cancelReason) => ({
+    type: NOTIFICATION_TYPE.ORDER,
+    title: 'Order returned',
+    message: `Order (${orderId}) is returned. Reason ${cancelReason}`,
+  }),
+
   offerAccepted: (orderId, driverId) => ({
     type: NOTIFICATION_TYPE.OFFER,
     title: 'Offer Accepted',
