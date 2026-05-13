@@ -15,6 +15,7 @@ import { notFound, unauthorized } from '#shared/errors/error.js';
 import { ROLES } from '#shared/utils/enums.js';
 import { fetchDriverByUserId } from '#modules/drivers/index.js';
 import { DtoService } from '#shared/utils/dtoService.js';
+import { cleanObject } from '#shared/utils/object.helper.js';
 
 export const createOrder = async (req, res) => {
   if (!req.user) throw unauthorized();
@@ -104,7 +105,7 @@ export const getOrders = async (req, res) => {
   if (!req.user) throw unauthorized();
 
   const { page, limit } = req.query;
-  const searchQuery = {
+  let searchQuery = {
     type: req.query?.type,
     priority: req.query?.priority,
     status: req.query?.status,
@@ -117,38 +118,26 @@ export const getOrders = async (req, res) => {
     endDate: req.query?.endDate,
   };
 
+  searchQuery = cleanObject(searchQuery);
+
   const isDriver = req.user.role === ROLES.DRIVER;
-  const isAdmin = req.user.role === ROLES.ADMIN;
 
   if (isDriver) {
     const driver = await fetchDriverByUserId(req.user._id);
     if (!driver) throw notFound('driver');
-
-    const result = await getDriverOrders(page, limit, {
-      ...searchQuery,
-      driverId: driver._id,
-    });
-
-    const orders = result.data.map(DtoService.order);
-
-    return res.status(200).json({
-      success: true,
-      data: orders,
-      totalOrders: result.total,
-      totalPage: result.totalPage,
-    });
+    searchQuery.driverId = driver._id;
   }
 
-  if (isAdmin) {
-    const result = await getAllOrders(page, limit, searchQuery);
+  const result = await getAllOrders(page, limit, searchQuery, req.user.role);
 
-    return res.status(200).json({
-      success: true,
-      data: result.data,
-      totalOrders: result.total,
-      totalPage: result.totalPage,
-    });
-  }
+  const orders = isDriver ? result.data.map((order) => DtoService.order(order)) : result.data;
+
+  return res.status(200).json({
+    success: true,
+    data: orders,
+    totalOrders: result.total,
+    totalPage: result.totalPage,
+  });
 };
 
 export const getOrder = async (req, res) => {
