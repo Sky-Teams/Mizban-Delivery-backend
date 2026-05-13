@@ -1,6 +1,18 @@
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 import { hashToken } from '#shared/utils/jwt.js';
+import { getObjectValues } from '#shared/utils/object.helper.js';
+import { DEVICES } from '#shared/utils/enums.js';
+
+const DeviceSchema = new mongoose.Schema(
+  {
+    fcmToken: { type: String, required: true },
+    platform: { type: String, enum: getObjectValues(DEVICES), required: true },
+    deviceId: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
 
 const UserSchema = new mongoose.Schema(
   {
@@ -17,7 +29,10 @@ const UserSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false },
     emailVerificationToken: { type: String, default: null },
     emailVerificationExpires: { type: Date, default: null },
-    fcmToken: { type: String, default: null },
+    devices: {
+      type: [DeviceSchema],
+      default: [],
+    },
   },
   {
     timestamps: true,
@@ -30,6 +45,16 @@ UserSchema.index(
     unique: true,
     partialFilterExpression: {
       googleId: { $ne: null },
+    },
+  }
+);
+
+UserSchema.index(
+  { 'devices.deviceId': 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      'devices.deviceId': { $exists: true },
     },
   }
 );

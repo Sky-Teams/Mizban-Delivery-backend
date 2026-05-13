@@ -625,4 +625,21 @@ export const ERROR_MESSAGES = {
     fa: 'تاریخ پایان نامعتبر است',
     ps: 'د پای نیټه ناسمه ده',
   },
+  [ERROR_CODES.INVALID_FCM_TOKEN]: {
+    en: 'Invalid FCM token.',
+    fa: '.توکن نا معتبر است FCM ',
+    ps: '.ټوکن ناسمه ده FCM د',
+  },
+
+  [ERROR_CODES.INVALID_DEVICE_ID]: {
+    en: 'Invalid device ID.',
+    fa: 'شناسه دستگاه نامعتبر است.',
+    ps: 'د وسیلې پېژند ناسم دی.',
+  },
+
+  [ERROR_CODES.INVALID_DEVICE_PLATFORM]: {
+    en: 'Invalid device platform.',
+    fa: 'پلتفرم دستگاه نامعتبر است.',
+    ps: 'د وسیلې پلېټفارم ناسمه ده.',
+  },
 };

@@ -66,3 +66,9 @@ export const SOCKET_EVENTS = {
     OFFER: 'offer',
   },
 };
+
+export const DEVICES = {
+  WEB: 'web',
+  ANDROID: 'android',
+  IOS: 'ios',
+};

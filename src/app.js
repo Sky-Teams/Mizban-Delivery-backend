@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import { corsOptions } from './config/cors.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
 import { businessRoutes } from '#modules/businesses/index.js';
-import { authRoutes, userRoutes } from '#modules/users/index.js';
+import { authRoutes, userRoutes, deviceRoutes } from '#modules/users/index.js';
 import { authMiddleware } from '#shared/middleware/authMiddleware.js';
 import { driverRoutes } from '#modules/drivers/index.js';
 import { notificationRoutes } from '#modules/notifications/index.js';
@@ -52,6 +52,7 @@ app.use('/api/businesses', authorizeRole(ROLES.ADMIN), businessRoutes);
 app.use('/api/business-customers', authorizeRole(ROLES.ADMIN), businessCustomerRoutes);
 app.use('/api/offers', offerRoutes);
 app.use('/api/logs', authorizeRole(ROLES.ADMIN), logRoutes);
+app.use('/api/devices', deviceRoutes);
 
 //#endregion
 

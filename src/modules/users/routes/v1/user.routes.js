@@ -1,6 +1,6 @@
 import express from 'express';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
-import { getProfile } from '../../controllers/v1/user.contoller.js';
+import { getProfile } from '../../controllers/v1/user.controller.js';
 
 const router = express.Router();
 
