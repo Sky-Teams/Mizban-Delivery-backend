@@ -1,4 +1,9 @@
-import { DRIVER_STATUS, VEHICLE_TYPE } from '#shared/utils/enums.js';
+import {
+  DRIVER_STATUS,
+  FUEL_TYPE,
+  VEHICLE_TYPE,
+  VERIFICATION_STATUS,
+} from '#shared/utils/enums.js';
 import { getObjectValues } from '#shared/utils/object.helper.js';
 import mongoose from 'mongoose';
 
@@ -10,11 +15,70 @@ const DriverSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    vehicleName: {
+      type: String,
+      trim: true,
+      default: null,
+    },
     vehicleType: {
       type: String,
       enum: getObjectValues(VEHICLE_TYPE),
       required: true,
       default: VEHICLE_TYPE.MOTORBIKE,
+    },
+    fuelType: {
+      type: String,
+      enum: getObjectValues(FUEL_TYPE),
+      default: null,
+    },
+    vehicleColor: {
+      type: String,
+      trim: true,
+    },
+    emergencyContactName: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    emergencyContactNumber: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    emergencyContactRelation: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    documents: {
+      photo: {
+        type: String,
+        default: null,
+      },
+
+      nationalIdCard: {
+        front: { type: String, default: null },
+        back: { type: String, default: null },
+      },
+
+      driverLicense: {
+        type: String,
+        default: null,
+      },
+
+      vehicleCard: {
+        type: String,
+        default: null,
+      },
+    },
+
+    verificationStatus: {
+      type: String,
+      enum: getObjectValues(VERIFICATION_STATUS),
+      default: VERIFICATION_STATUS.PENDING,
     },
     status: {
       type: String,
@@ -36,11 +100,11 @@ const DriverSchema = new mongoose.Schema(
     timeAvailability: {
       start: {
         type: String,
-        required: true,
+        default: null,
       },
       end: {
         type: String,
-        required: true,
+        default: null,
       },
     },
     lastLocationAt: {
@@ -59,6 +123,10 @@ const DriverSchema = new mongoose.Schema(
     acceptanceRate: {
       type: Number,
       default: 0,
+    },
+    dateOfBirth: {
+      type: Date,
+      default: null,
     },
 
     isVerified: { type: Boolean, default: false },
