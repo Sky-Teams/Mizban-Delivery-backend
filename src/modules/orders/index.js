@@ -24,8 +24,8 @@ export {
   increaseDriverIndex,
   addDriversDataInOrder,
   getOrdersStatistics,
-  findOrdersWithOfferStatus,
-  findOrdersWithOrderStatus,
-  findOrdersWithoutStatus,
+  findOrdersByOfferStatus,
+  findOrdersByOrderStatus,
+  findOrders,
 } from './services/v1/order.service.js';
 export { OrderModel } from './models/order.model.js';
