@@ -36,7 +36,7 @@ export const getAllDrivers = async (req, res) => {
     searchTerm: req.query?.searchTerm, // searchTerm can be name/email/phone
     vehicleType: req.query?.vehicleType,
     status: req.query?.status,
-    isVerified: req.query?.isVerified,
+    verificationStatus: req.query?.verificationStatus,
   };
 
   const { drivers, totalDrivers, totalPages } = await fetchDrivers(limit, page, searchQuery);
