@@ -1490,7 +1490,7 @@ describe('getAllOrders', () => {
       totalOrders: 2,
     };
 
-    vi.spyOn(orderService, 'findOrdersWithOrderStatus').mockResolvedValue(serviceResult);
+    vi.spyOn(orderService, 'findOrdersByOrderStatus').mockResolvedValue(serviceResult);
 
     const chain = {
       sort: vi.fn().mockReturnThis(),
