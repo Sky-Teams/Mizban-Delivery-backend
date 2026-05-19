@@ -11,7 +11,7 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { GeoService } from '#shared/utils/geoService.js';
 import { DriverScore } from '#shared/utils/scorePrediction.js';
-import { DRIVER_STATUS } from '#shared/utils/enums.js';
+import { DRIVER_STATUS, VERIFICATION_STATUS } from '#shared/utils/enums.js';
 //#region Services
 
 /** Fetch all Drivers with pagination functionality */
@@ -102,7 +102,7 @@ const addDriver = async (session, driverData) => {
     address,
     vehicleRegistrationNumber,
     timeAvailability: { start, end },
-    isVerified: true,
+    verificationStatus: VERIFICATION_STATUS.APPROVED,
   };
 
   const driver = await DriverModel.create([newDriver], { session });
@@ -121,7 +121,7 @@ const addDriver = async (session, driverData) => {
     address: driverPlainObject.address,
     vehicleRegistrationNumber: driverPlainObject.vehicleRegistrationNumber,
     timeAvailability: driverPlainObject.timeAvailability,
-    isVerified: driverPlainObject.isVerified,
+    verificationStatus: driverPlainObject.verificationStatus,
     createdAt: driverPlainObject.createdAt,
     updatedAt: driverPlainObject.updatedAt,
   };
