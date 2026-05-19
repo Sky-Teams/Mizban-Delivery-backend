@@ -1,70 +1,127 @@
-// import { ERROR_CODES } from '#shared/errors/customCodes.js';
-// import { ensureNumber } from '#shared/utils/ensureNumber.js';
-// import { z } from 'zod';
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import { DateHelper } from '#shared/utils/date.helper.js';
+import { ensureNumber } from '#shared/utils/ensureNumber.js';
+import { FUEL_TYPE, VEHICLE_TYPE } from '#shared/utils/enums.js';
+import { getObjectValues } from '#shared/utils/object.helper.js';
+import { isValidPhoneNumber } from 'libphonenumber-js';
+import { z } from 'zod';
+const vehicleTypes = getObjectValues(VEHICLE_TYPE);
+const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 // import { ensureISODate } from '#shared/utils/ensureISODate.js';
-// const vehicleTypes = ['bike', 'car', 'van'];
 // const driverStatuses = ['offline', 'idle', 'assigned', 'delivering'];
-// const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-// Maybe in future we will need these validators.
+const createDriverProfileSchema = z.object({
+  body: z.object({
+    name: z.string().min(3).optional(),
 
-// const createDriverSchema = z.object({
-//   body: z.object({
-//     vehicleType: z.enum(vehicleTypes, {
-//       errorMap: () => ({ message: ERROR_CODES.INVALID_VEHICLE_TYPE }),
-//     }),
-//     status: z
-//       .enum(driverStatuses, { errorMap: () => ({ message: ERROR_CODES.INVALID_STATUS }) })
-//       .optional(),
-//     capacity: z.object({
-//       maxWeightKg: z.preprocess(
-//         (val) => ensureNumber(val, 'capacity.maxWeightKg', ERROR_CODES.MAX_WEIGHT_MUST_BE_NUMBER),
-//         z.number().positive({ message: ERROR_CODES.MAX_WEIGHT_MUST_BE_POSITIVE })
-//       ),
-//       maxPackages: z.preprocess(
-//         (val) => ensureNumber(val, 'capacity.maxPackages', ERROR_CODES.MAX_PACKAGES_MUST_BE_NUMBER),
-//         z
-//           .number()
-//           .int({ message: ERROR_CODES.MAX_PACKAGES_MUST_BE_INTEGER })
-//           .positive({ message: ERROR_CODES.MAX_PACKAGES_MUST_BE_POSITIVE })
-//       ),
-//     }),
-//     vehicleRegistrationNumber: z
-//       .string()
-//       .min(1, { message: ERROR_CODES.VEHICLE_REGISTRATION_REQUIRED }),
+    phone: z
+      .string()
+      .refine((val) => isValidPhoneNumber(val, 'AF'), {
+        message: ERROR_CODES.INVALID_PHONE_NUMBER,
+      })
+      .optional(),
 
-//     address: z.string().optional().nullable(),
-//     timeAvailability: z
-//       .object({
-//         start: z.string().regex(timeRegex, {
-//           message: ERROR_CODES.INVALID_TIME_FORMAT,
-//         }),
+    vehicleType: z
+      .enum(vehicleTypes, {
+        errorMap: () => ({ message: ERROR_CODES.INVALID_VEHICLE_TYPE }),
+      })
+      .optional(),
 
-//         end: z.string().regex(timeRegex, {
-//           message: ERROR_CODES.INVALID_TIME_FORMAT,
-//         }),
-//       })
-//       .refine(
-//         (data) => {
-//           const [startH, startM] = data.start.split(':').map(Number);
-//           const [endH, endM] = data.end.split(':').map(Number);
+    vehicleRegistrationNumber: z
+      .string()
+      .min(1, {
+        message: ERROR_CODES.VEHICLE_REGISTRATION_REQUIRED,
+      })
+      .optional(),
 
-//           const startMinutes = startH * 60 + startM;
-//           const endMinutes = endH * 60 + endM;
+    address: z.string().optional().nullable(),
 
-//           return startMinutes < endMinutes;
-//         },
-//         {
-//           message: ERROR_CODES.END_TIME_MUST_BE_GREATER,
-//           path: ['end'],
-//         }
-//       ),
-//   }),
-// });
+    dateOfBirth: z
+      .string()
+      .refine(DateHelper.isValidBirthDate, {
+        message: ERROR_CODES.INVALID_BIRTH_DATE,
+      })
+      .optional(),
 
-// export const createDriverValidator = (req) => {
-//   return createDriverSchema.safeParse({ body: req.body });
-// };
+    vehicleName: z.string().min(2).optional(),
+
+    fuelType: z
+      .enum(getObjectValues(FUEL_TYPE), {
+        errorMap: () => ({ message: ERROR_CODES.INVALID_FUEL_TYPE }),
+      })
+      .optional(),
+
+    vehicleColor: z.string().min(2).optional(),
+
+    emergencyContactName: z.string().min(3).optional(),
+
+    emergencyContactNumber: z
+      .string()
+      .refine((val) => isValidPhoneNumber(val, 'AF'), {
+        message: ERROR_CODES.INVALID_PHONE_NUMBER,
+      })
+      .optional(),
+
+    emergencyContactRelation: z.string().min(2).optional(),
+
+    capacity: z
+      .object({
+        maxWeightKg: z.preprocess(
+          (val) =>
+            val !== undefined
+              ? ensureNumber(val, 'capacity.maxWeightKg', ERROR_CODES.MAX_WEIGHT_MUST_BE_NUMBER)
+              : val,
+          z.number().positive().optional()
+        ),
+
+        maxPackages: z.preprocess(
+          (val) =>
+            val !== undefined
+              ? ensureNumber(val, 'capacity.maxPackages', ERROR_CODES.MAX_PACKAGES_MUST_BE_NUMBER)
+              : val,
+          z.number().int().positive().optional()
+        ),
+      })
+      .optional(),
+
+    timeAvailability: z
+      .object({
+        start: z
+          .string()
+          .regex(timeRegex, {
+            message: ERROR_CODES.INVALID_TIME_FORMAT,
+          })
+          .optional(),
+
+        end: z
+          .string()
+          .regex(timeRegex, {
+            message: ERROR_CODES.INVALID_TIME_FORMAT,
+          })
+          .optional(),
+      })
+      .partial()
+      .refine(
+        (data) => {
+          if (!data.start || !data.end) return true;
+
+          const [sh, sm] = data.start.split(':').map(Number);
+          const [eh, em] = data.end.split(':').map(Number);
+
+          return sh * 60 + sm < eh * 60 + em;
+        },
+        {
+          message: ERROR_CODES.END_TIME_MUST_BE_GREATER,
+          path: ['end'],
+        }
+      )
+      .optional(),
+  }),
+});
+
+export const createDriverProfileValidator = (req) => {
+  return createDriverProfileSchema.safeParse({ body: req.body });
+};
 
 // const updateDriverSchema = z.object({
 //   body: z
