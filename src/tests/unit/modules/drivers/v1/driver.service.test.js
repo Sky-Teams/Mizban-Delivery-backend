@@ -11,6 +11,7 @@ import { UserModel } from '#modules/users/index.js';
 import { hashPassword } from '#shared/utils/jwt.js';
 import { AppError } from '#shared/errors/error.js';
 import mongoose from 'mongoose';
+import { VERIFICATION_STATUS } from '#shared/utils/enums.js';
 
 // Mock the driver model
 vi.mock('#modules/drivers/models/driver.model.js', () => ({
@@ -184,7 +185,7 @@ describe('Driver Services', () => {
             address: 'Street 123',
             vehicleRegistrationNumber: 'ABC123',
             timeAvailability: { start: '09:00', end: '17:00' },
-            isVerified: true,
+            verificationStatus: VERIFICATION_STATUS.APPROVED,
             createdAt: new Date(),
             updatedAt: new Date(),
           }),

@@ -132,7 +132,7 @@ describe('Driver Controllers', () => {
         searchTerm: 'John',
         vehicleType: 'motorbike',
         status: undefined,
-        isVerified: undefined,
+        verificationStatus: undefined,
       });
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
