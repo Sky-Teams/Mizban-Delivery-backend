@@ -86,6 +86,15 @@ export const getOrderById = async (orderId) => {
   return order;
 };
 
+/**
+ * Retrieve orders based on filters, status, and pagination.
+ *
+ * @param {Number} page
+ * @param {Number} limit
+ * @param {Object} searchQuery
+ * @param {String} role
+ * @returns List of orders
+ */
 export const getAllOrders = async (page = 1, limit = 10, searchQuery = {}, role) => {
   const skip = (page - 1) * limit;
 
@@ -98,19 +107,33 @@ export const getAllOrders = async (page = 1, limit = 10, searchQuery = {}, role)
     filters,
   });
 
+  // Logic Overview:
+  // This function retrieves orders based on the provided status type.
+  //
+  // 1. Offer Status:
+  //    - If the status belongs to OFFER_STATUS list,
+  //    - fetch orders using order references stored in the Offer collection.
+  //
+  // 2. Order Status:
+  //    - If the status belongs to ORDER_STATUS list,
+  //    - fetch data directly from the Order collection.
+  //
+  // 3. No Status:
+  //    - Fetch normal orders from Order collection
+  //    - Also include relevant offer-based orders (rejected/expired)
+  //    - Merge both datasets and return combined results
+
+  // Check if the status provided in query parameter exists in the list of offer statuses
   const isOfferStatus = status === OFFER_STATUS.REJECTED || status === OFFER_STATUS.EXPIRED;
 
+  // Check if the status provided in query parameters exists in the list of order statuses
   const isOrderStatus = getObjectValues(ORDER_STATUS).includes(status);
-
-  console.log('status:', status);
-  console.log('OFFER_STATUS:', OFFER_STATUS);
-  console.log('isOfferStatus:', isOfferStatus);
 
   // No status:
   // get all normal orders +
   // rejected/expired orders from offers collection
   if (!status) {
-    let orders = await findOrdersWithoutStatus(orderFilter);
+    let orders = await findOrders(orderFilter);
 
     if (role === ROLES.ADMIN) {
       orders = deduplicateById(orders);
@@ -126,12 +149,7 @@ export const getAllOrders = async (page = 1, limit = 10, searchQuery = {}, role)
   // Order statuses:
   // data comes directly from orders collection
   if (isOrderStatus) {
-    const { orders, totalOrders } = await findOrdersWithOrderStatus(
-      orderFilter,
-      status,
-      skip,
-      limit
-    );
+    const { orders, totalOrders } = await findOrdersByOrderStatus(orderFilter, status, skip, limit);
 
     return buildPaginatedResponse(orders, totalOrders, limit);
   }
@@ -139,7 +157,7 @@ export const getAllOrders = async (page = 1, limit = 10, searchQuery = {}, role)
   // Offer statuses:
   // data comes from offers collection
   if (isOfferStatus) {
-    let orders = await findOrdersWithOfferStatus(orderFilter, status);
+    let orders = await findOrdersByOfferStatus(orderFilter, status);
 
     if (role === ROLES.ADMIN) {
       orders = deduplicateById(orders);
@@ -485,6 +503,16 @@ export const getOrdersStatistics = async (driverId) => {
   };
 };
 
+/**
+ * Get offers and return their related orders.
+ * Filters offers by driverId and status, then matches orders and maps results.
+ *
+ * @param {Object} params
+ * @param {String} [params.driverId] - Driver ID filter
+ * @param {Object} params.filter - Order filter for matching populated order
+ * @param {String} [params.status] - Offer status filter
+ * @returns {Promise<Array>} List of orders from offers
+ */
 const getOffersWithOrders = async ({ driverId, filter, status }) => {
   const query = {};
 
@@ -569,8 +597,18 @@ const doesDriverAssignedToOrder = (driverId, orderDriverId) => {
   return true;
 };
 
-// Accept order filters and return the array of orders
-export const findOrdersWithoutStatus = async (filter = {}) => {
+/**
+ * Fetches all orders when no status filter is applied.
+ * Combines normal orders from the Order collection with offer-based orders
+ * (e.g. rejected or expired offers).
+ *
+ * @param {Object} filter - Query filter object for searching orders
+ * @param {String} [filter.driverId] - Driver ID filter
+ * @param {String} [filter.startDate] - Start date filter
+ * @param {String} [filter.endDate] - End date filter
+ * @returns {Promise<Array>} Merged list of orders from orders and offers
+ */
+export const findOrders = async (filter = {}) => {
   const { driverId, startDate, endDate, ...filters } = filter;
 
   const offerFilter = buildOfferFilter({
@@ -595,8 +633,21 @@ export const findOrdersWithoutStatus = async (filter = {}) => {
   return mergedOrders;
 };
 
-// Accept order filter and status and return array of orders
-export const findOrdersWithOrderStatus = async (filter = {}, status, skip, limit) => {
+/**
+ * Fetches orders from the Order collection based on a specific order status.
+ *
+ * Applies filtering, pagination, and returns both the matching orders
+ * and the total count for pagination purposes.
+ *
+ * @param {Object} filter - Query filter object for searching orders
+ * @param {String} status - Order status to filter by
+ * @param {Number} skip - Number of records to skip (pagination)
+ * @param {Number} limit - Number of records to return (pagination limit)
+ *
+ * @returns {Promise<{orders: Array, totalOrders: Number}>}
+ * Object containing filtered orders and total count
+ */
+export const findOrdersByOrderStatus = async (filter = {}, status, skip, limit) => {
   const query = {
     ...filter,
     status,
@@ -611,8 +662,18 @@ export const findOrdersWithOrderStatus = async (filter = {}, status, skip, limit
   return { orders, totalOrders };
 };
 
-// Accept order filter and status and return array of orders
-export const findOrdersWithOfferStatus = async (filter = {}, status) => {
+/**
+ * Fetches orders related to offers based on a specific offer status.
+ *
+ * This function retrieves orders that originate from the Offer collection
+ * (e.g. rejected or expired offers) and applies additional filtering.
+ *
+ * @param {Object} filter - Query filter object for searching offers
+ * @param {String} status - Offer status to filter by
+ *
+ * @returns {Promise<Array>} List of orders derived from offers
+ */
+export const findOrdersByOfferStatus = async (filter = {}, status) => {
   const { driverId, startDate, endDate, ...filters } = filter;
   const offerFilter = buildOfferFilter({
     startDate,
