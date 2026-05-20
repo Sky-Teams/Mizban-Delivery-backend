@@ -75,6 +75,7 @@ const DriverSchema = new mongoose.Schema(
       },
     },
 
+    // Verification status can help us in registration process(pending => accepted/rejected).
     verificationStatus: {
       type: String,
       enum: getObjectValues(VERIFICATION_STATUS),
