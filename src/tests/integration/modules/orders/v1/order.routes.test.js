@@ -1035,7 +1035,8 @@ describe('Order API v1 Integration', () => {
     });
   });
 
-  describe('GET /api/orders', () => {
+  describe('GET /api/orders - Admin', () => {
+    let driverId = null;
     beforeEach(async () => {
       await OrderModel.create({
         _id: new mongoose.Types.ObjectId(),
@@ -1054,6 +1055,15 @@ describe('Order API v1 Integration', () => {
         deliveryPrice: { total: 20 },
         createdAt: new Date('2026-03-05'),
       });
+
+      driverId = new mongoose.Types.ObjectId();
+
+      await createFakeOrder({
+        status: ORDER_STATUS.DELIVERED,
+        driverId,
+      });
+
+      await createFakeOrder({ status: ORDER_STATUS.RETURNED, type: 'food' });
     });
 
     it('should throw unauthorized error if user is missing', async () => {
@@ -1068,6 +1078,46 @@ describe('Order API v1 Integration', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(3);
+    });
+
+    it('should return orders based on status', async () => {
+      const url = `${baseURL}/?page=1&limit=8&status=returned`;
+      const res = await getWithAuth(app, url, token);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(1);
+    });
+
+    it('should return orders based on status', async () => {
+      const url = `${baseURL}/?page=1&limit=8&status=rejected`;
+      const res = await getWithAuth(app, url, token);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(0);
+    });
+
+    it('should return orders based on status and type', async () => {
+      const url = `${baseURL}/?page=1&limit=8&status=returned&type=food`;
+      const res = await getWithAuth(app, url, token);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(1);
+    });
+
+    it('should return orders based on status and type', async () => {
+      const url = `${baseURL}/?page=1&limit=8&status=returned&type=food`;
+      const res = await getWithAuth(app, url, token);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(1);
+    });
+
+    it('should return orders based on driverId', async () => {
+      const url = `${baseURL}/?page=1&limit=8&driverId=${driverId}`;
+      const res = await getWithAuth(app, url, token);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
       expect(res.body.data.length).toBe(1);
     });
 
@@ -1077,6 +1127,97 @@ describe('Order API v1 Integration', () => {
         `${baseURL}?startDate=2026-03-01&endDate=2026-03-10`,
         token
       );
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(1);
+    });
+  });
+
+  describe('GET /api/orders - Driver', () => {
+    let driver;
+
+    beforeEach(async () => {
+      await clearDB();
+
+      const result = await createFakeUserWithToken('driver');
+      token = result.token;
+
+      driver = await createFakeDriver(result.user);
+
+      await createFakeOrder({
+        status: ORDER_STATUS.ASSIGNED,
+        timeline: { pickedUpAt: new Date() },
+        driverId: driver._id,
+        type: 'food',
+      });
+
+      await createFakeOrder({
+        status: ORDER_STATUS.PICKEDUP,
+        timeline: { pickedUpAt: new Date() },
+        driverId: driver._id,
+      });
+
+      await createFakeOrder({
+        status: ORDER_STATUS.DELIVERED,
+        timeline: { pickedUpAt: new Date() },
+        driverId: driver._id,
+      });
+
+      await createFakeOrder({
+        status: ORDER_STATUS.RETURNED,
+        timeline: { pickedUpAt: new Date() },
+        driverId: driver._id,
+      });
+    });
+
+    it('should return orders of a driver', async () => {
+      const res = await getWithAuth(app, baseURL, token);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(4);
+    });
+
+    it('should return orders of a driver based on status', async () => {
+      const url = `${baseURL}/?page=1&limit=8&status=rejected`;
+      const res = await getWithAuth(app, url, token);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(0);
+    });
+
+    it('should return orders of a driver based on status', async () => {
+      const url = `${baseURL}/?page=1&limit=8&status=delivered`;
+      const res = await getWithAuth(app, url, token);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(1);
+    });
+
+    it('should return orders of a driver based on status', async () => {
+      const url = `${baseURL}/?page=1&limit=8&status=returned`;
+      const res = await getWithAuth(app, url, token);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(1);
+    });
+
+    it('should return orders of a driver based on type ', async () => {
+      const url = `${baseURL}/?page=1&limit=8&type=food`;
+      const res = await getWithAuth(app, url, token);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(1);
+    });
+
+    it('should return orders of a driver based on type ', async () => {
+      const url = `${baseURL}/?page=1&limit=8&type=food`;
+      const res = await getWithAuth(app, url, token);
+
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.length).toBe(1);

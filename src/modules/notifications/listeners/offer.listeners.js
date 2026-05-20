@@ -10,7 +10,7 @@ export const registerOfferListeners = () => {
   });
 
   eventBus.on(EVENT_BUS_EVENTS.OFFER_REJECTED, async (data) => {
-    const payload = NotificationPayloads.offerAccepted(data.orderId, data.driverId);
+    const payload = NotificationPayloads.offerRejected(data.orderId, data.driverId);
     await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
   });
 };

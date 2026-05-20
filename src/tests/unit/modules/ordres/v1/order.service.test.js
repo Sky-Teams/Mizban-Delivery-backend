@@ -15,24 +15,25 @@ import {
   deliverOrderWithTransaction,
   OrderModel,
   pickupOrderWithTransaction,
-  getAllOrders,
   getOrdersStatistics,
 } from '#modules/orders/index.js';
 import mongoose from 'mongoose';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
-import { orderUpdateQuery, driverQueryBuilder } from '#shared/utils/queryBuilder.js';
+import { orderUpdateQuery } from '#shared/utils/queryBuilder.js';
 import { getOrderById, updateOrderInfo } from '#modules/orders/services/v1/order.service.js';
 import {
   DRIVER_STATUS,
   EVENT_BUS_EVENTS,
+  OFFER_STATUS,
   ORDER_STATUS,
   PAYMENT_STATUS,
   ROLES,
 } from '#shared/utils/enums.js';
-import { DateHelper } from '#shared/utils/date.helper.js';
 import { DtoService } from '#shared/utils/dtoService.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
 import { OfferModel } from '#modules/offers/index.js';
+
+import * as orderService from '#modules/orders/services/v1/order.service.js';
 
 vi.mock('#modules/orders/models/order.model.js', () => ({
   OrderModel: {
@@ -44,9 +45,11 @@ vi.mock('#modules/orders/models/order.model.js', () => ({
     aggregate: vi.fn(),
   },
 }));
+
 vi.mock('#modules/offers/models/offer.model.js', () => ({
   OfferModel: {
     aggregate: vi.fn(),
+    find: vi.fn(),
   },
 }));
 
@@ -69,6 +72,8 @@ vi.mock('#shared/utils/math.helper.js', () => ({
 vi.mock('#shared/utils/queryBuilder.js', () => ({
   orderUpdateQuery: vi.fn(),
   driverQueryBuilder: vi.fn(),
+  buildOrderFilter: vi.fn(() => ({})),
+  buildOfferFilter: vi.fn(() => ({})),
   countByStatus: vi.fn(() => ({ $sum: 1 })),
 }));
 
@@ -1442,71 +1447,66 @@ describe('getOrderById', () => {
 });
 
 describe('getAllOrders', () => {
-  it('should return orders list', async () => {
-    const mockOrders = [{ _id: '3' }, { _id: '2' }, { _id: '1' }];
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-    OrderModel.countDocuments.mockResolvedValue(10);
+  it('should return paginated orders (no status)', async () => {
+    const mockOrders = [
+      { _id: '1', createdAt: new Date('2026-01-02') },
+      { _id: '2', createdAt: new Date('2026-01-01') },
+    ];
+
     OrderModel.find.mockReturnValue({
       sort: vi.fn().mockReturnThis(),
-      skip: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockReturnThis(),
       lean: vi.fn().mockResolvedValue(mockOrders),
     });
 
-    const result = await getAllOrders(2, 4);
+    OrderModel.countDocuments.mockResolvedValue(2);
 
-    expect(OrderModel.countDocuments).toHaveBeenCalledWith({});
+    OfferModel.find.mockReturnValue({
+      populate: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue([]),
+    });
+
+    const result = await orderService.getAllOrders(1, 10, {}, 'admin');
+
     expect(result).toEqual({
-      orders: mockOrders,
-      totalOrders: 10,
-      totalPage: 3,
+      data: mockOrders,
+      total: mockOrders.length,
+      totalPage: 1,
     });
   });
 
-  it('should return orders filtered by status + date range', async () => {
-    const mockOrders = [
-      { _id: '4', status: ORDER_STATUS.ASSIGNED },
-      { _id: '2', status: ORDER_STATUS.ASSIGNED },
-    ];
-
-    // Mock date helpers
-    DateHelper.getStartDateUTC.mockReturnValue('2026-01-01T00:00:00Z');
-    DateHelper.getEndDateUTC.mockReturnValue('2026-01-10T23:59:59Z');
+  it('should return orders when status is ORDER_STATUS (direct orders)', async () => {
+    const mockOrders = [{ _id: '1' }, { _id: '2' }];
 
     const searchQuery = {
-      status: ORDER_STATUS.ASSIGNED,
-      startDate: '2026-01-01',
-      endDate: '2026-01-10',
+      status: 'assigned',
     };
 
-    const expectedQuery = {
-      status: ORDER_STATUS.ASSIGNED,
-      createdAt: {
-        $gte: '2026-01-01T00:00:00Z',
-        $lte: '2026-01-10T23:59:59Z',
-      },
+    const serviceResult = {
+      orders: mockOrders,
+      totalOrders: 2,
     };
 
-    OrderModel.countDocuments.mockResolvedValue(14);
-    OrderModel.find.mockReturnValue({
+    vi.spyOn(orderService, 'findOrdersByOrderStatus').mockResolvedValue(serviceResult);
+
+    const chain = {
       sort: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
       lean: vi.fn().mockResolvedValue(mockOrders),
-    });
+    };
 
-    const result = await getAllOrders(1, 5, searchQuery);
+    OrderModel.find.mockReturnValue(chain);
 
-    expect(DateHelper.getStartDateUTC).toHaveBeenCalledWith('2026-01-01');
-    expect(DateHelper.getEndDateUTC).toHaveBeenCalledWith('2026-01-10');
-
-    expect(OrderModel.countDocuments).toHaveBeenCalledWith(expectedQuery);
-    expect(OrderModel.find).toHaveBeenCalledWith(expectedQuery);
+    const result = await orderService.getAllOrders(1, 10, searchQuery, 'admin');
 
     expect(result).toEqual({
-      orders: mockOrders,
-      totalOrders: 14,
-      totalPage: 3,
+      data: mockOrders,
+      total: 2,
+      totalPage: 1,
     });
   });
 });

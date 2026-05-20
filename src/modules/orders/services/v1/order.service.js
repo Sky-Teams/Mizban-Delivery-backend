@@ -16,12 +16,18 @@ import {
   ROLES,
   OFFER_STATUS,
 } from '#shared/utils/enums.js';
-import { DateHelper } from '#shared/utils/date.helper.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
-import { countByStatus, orderUpdateQuery } from '#shared/utils/queryBuilder.js';
+import {
+  buildOfferFilter,
+  buildOrderFilter,
+  countByStatus,
+  orderUpdateQuery,
+} from '#shared/utils/queryBuilder.js';
 import { OrderModel } from '../../models/order.model.js';
 import mongoose from 'mongoose';
 import { OfferModel } from '#modules/offers/index.js';
+import { deduplicateById, getObjectValues } from '#shared/utils/object.helper.js';
+import { buildPaginatedResponse } from '#shared/utils/pagination.js';
 
 //#region Admin Services
 
@@ -80,39 +86,87 @@ export const getOrderById = async (orderId) => {
   return order;
 };
 
-export const getAllOrders = async (page = 1, limit = 10, searchQuery = {}) => {
+/**
+ * Retrieve orders based on filters, status, and pagination.
+ *
+ * @param {Number} page
+ * @param {Number} limit
+ * @param {Object} searchQuery
+ * @param {String} role
+ * @returns List of orders
+ */
+export const getAllOrders = async (page = 1, limit = 10, searchQuery = {}, role) => {
   const skip = (page - 1) * limit;
 
-  let query = Object.fromEntries(
-    Object.entries(searchQuery).filter(([_, value]) => value !== null && value !== undefined)
-  );
+  const { driverId, status, startDate, endDate, ...filters } = searchQuery;
 
-  if (searchQuery.startDate || searchQuery.endDate) {
-    query.createdAt = {};
+  const orderFilter = buildOrderFilter({
+    driverId,
+    startDate,
+    endDate,
+    filters,
+  });
+
+  // Logic Overview:
+  // This function retrieves orders based on the provided status type.
+  //
+  // 1. Offer Status:
+  //    - If the status belongs to OFFER_STATUS list,
+  //    - fetch orders using order references stored in the Offer collection.
+  //
+  // 2. Order Status:
+  //    - If the status belongs to ORDER_STATUS list,
+  //    - fetch data directly from the Order collection.
+  //
+  // 3. No Status:
+  //    - Fetch normal orders from Order collection
+  //    - Also include relevant offer-based orders (rejected/expired)
+  //    - Merge both datasets and return combined results
+
+  // Check if the status provided in query parameter exists in the list of offer statuses
+  const isOfferStatus = status === OFFER_STATUS.REJECTED || status === OFFER_STATUS.EXPIRED;
+
+  // Check if the status provided in query parameters exists in the list of order statuses
+  const isOrderStatus = getObjectValues(ORDER_STATUS).includes(status);
+
+  // No status:
+  // get all normal orders +
+  // rejected/expired orders from offers collection
+  if (!status) {
+    let orders = await findOrders(orderFilter);
+
+    if (role === ROLES.ADMIN) {
+      orders = deduplicateById(orders);
+    }
+
+    const sortedOrders = orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const paginatedOrders = sortedOrders.slice(skip, skip + limit);
+
+    return buildPaginatedResponse(paginatedOrders, sortedOrders.length, limit);
   }
 
-  if (searchQuery.startDate) {
-    query.createdAt.$gte = DateHelper.getStartDateUTC(searchQuery.startDate);
-    delete query.startDate; // Remove the startDate field from query because we filter based on createdAt
+  // Order statuses:
+  // data comes directly from orders collection
+  if (isOrderStatus) {
+    const { orders, totalOrders } = await findOrdersByOrderStatus(orderFilter, status, skip, limit);
+
+    return buildPaginatedResponse(orders, totalOrders, limit);
   }
 
-  if (searchQuery.endDate) {
-    query.createdAt.$lte = DateHelper.getEndDateUTC(searchQuery.endDate);
-    delete query.endDate; // Remove the endDate field from query because we filter based on createdAt
+  // Offer statuses:
+  // data comes from offers collection
+  if (isOfferStatus) {
+    let orders = await findOrdersByOfferStatus(orderFilter, status);
+
+    if (role === ROLES.ADMIN) {
+      orders = deduplicateById(orders);
+    }
+
+    const paginatedOrders = orders.slice(skip, skip + limit);
+
+    return buildPaginatedResponse(paginatedOrders, orders.length, limit);
   }
-
-  const totalOrders = await OrderModel.countDocuments(query);
-  const orders = await OrderModel.find(query)
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean();
-
-  return {
-    orders,
-    totalOrders,
-    totalPage: Math.ceil(totalOrders / limit),
-  };
 };
 
 export const updateOrderInfo = async (orderId, orderData) => {
@@ -449,6 +503,41 @@ export const getOrdersStatistics = async (driverId) => {
   };
 };
 
+/**
+ * Get offers and return their related orders.
+ * Filters offers by driverId and status, then matches orders and maps results.
+ *
+ * @param {Object} params
+ * @param {String} [params.driverId] - Driver ID filter
+ * @param {Object} params.filter - Order filter for matching populated order
+ * @param {String} [params.status] - Offer status filter
+ * @returns {Promise<Array>} List of orders from offers
+ */
+const getOffersWithOrders = async ({ driverId, filter, status }) => {
+  const query = {};
+
+  if (driverId) {
+    query.driver = driverId;
+  }
+
+  if (status) {
+    query.status = status;
+  }
+
+  const offers = await OfferModel.find(query)
+    .populate({
+      path: 'order',
+      match: filter,
+    })
+    .lean();
+
+  const filteredOffers = offers.filter((offer) => offer.order);
+
+  const mappedOrders = DtoService.mapOfferOrders(filteredOffers);
+
+  return mappedOrders;
+};
+
 //#endregion
 
 /** Add drivers info (id, eta, distance ) in related order record */
@@ -506,6 +595,99 @@ const doesDriverAssignedToOrder = (driverId, orderDriverId) => {
   }
 
   return true;
+};
+
+/**
+ * Fetches all orders when no status filter is applied.
+ * Combines normal orders from the Order collection with offer-based orders
+ * (e.g. rejected or expired offers).
+ *
+ * @param {Object} filter - Query filter object for searching orders
+ * @param {String} [filter.driverId] - Driver ID filter
+ * @param {String} [filter.startDate] - Start date filter
+ * @param {String} [filter.endDate] - End date filter
+ * @returns {Promise<Array>} Merged list of orders from orders and offers
+ */
+export const findOrders = async (filter = {}) => {
+  const { driverId, startDate, endDate, ...filters } = filter;
+
+  const offerFilter = buildOfferFilter({
+    startDate,
+    endDate,
+    filters,
+  });
+
+  const [orders, offerOrders] = await Promise.all([
+    OrderModel.find(filter).sort({ createdAt: -1 }).lean(),
+    getOffersWithOrders({
+      driverId,
+      filter: offerFilter,
+      status: {
+        $in: [OFFER_STATUS.REJECTED, OFFER_STATUS.EXPIRED],
+      },
+    }),
+  ]);
+
+  const mergedOrders = [...orders, ...offerOrders];
+
+  return mergedOrders;
+};
+
+/**
+ * Fetches orders from the Order collection based on a specific order status.
+ *
+ * Applies filtering, pagination, and returns both the matching orders
+ * and the total count for pagination purposes.
+ *
+ * @param {Object} filter - Query filter object for searching orders
+ * @param {String} status - Order status to filter by
+ * @param {Number} skip - Number of records to skip (pagination)
+ * @param {Number} limit - Number of records to return (pagination limit)
+ *
+ * @returns {Promise<{orders: Array, totalOrders: Number}>}
+ * Object containing filtered orders and total count
+ */
+export const findOrdersByOrderStatus = async (filter = {}, status, skip, limit) => {
+  const query = {
+    ...filter,
+    status,
+  };
+
+  const [orders, totalOrders] = await Promise.all([
+    OrderModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+
+    OrderModel.countDocuments(query),
+  ]);
+
+  return { orders, totalOrders };
+};
+
+/**
+ * Fetches orders related to offers based on a specific offer status.
+ *
+ * This function retrieves orders that originate from the Offer collection
+ * (e.g. rejected or expired offers) and applies additional filtering.
+ *
+ * @param {Object} filter - Query filter object for searching offers
+ * @param {String} status - Offer status to filter by
+ *
+ * @returns {Promise<Array>} List of orders derived from offers
+ */
+export const findOrdersByOfferStatus = async (filter = {}, status) => {
+  const { driverId, startDate, endDate, ...filters } = filter;
+  const offerFilter = buildOfferFilter({
+    startDate,
+    endDate,
+    filters,
+  });
+
+  const offerOrders = await getOffersWithOrders({
+    driverId,
+    filter: offerFilter,
+    status,
+  });
+
+  return offerOrders;
 };
 
 export const assignDriverToOrderWithTransaction = withTransaction(assignDriver);
