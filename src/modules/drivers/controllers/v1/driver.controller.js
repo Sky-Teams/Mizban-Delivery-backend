@@ -62,15 +62,17 @@ export const getDriver = async (req, res) => {
 
 //#endregion
 
-//#region Driver Routes
+//#region Driver controllers
 
-// Driver request to create a driver account
+// Create driver profile.
 export const createDriver = async (req, res) => {
   if (!req.user) throw unauthorized();
 
+  // Check if user already have a driver account.
   const exist = await doesDriverExist(req.user._id);
   if (exist) throw new AppError('Driver already exist', 400, ERROR_CODES.DRIVER_ALREADY_EXIST);
 
+  //Get photo and other documents for driver account
   const documents = {
     photo: req.files?.photo?.[0]?.path || null,
 
