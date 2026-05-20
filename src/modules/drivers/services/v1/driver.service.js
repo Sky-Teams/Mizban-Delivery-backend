@@ -266,6 +266,7 @@ export const createNewDriver = async (userId, driverData) => {
     emergencyContactRelation,
     dateOfBirth,
     documents,
+    phone,
   } = driverData;
 
   const newDriver = {
@@ -287,6 +288,11 @@ export const createNewDriver = async (userId, driverData) => {
   };
 
   const driver = await DriverModel.create(newDriver);
+
+  // Update the phone number of the driver if provided
+  if (phone) {
+    await UserModel.findOneAndUpdate({ _id: userId }, { phone });
+  }
 
   return driver;
 };
