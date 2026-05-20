@@ -251,43 +251,9 @@ export const doesDriverExist = async (userId) => {
 
 /** create driver account for a user */
 export const createNewDriver = async (userId, driverData) => {
-  const {
-    vehicleType,
-    status,
-    capacity,
-    address,
-    vehicleRegistrationNumber,
-    timeAvailability,
-    vehicleName,
-    fuelType,
-    vehicleColor,
-    emergencyContactName,
-    emergencyContactNumber,
-    emergencyContactRelation,
-    dateOfBirth,
-    documents,
-    phone,
-  } = driverData;
+  const { phone, ...driverInfo } = driverData;
 
-  const newDriver = {
-    user: userId,
-    vehicleType,
-    status,
-    capacity,
-    address,
-    vehicleRegistrationNumber,
-    timeAvailability,
-    vehicleName,
-    fuelType,
-    vehicleColor,
-    emergencyContactName,
-    emergencyContactNumber,
-    emergencyContactRelation,
-    dateOfBirth,
-    documents,
-  };
-
-  const driver = await DriverModel.create(newDriver);
+  const driver = await DriverModel.create(driverInfo);
 
   // Update the phone number of the driver if provided
   if (phone) {
