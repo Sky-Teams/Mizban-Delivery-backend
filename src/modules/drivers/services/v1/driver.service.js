@@ -253,7 +253,7 @@ export const doesDriverExist = async (userId) => {
 export const createNewDriver = async (userId, driverData) => {
   const { phone, ...driverInfo } = driverData;
 
-  const driver = await DriverModel.create(driverInfo);
+  const driver = await DriverModel.create({ ...driverInfo, user: userId });
 
   // Update the phone number of the driver if provided
   if (phone) {
