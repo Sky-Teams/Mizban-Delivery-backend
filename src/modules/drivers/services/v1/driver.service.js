@@ -268,16 +268,11 @@ export const createNewDriver = async (userId, driverData) => {
     documents,
   } = driverData;
 
-  const { maxWeightKg, maxPackages } = capacity;
-
   const newDriver = {
     user: userId,
     vehicleType,
     status,
-    capacity: {
-      maxWeightKg,
-      maxPackages,
-    },
+    capacity,
     address,
     vehicleRegistrationNumber,
     timeAvailability,
