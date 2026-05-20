@@ -86,8 +86,8 @@ const DriverSchema = new mongoose.Schema(
       default: DRIVER_STATUS.OFFLINE,
     },
     capacity: {
-      maxWeightKg: { type: Number, min: 0, required: true },
-      maxPackages: { type: Number, min: 0, required: true },
+      maxWeightKg: { type: Number, min: 0, default: 0 },
+      maxPackages: { type: Number, min: 0, default: 0 },
     },
     activeOrders: { type: Number, default: 0, min: 0 }, // Number of active orders of a driver
     maxOrders: { type: Number, default: 5, min: 1 }, // This default values is only for test, we can change it later.
