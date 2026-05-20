@@ -72,16 +72,16 @@ export const createDriver = async (req, res) => {
   if (exist) throw new AppError('Driver already exist', 400, ERROR_CODES.DRIVER_ALREADY_EXIST);
 
   const documents = {
-    photo: req.files.photo?.[0]?.path || null,
+    photo: req.files?.photo?.[0]?.path || null,
 
     nationalIdCard: {
-      front: req.files.nationalIdCardFront?.[0]?.path || null,
-      back: req.files.nationalIdCardBack?.[0]?.path || null,
+      front: req.files?.nationalIdCardFront?.[0]?.path || null,
+      back: req.files?.nationalIdCardBack?.[0]?.path || null,
     },
 
-    driverLicense: req.files.driverLicense?.[0]?.path || null,
+    driverLicense: req.files?.driverLicense?.[0]?.path || null,
 
-    vehicleCard: req.files.vehicleCard?.[0]?.path || null,
+    vehicleCard: req.files?.vehicleCard?.[0]?.path || null,
   };
 
   const driverData = { ...req.body, documents };
