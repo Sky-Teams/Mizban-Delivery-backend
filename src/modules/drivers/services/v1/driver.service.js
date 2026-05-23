@@ -11,7 +11,7 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { GeoService } from '#shared/utils/geoService.js';
 import { DriverScore } from '#shared/utils/scorePrediction.js';
-import { DRIVER_STATUS, VERIFICATION_STATUS } from '#shared/utils/enums.js';
+import { DRIVER_STATUS, REASON_TYPES, VERIFICATION_STATUS } from '#shared/utils/enums.js';
 //#region Services
 
 /** Fetch all Drivers with pagination functionality */
@@ -64,6 +64,48 @@ export const getDriverStatusByDriverId = async (driverId) => {
   const driver = await DriverModel.findById(driverId).select('status');
   if (!driver) throw notFound('Driver');
   return driver;
+};
+
+/**
+ * Approve the driver registration request by driverId
+ * @param {String} driverId
+ */
+export const approveDriverRequest = async (driverId) => {
+  // Check the existence of driver
+  const driver = await fetchDriverByDriverId(driverId);
+  if (!driver) throw notFound('Driver');
+
+  // Check the verification status, if its approved, then we throw error.
+  if (driver.verificationStatus === VERIFICATION_STATUS.APPROVED)
+    throw new AppError('Driver is already verified', 400, ERROR_CODES.DRIVER_ALREADY_VERIFIED);
+
+  // Approve the driver request
+  driver.verificationStatus = VERIFICATION_STATUS.APPROVED;
+
+  await driver.save();
+};
+
+/**
+ * Reject the driver registration request by driverId
+ * @param {String} driverId
+ * @param {String} rejectReason
+ */
+export const rejectDriverRequest = async (driverId, rejectReason) => {
+  // Check the existence of driver
+  const driver = await fetchDriverByDriverId(driverId);
+  if (!driver) throw notFound('Driver');
+
+  // Check the verification status, if its rejected, then we throw error.
+  if (driver.verificationStatus === VERIFICATION_STATUS.REJECTED)
+    throw new AppError('Driver is already rejected', 400, ERROR_CODES.DRIVER_ALREADY_REJECTED);
+
+  // Reject the driver request
+  driver.verificationStatus = VERIFICATION_STATUS.REJECTED;
+  driver.reason.type = REASON_TYPES.REJECTED;
+  driver.reason.description = rejectReason;
+  driver.reason.date = new Date();
+
+  await driver.save();
 };
 
 /** Create a new driver in system through admin*/
