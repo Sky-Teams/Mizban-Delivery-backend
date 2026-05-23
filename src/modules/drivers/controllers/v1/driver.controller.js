@@ -2,11 +2,13 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound, unauthorized } from '#shared/errors/error.js';
 import {
   addNewDriver,
+  approveDriverRequest,
   createNewDriver,
   doesDriverExist,
   fetchDriverByDriverId,
   fetchDrivers,
   modifyExistedDriver,
+  rejectDriverRequest,
 } from '../../services/v1/driver.service.js';
 
 //#region controllers
@@ -58,6 +60,27 @@ export const getDriver = async (req, res) => {
   if (!driver) throw notFound('Driver');
 
   res.status(200).json({ success: true, data: driver });
+};
+
+export const acceptDriverRegistrationRequest = async (req, res) => {
+  if (!req.user) throw unauthorized();
+
+  const driverId = req.params.id;
+
+  await approveDriverRequest(driverId);
+
+  res.status(200).json({ success: true, message: 'Driver registration approved' });
+};
+
+export const rejectDriverRegistrationRequest = async (req, res) => {
+  if (!req.user) throw unauthorized();
+
+  const driverId = req.params.id;
+  const rejectReason = req.body.rejectReason;
+
+  await rejectDriverRequest(driverId, rejectReason);
+
+  res.status(200).json({ success: true, message: 'Driver registration rejected' });
 };
 
 //#endregion
