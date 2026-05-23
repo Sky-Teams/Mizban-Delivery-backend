@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import { UserModel } from '#modules/users/index.js';
 import { hashPassword } from '#shared/utils/jwt.js';
 import { DriverModel } from '#modules/drivers/index.js';
-import { VEHICLE_TYPE } from '#shared/utils/enums.js';
+import { VEHICLE_TYPE, VERIFICATION_STATUS } from '#shared/utils/enums.js';
 
 dotenv.config();
 
@@ -220,7 +220,7 @@ const createFakeDrivers = async () => {
       phone: driver.phone,
       password: driver.password,
       role: 'driver',
-      isVerified: true,
+      verificationStatus: VERIFICATION_STATUS.APPROVED,
     };
   });
   const newUsers = await UserModel.insertMany(users);

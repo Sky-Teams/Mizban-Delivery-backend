@@ -72,3 +72,14 @@ export const DEVICES = {
   ANDROID: 'android',
   IOS: 'ios',
 };
+
+export const FUEL_TYPE = {
+  PETROL: 'petrol',
+  DIESEL: 'diesel',
+};
+
+export const VERIFICATION_STATUS = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+};

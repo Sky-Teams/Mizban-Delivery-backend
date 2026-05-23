@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   addNewDriver,
+  createNewDriver,
+  doesDriverExist,
   DriverModel,
   fetchDriverByDriverId,
   fetchDrivers,
@@ -11,6 +13,7 @@ import { UserModel } from '#modules/users/index.js';
 import { hashPassword } from '#shared/utils/jwt.js';
 import { AppError } from '#shared/errors/error.js';
 import mongoose from 'mongoose';
+import { VERIFICATION_STATUS } from '#shared/utils/enums.js';
 
 // Mock the driver model
 vi.mock('#modules/drivers/models/driver.model.js', () => ({
@@ -184,7 +187,7 @@ describe('Driver Services', () => {
             address: 'Street 123',
             vehicleRegistrationNumber: 'ABC123',
             timeAvailability: { start: '09:00', end: '17:00' },
-            isVerified: true,
+            verificationStatus: VERIFICATION_STATUS.APPROVED,
             createdAt: new Date(),
             updatedAt: new Date(),
           }),
@@ -252,246 +255,246 @@ describe('Driver Services', () => {
   });
 });
 
-// We don't need these tests for now
-// describe('Driver Service', () => {
-//   beforeEach(() => {
-//     vi.clearAllMocks();
-//   });
-//   describe('doesDriverExist', () => {
-//     it('should return true if driver exists for a user', async () => {
-//       DriverModel.exists.mockResolvedValue({ user: 'user567' });
+describe('Driver Service', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+  describe('doesDriverExist', () => {
+    it('should return true if driver exists for a user', async () => {
+      DriverModel.exists.mockResolvedValue({ user: 'user567' });
 
-//       const result = await doesDriverExist('user567');
+      const result = await doesDriverExist('user567');
 
-//       expect(result).toBe(true);
-//       expect(DriverModel.exists).toHaveBeenCalledWith({ user: 'user567' });
-//     });
+      expect(result).toBe(true);
+      expect(DriverModel.exists).toHaveBeenCalledWith({ user: 'user567' });
+    });
 
-//     it('should return false if driver does not exist for a user', async () => {
-//       DriverModel.exists.mockResolvedValue(null);
+    it('should return false if driver does not exist for a user', async () => {
+      DriverModel.exists.mockResolvedValue(null);
 
-//       const result = await doesDriverExist('user999');
+      const result = await doesDriverExist('user999');
 
-//       expect(result).toBe(false);
-//       expect(DriverModel.exists).toHaveBeenCalledWith({ user: 'user999' });
-//     });
-//   });
+      expect(result).toBe(false);
+      expect(DriverModel.exists).toHaveBeenCalledWith({ user: 'user999' });
+    });
+  });
 
-//   describe('createNewDriver', () => {
-//     it('should create a new driver', async () => {
-//       const userId = 'user567';
-//       const driverData = {
-//         vehicleType: 'car',
-//         status: 'offline',
-//         capacity: { maxWeightKg: 100, maxPackages: 5 },
-//         vehicleRegistrationNumber: 'ABC-1234',
-//         timeAvailability: {
-//           start: '08:00',
-//           end: '18:00',
-//         },
-//       };
+  describe('createNewDriver', () => {
+    it('should create a new driver', async () => {
+      const userId = 'user567';
+      const driverData = {
+        vehicleType: 'car',
+        status: 'offline',
+        capacity: { maxWeightKg: 100, maxPackages: 5 },
+        vehicleRegistrationNumber: 'ABC-1234',
+        timeAvailability: {
+          start: '08:00',
+          end: '18:00',
+        },
+      };
 
-//       const mockedDriver = {
-//         _id: 'driver123',
-//         user: userId,
-//         vehicleType: 'car',
-//         status: 'offline',
-//         capacity: { maxWeightKg: 100, maxPackages: 5 },
-//         currentLocation: { type: 'Point', coordinates: [0, 0] },
-//         lastLocationAt: null,
-//         ratingAvg: 0,
-//         ratingCount: 0,
-//         acceptanceRate: 0,
-//         isVerified: false,
-//         createdAt: new Date(),
-//         updatedAt: new Date(),
-//       };
+      const mockedDriver = {
+        _id: 'driver123',
+        user: userId,
+        vehicleType: 'car',
+        status: 'offline',
+        capacity: { maxWeightKg: 100, maxPackages: 5 },
+        currentLocation: { type: 'Point', coordinates: [0, 0] },
+        lastLocationAt: null,
+        ratingAvg: 0,
+        ratingCount: 0,
+        acceptanceRate: 0,
+        isVerified: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-//       DriverModel.create.mockResolvedValue(mockedDriver);
+      DriverModel.create.mockResolvedValue(mockedDriver);
 
-//       const result = await createNewDriver(userId, driverData);
+      const result = await createNewDriver(userId, driverData);
 
-//       expect(result).toEqual(mockedDriver);
+      expect(result).toEqual(mockedDriver);
 
-//       expect(DriverModel.create).toHaveBeenCalledWith({
-//         user: userId,
-//         vehicleType: 'car',
-//         status: 'offline',
-//         capacity: { maxWeightKg: 100, maxPackages: 5 },
-//         vehicleRegistrationNumber: 'ABC-1234',
-//         timeAvailability: {
-//           start: '08:00',
-//           end: '18:00',
-//         },
-//       });
-//     });
+      expect(DriverModel.create).toHaveBeenCalledWith({
+        user: userId,
+        vehicleType: 'car',
+        status: 'offline',
+        capacity: { maxWeightKg: 100, maxPackages: 5 },
+        vehicleRegistrationNumber: 'ABC-1234',
+        timeAvailability: {
+          start: '08:00',
+          end: '18:00',
+        },
+      });
+    });
 
-//     it('should throw a validation error for negative capacity values', async () => {
-//       const userId = 'user567';
-//       const driverData = {
-//         vehicleType: 'bike',
-//         status: 'offline',
-//         capacity: { maxWeightKg: -10, maxPackages: -3 },
-//         vehicleRegistrationNumber: 'ABC-1234',
-//         timeAvailability: {
-//           start: '08:00',
-//           end: '18:00',
-//         },
-//       };
+    it('should throw a validation error for negative capacity values', async () => {
+      const userId = 'user567';
+      const driverData = {
+        vehicleType: 'bike',
+        status: 'offline',
+        capacity: { maxWeightKg: -10, maxPackages: -3 },
+        vehicleRegistrationNumber: 'ABC-1234',
+        timeAvailability: {
+          start: '08:00',
+          end: '18:00',
+        },
+      };
 
-//       const validationError = new Error('Driver validation failed');
-//       validationError.name = 'ValidationError';
-//       validationError.errors = {
-//         'capacity.maxWeightKg': {
-//           name: 'ValidatorError',
-//           message: 'Path `capacity.maxWeightKg` (-10) is less than minimum allowed value (0).',
-//           type: 'min',
-//           path: 'capacity.maxWeightKg',
-//           value: -10,
-//         },
-//         'capacity.maxPackages': {
-//           name: 'ValidatorError',
-//           message: 'Path `capacity.maxPackages` (-3) is less than minimum allowed value (0).',
-//           type: 'min',
-//           path: 'capacity.maxPackages',
-//           value: -3,
-//         },
-//       };
+      const validationError = new Error('Driver validation failed');
+      validationError.name = 'ValidationError';
+      validationError.errors = {
+        'capacity.maxWeightKg': {
+          name: 'ValidatorError',
+          message: 'Path `capacity.maxWeightKg` (-10) is less than minimum allowed value (0).',
+          type: 'min',
+          path: 'capacity.maxWeightKg',
+          value: -10,
+        },
+        'capacity.maxPackages': {
+          name: 'ValidatorError',
+          message: 'Path `capacity.maxPackages` (-3) is less than minimum allowed value (0).',
+          type: 'min',
+          path: 'capacity.maxPackages',
+          value: -3,
+        },
+      };
 
-//       // Mock the create method to throw this validation error
-//       DriverModel.create = vi.fn().mockImplementation(() => {
-//         throw validationError;
-//       });
+      // Mock the create method to throw this validation error
+      DriverModel.create = vi.fn().mockImplementation(() => {
+        throw validationError;
+      });
 
-//       await expect(createNewDriver(userId, driverData)).rejects.toMatchObject({
-//         name: 'ValidationError',
-//         errors: {
-//           'capacity.maxWeightKg': expect.objectContaining({ value: -10 }),
-//           'capacity.maxPackages': expect.objectContaining({ value: -3 }),
-//         },
-//       });
-//     });
-//   });
+      await expect(createNewDriver(userId, driverData)).rejects.toMatchObject({
+        name: 'ValidationError',
+        errors: {
+          'capacity.maxWeightKg': expect.objectContaining({ value: -10 }),
+          'capacity.maxPackages': expect.objectContaining({ value: -3 }),
+        },
+      });
+    });
+  });
 
-//   describe('updateExistedDriver', () => {
-//     beforeEach(() => {
-//       vi.clearAllMocks();
-//     });
+  // We don't need these tests for now
+  //   describe('updateExistedDriver', () => {
+  //     beforeEach(() => {
+  //       vi.clearAllMocks();
+  //     });
 
-//     it('should update driver with partial fields', async () => {
-//       const driverId = 'driver123';
-//       const userId = 'user567';
-//       const driverData = { vehicleType: 'van', status: 'idle' };
+  //     it('should update driver with partial fields', async () => {
+  //       const driverId = 'driver123';
+  //       const userId = 'user567';
+  //       const driverData = { vehicleType: 'van', status: 'idle' };
 
-//       const mockedDriver = {
-//         _id: driverId,
-//         user: userId,
-//         vehicleType: 'van',
-//         status: 'idle',
-//         capacity: { maxWeightKg: 100, maxPackages: 5 },
-//         currentLocation: { coordinates: [0, 0] },
-//         lastLocationAt: null,
-//       };
+  //       const mockedDriver = {
+  //         _id: driverId,
+  //         user: userId,
+  //         vehicleType: 'van',
+  //         status: 'idle',
+  //         capacity: { maxWeightKg: 100, maxPackages: 5 },
+  //         currentLocation: { coordinates: [0, 0] },
+  //         lastLocationAt: null,
+  //       };
 
-//       DriverModel.findOneAndUpdate.mockResolvedValue(mockedDriver);
+  //       DriverModel.findOneAndUpdate.mockResolvedValue(mockedDriver);
 
-//       const result = await updateExistedDriver(driverId, userId, driverData);
+  //       const result = await updateExistedDriver(driverId, userId, driverData);
 
-//       expect(result).toEqual(mockedDriver);
-//       expect(DriverModel.findOneAndUpdate).toHaveBeenCalledWith(
-//         { _id: driverId, user: userId },
-//         { $set: driverData },
-//         { new: true, runValidators: true }
-//       );
-//     });
+  //       expect(result).toEqual(mockedDriver);
+  //       expect(DriverModel.findOneAndUpdate).toHaveBeenCalledWith(
+  //         { _id: driverId, user: userId },
+  //         { $set: driverData },
+  //         { new: true, runValidators: true }
+  //       );
+  //     });
 
-//     it('should update driver with partial fields', async () => {
-//       const driverId = 'driver123';
-//       const userId = 'user567';
-//       const driverData = {
-//         capacity: { maxWeightKg: 100 },
-//         currentLocation: { coordinates: [0, 0] },
-//       };
+  //     it('should update driver with partial fields', async () => {
+  //       const driverId = 'driver123';
+  //       const userId = 'user567';
+  //       const driverData = {
+  //         capacity: { maxWeightKg: 100 },
+  //         currentLocation: { coordinates: [0, 0] },
+  //       };
 
-//       const mockedDriver = {
-//         _id: driverId,
-//         user: userId,
-//         vehicleType: 'van',
-//         status: 'idle',
-//         capacity: { maxWeightKg: 100, maxPackages: 5 },
-//         currentLocation: { coordinates: [0, 0] },
-//         lastLocationAt: null,
-//       };
+  //       const mockedDriver = {
+  //         _id: driverId,
+  //         user: userId,
+  //         vehicleType: 'van',
+  //         status: 'idle',
+  //         capacity: { maxWeightKg: 100, maxPackages: 5 },
+  //         currentLocation: { coordinates: [0, 0] },
+  //         lastLocationAt: null,
+  //       };
 
-//       DriverModel.findOneAndUpdate.mockResolvedValue(mockedDriver);
+  //       DriverModel.findOneAndUpdate.mockResolvedValue(mockedDriver);
 
-//       const result = await updateExistedDriver(driverId, userId, driverData);
+  //       const result = await updateExistedDriver(driverId, userId, driverData);
 
-//       expect(result).toEqual(mockedDriver);
+  //       expect(result).toEqual(mockedDriver);
 
-//       expect(DriverModel.findOneAndUpdate).toHaveBeenCalledWith(
-//         { _id: driverId, user: userId },
-//         {
-//           $set: {
-//             'capacity.maxWeightKg': 100,
-//             'currentLocation.coordinates': [0, 0],
-//           },
-//         },
-//         { new: true, runValidators: true }
-//       );
-//     });
+  //       expect(DriverModel.findOneAndUpdate).toHaveBeenCalledWith(
+  //         { _id: driverId, user: userId },
+  //         {
+  //           $set: {
+  //             'capacity.maxWeightKg': 100,
+  //             'currentLocation.coordinates': [0, 0],
+  //           },
+  //         },
+  //         { new: true, runValidators: true }
+  //       );
+  //     });
 
-//     it('should throw AppError if no fields are provided', async () => {
-//       const driverId = 'driver123';
-//       const userId = 'user567';
-//       const driverData = {};
+  //     it('should throw AppError if no fields are provided', async () => {
+  //       const driverId = 'driver123';
+  //       const userId = 'user567';
+  //       const driverData = {};
 
-//       await expect(updateExistedDriver(driverId, userId, driverData)).rejects.toMatchObject({
-//         message: 'No fields provided for update',
-//         code: ERROR_CODES.NO_FIELDS_PROVIDED,
-//         status: 400,
-//       });
-//     });
+  //       await expect(updateExistedDriver(driverId, userId, driverData)).rejects.toMatchObject({
+  //         message: 'No fields provided for update',
+  //         code: ERROR_CODES.NO_FIELDS_PROVIDED,
+  //         status: 400,
+  //       });
+  //     });
 
-//     it('should throw error if driver not found', async () => {
-//       const driverId = 'driver123';
-//       const userId = 'user567';
-//       const driverData = { status: 'idle' };
+  //     it('should throw error if driver not found', async () => {
+  //       const driverId = 'driver123';
+  //       const userId = 'user567';
+  //       const driverData = { status: 'idle' };
 
-//       DriverModel.findOneAndUpdate.mockResolvedValue(null);
+  //       DriverModel.findOneAndUpdate.mockResolvedValue(null);
 
-//       await expect(updateExistedDriver(driverId, userId, driverData)).rejects.toMatchObject({
-//         message: 'Driver not found',
-//         code: ERROR_CODES.NOT_FOUND,
-//         status: 404,
-//       });
-//     });
-//   });
+  //       await expect(updateExistedDriver(driverId, userId, driverData)).rejects.toMatchObject({
+  //         message: 'Driver not found',
+  //         code: ERROR_CODES.NOT_FOUND,
+  //         status: 404,
+  //       });
+  //     });
+  //   });
 
-//   describe('getDriverInfoByUserId', () => {
-//     beforeEach(() => {
-//       vi.clearAllMocks();
-//     });
-//     it('should get driver info by userId', async () => {
-//       const driverId = 'driver123';
-//       const userId = 'user567';
+  //   describe('getDriverInfoByUserId', () => {
+  //     beforeEach(() => {
+  //       vi.clearAllMocks();
+  //     });
+  //     it('should get driver info by userId', async () => {
+  //       const driverId = 'driver123';
+  //       const userId = 'user567';
 
-//       const mockedDriver = {
-//         _id: driverId,
-//         user: userId,
-//         vehicleType: 'van',
-//         status: 'idle',
-//         capacity: { maxWeightKg: 100, maxPackages: 5 },
-//         currentLocation: { coordinates: [0, 0] },
-//         lastLocationAt: null,
-//       };
+  //       const mockedDriver = {
+  //         _id: driverId,
+  //         user: userId,
+  //         vehicleType: 'van',
+  //         status: 'idle',
+  //         capacity: { maxWeightKg: 100, maxPackages: 5 },
+  //         currentLocation: { coordinates: [0, 0] },
+  //         lastLocationAt: null,
+  //       };
 
-//       DriverModel.find.mockResolvedValue(mockedDriver);
+  //       DriverModel.find.mockResolvedValue(mockedDriver);
 
-//       const result = await getDriverInfoByUserId(userId);
+  //       const result = await getDriverInfoByUserId(userId);
 
-//       expect(result).toEqual(mockedDriver);
-//       expect(DriverModel.find).toHaveBeenCalledWith({ user: userId });
-//     });
-//   });
-// });
+  //       expect(result).toEqual(mockedDriver);
+  //       expect(DriverModel.find).toHaveBeenCalledWith({ user: userId });
+  //     });
+  //   });
+});

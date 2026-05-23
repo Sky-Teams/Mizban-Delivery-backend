@@ -6,12 +6,14 @@ import {
   disconnectDB,
   clearDB,
   createFakeUserWithToken,
+  createFakeDriver,
 } from '../../../../config/memoryDB.js';
 
 import { DriverModel } from '#modules/drivers/models/driver.model.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import mongoose from 'mongoose';
 import { UserModel } from '#modules/users/index.js';
+import { VERIFICATION_STATUS } from '#shared/utils/enums.js';
 
 const baseURL = '/api/drivers/';
 let token;
@@ -413,6 +415,67 @@ describe('Drivers API v1 Integration', () => {
 
       expect(res.status).toBe(401);
       expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
+    });
+  });
+
+  describe('POST /api/drivers/registration  - Role-Driver', () => {
+    const registrationUrl = `${baseURL}registration`;
+    let driverToken = null;
+    let userAccount = null;
+    beforeEach(async () => {
+      const { token, user } = await createFakeUserWithToken('driver');
+      driverToken = token;
+      userAccount = user;
+    });
+
+    it('should return unauthorized when no token is sent', async () => {
+      const res = await request(app).post(registrationUrl);
+      expect(res.status).toBe(401);
+      expect(res.body.code).toBe(ERROR_CODES.INVALID_JWT);
+    });
+
+    it('should create profile for driver', async () => {
+      const res = await request(app)
+        .post(registrationUrl)
+        .send({ vehicleType: 'motorbike', vehicleRegistrationNumber: 'hrt123' })
+        .set('Authorization', `Bearer ${driverToken}`);
+
+      expect(res.status).toBe(201);
+    });
+
+    it('should throw error if driver profile already exist', async () => {
+      await createFakeDriver(userAccount);
+      const res = await request(app)
+        .post(registrationUrl)
+        .send({})
+        .set('Authorization', `Bearer ${driverToken}`);
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe(ERROR_CODES.DRIVER_ALREADY_EXIST);
+    });
+
+    it('should return driver verification status as pending after driver profile creation', async () => {
+      const res = await request(app)
+        .post(registrationUrl)
+        .send({ vehicleType: 'motorbike', vehicleRegistrationNumber: 'hrt123' })
+        .set('Authorization', `Bearer ${driverToken}`);
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.verificationStatus).toBe(VERIFICATION_STATUS.PENDING);
+    });
+
+    it('should update driver phone number in user collection if provided', async () => {
+      const driverInfo = {
+        vehicleType: 'motorbike',
+        vehicleRegistrationNumber: 'hrt123',
+        phone: '0790909090',
+      };
+      const res = await request(app)
+        .post(registrationUrl)
+        .send(driverInfo)
+        .set('Authorization', `Bearer ${driverToken}`);
+      const userInfo = await UserModel.findById(userAccount._id);
+      expect(res.status).toBe(201);
+      expect(userInfo.phone).toBe(driverInfo.phone);
     });
   });
 });

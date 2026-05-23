@@ -637,9 +637,31 @@ export const ERROR_MESSAGES = {
     ps: 'د وسیلې پېژند ناسم دی.',
   },
 
+  [ERROR_CODES.INVALID_FUEL_TYPE]: {
+    en: 'Invalid fuel type.',
+    fa: 'نوع سوخت نامعتبر است.',
+    ps: 'د سون توکي ډول ناسمه ده.',
+  },
+
+  [ERROR_CODES.INVALID_IMAGE_TYPE]: {
+    en: 'Invalid image type.',
+    fa: 'نوع تصویر نامعتبر است.',
+    ps: 'د انځور ډول ناسمه ده.',
+  },
+
+  [ERROR_CODES.INVALID_BIRTH_DATE]: {
+    en: 'Invalid birth date.',
+    fa: 'تاریخ تولد نامعتبر است.',
+    ps: 'د زیږون نېټه ناسمه ده.',
+  },
   [ERROR_CODES.INVALID_DEVICE_PLATFORM]: {
     en: 'Invalid device platform.',
-    fa: 'پلتفرم دستگاه نامعتبر است.',
+    fa: 'نوعیت دستگاه نامعتبر است.',
     ps: 'د وسیلې پلېټفارم ناسمه ده.',
+  },
+  [ERROR_CODES.VEHICLE_REGISTRATION_REQUIRED]: {
+    en: 'Vehicle registration number is required.',
+    fa: 'شماره ثبت وسایل نقلیه (شماره پلیت) الزامی است.',
+    ps: 'د موټر ثبت نمبر اړین دی.',
   },
 };

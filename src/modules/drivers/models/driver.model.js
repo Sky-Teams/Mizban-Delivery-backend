@@ -1,4 +1,9 @@
-import { DRIVER_STATUS, VEHICLE_TYPE } from '#shared/utils/enums.js';
+import {
+  DRIVER_STATUS,
+  FUEL_TYPE,
+  VEHICLE_TYPE,
+  VERIFICATION_STATUS,
+} from '#shared/utils/enums.js';
 import { getObjectValues } from '#shared/utils/object.helper.js';
 import mongoose from 'mongoose';
 
@@ -10,11 +15,71 @@ const DriverSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    vehicleName: {
+      type: String,
+      trim: true,
+      default: null,
+    },
     vehicleType: {
       type: String,
       enum: getObjectValues(VEHICLE_TYPE),
       required: true,
       default: VEHICLE_TYPE.MOTORBIKE,
+    },
+    fuelType: {
+      type: String,
+      enum: getObjectValues(FUEL_TYPE),
+      default: null,
+    },
+    vehicleColor: {
+      type: String,
+      trim: true,
+    },
+    emergencyContactName: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    emergencyContactNumber: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    emergencyContactRelation: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    documents: {
+      photo: {
+        type: String,
+        default: null,
+      },
+
+      nationalIdCard: {
+        front: { type: String, default: null },
+        back: { type: String, default: null },
+      },
+
+      driverLicense: {
+        type: String,
+        default: null,
+      },
+
+      vehicleCard: {
+        type: String,
+        default: null,
+      },
+    },
+
+    // Verification status can help us in registration process(pending => accepted/rejected).
+    verificationStatus: {
+      type: String,
+      enum: getObjectValues(VERIFICATION_STATUS),
+      default: VERIFICATION_STATUS.PENDING,
     },
     status: {
       type: String,
@@ -22,8 +87,8 @@ const DriverSchema = new mongoose.Schema(
       default: DRIVER_STATUS.OFFLINE,
     },
     capacity: {
-      maxWeightKg: { type: Number, min: 0, required: true },
-      maxPackages: { type: Number, min: 0, required: true },
+      maxWeightKg: { type: Number, min: 0, default: 0 },
+      maxPackages: { type: Number, min: 0, default: 0 },
     },
     activeOrders: { type: Number, default: 0, min: 0 }, // Number of active orders of a driver
     maxOrders: { type: Number, default: 5, min: 1 }, // This default values is only for test, we can change it later.
@@ -36,11 +101,11 @@ const DriverSchema = new mongoose.Schema(
     timeAvailability: {
       start: {
         type: String,
-        required: true,
+        default: null,
       },
       end: {
         type: String,
-        required: true,
+        default: null,
       },
     },
     lastLocationAt: {
@@ -60,8 +125,10 @@ const DriverSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-
-    isVerified: { type: Boolean, default: false },
+    dateOfBirth: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

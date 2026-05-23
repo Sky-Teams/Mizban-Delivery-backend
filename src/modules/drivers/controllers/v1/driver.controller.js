@@ -1,6 +1,9 @@
-import { notFound, unauthorized } from '#shared/errors/error.js';
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import { AppError, notFound, unauthorized } from '#shared/errors/error.js';
 import {
   addNewDriver,
+  createNewDriver,
+  doesDriverExist,
   fetchDriverByDriverId,
   fetchDrivers,
   modifyExistedDriver,
@@ -33,7 +36,7 @@ export const getAllDrivers = async (req, res) => {
     searchTerm: req.query?.searchTerm, // searchTerm can be name/email/phone
     vehicleType: req.query?.vehicleType,
     status: req.query?.status,
-    isVerified: req.query?.isVerified,
+    verificationStatus: req.query?.verificationStatus,
   };
 
   const { drivers, totalDrivers, totalPages } = await fetchDrivers(limit, page, searchQuery);
@@ -59,18 +62,35 @@ export const getDriver = async (req, res) => {
 
 //#endregion
 
-//#region User Routes => We will need these controllers in future. For now we don't need them
+//#region Driver controllers
 
-// User can request to create a driver account
-// export const createDriver = async (req, res) => {
-//   if (!req.user) throw unauthorized();
+// Create driver profile.
+export const createDriver = async (req, res) => {
+  if (!req.user) throw unauthorized();
 
-//   const exist = await doesDriverExist(req.user._id);
-//   if (exist) throw new AppError('Driver already exist', 400, ERROR_CODES.DRIVER_ALREADY_EXIST);
+  // Check if user already have a driver account.
+  const exist = await doesDriverExist(req.user._id);
+  if (exist) throw new AppError('Driver already exist', 400, ERROR_CODES.DRIVER_ALREADY_EXIST);
 
-//   const driver = await createNewDriver(req.user._id, req.body);
-//   res.status(201).json({ success: true, data: driver });
-// };
+  //Get photo and other documents for driver account
+  const documents = {
+    photo: req.files?.photo?.[0]?.path || null,
+
+    nationalIdCard: {
+      front: req.files?.nationalIdCardFront?.[0]?.path || null,
+      back: req.files?.nationalIdCardBack?.[0]?.path || null,
+    },
+
+    driverLicense: req.files?.driverLicense?.[0]?.path || null,
+
+    vehicleCard: req.files?.vehicleCard?.[0]?.path || null,
+  };
+
+  const driverData = { ...req.body, documents };
+
+  const driver = await createNewDriver(req.user._id, driverData);
+  res.status(201).json({ success: true, data: driver });
+};
 
 // User can update its driver account
 // export const updateDriver = async (req, res) => {

@@ -18,4 +18,5 @@ export {
   getAllDrivers,
   getDriver,
   modifyDriver,
+  createDriver,
 } from './controllers/v1/driver.controller.js';

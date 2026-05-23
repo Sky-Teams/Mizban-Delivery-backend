@@ -46,7 +46,7 @@ app.use(authMiddleware);
 app.use('/api/user', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 
-app.use('/api/drivers', authorizeRole(ROLES.ADMIN), driverRoutes);
+app.use('/api/drivers', driverRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/businesses', authorizeRole(ROLES.ADMIN), businessRoutes);
 app.use('/api/business-customers', authorizeRole(ROLES.ADMIN), businessCustomerRoutes);

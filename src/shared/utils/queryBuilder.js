@@ -7,14 +7,7 @@ export const driverQueryBuilder = (searchQuery) => {
   const query = {};
   if (searchQuery.vehicleType) query.vehicleType = searchQuery.vehicleType;
   if (searchQuery.status) query.status = searchQuery.status;
-
-  // Only check if isVerified is true or false; ignore any other values
-  if (searchQuery.isVerified === 'true') {
-    query.isVerified = true;
-  } else if (searchQuery.isVerified === 'false') {
-    query.isVerified = false;
-  }
-
+  if (searchQuery.verificationStatus) query.verificationStatus = searchQuery.verificationStatus;
   return query;
 };
 
@@ -29,7 +22,7 @@ export const filterDriverField = (driverData) => {
     vehicleRegistrationNumber: true,
     address: true,
     timeAvailability: true,
-    isVerified: true,
+    verificationStatus: true,
   };
 
   const driverUpdateQuery = {};
