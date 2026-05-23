@@ -13,7 +13,7 @@ import { DriverModel } from '#modules/drivers/models/driver.model.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import mongoose from 'mongoose';
 import { UserModel } from '#modules/users/index.js';
-import { VERIFICATION_STATUS } from '#shared/utils/enums.js';
+import { REASON_TYPES, VERIFICATION_STATUS } from '#shared/utils/enums.js';
 
 const baseURL = '/api/drivers/';
 let token;
@@ -476,6 +476,119 @@ describe('Drivers API v1 Integration', () => {
       const userInfo = await UserModel.findById(userAccount._id);
       expect(res.status).toBe(201);
       expect(userInfo.phone).toBe(driverInfo.phone);
+    });
+  });
+
+  describe('PATCH /api/drivers/id/verification/approve', () => {
+    let newDriverId = null;
+    beforeEach(async () => {
+      const { user } = await createFakeUserWithToken('driver');
+      const driverInfo = await createFakeDriver(user);
+
+      newDriverId = driverInfo._id;
+    });
+    it('should throw error if token not provided', async () => {
+      const result = await request(app).patch(`${baseURL}123/verification/approve`).send({});
+      expect(result.body.code).toBe(ERROR_CODES.INVALID_JWT);
+      expect(result.status).toBe(401);
+    });
+
+    it('should approve driver registration request', async () => {
+      const result = await request(app)
+        .patch(`${baseURL}${newDriverId}/verification/approve`)
+        .set('Authorization', `Bearer ${token}`);
+
+      const driverInfo = await DriverModel.findOne({ _id: newDriverId });
+
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBe('Driver registration approved');
+      expect(driverInfo.verificationStatus).toBe(VERIFICATION_STATUS.APPROVED);
+    });
+
+    it('should return `Driver not found` if driver not exist', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      const result = await request(app)
+        .patch(`${baseURL}${fakeId}/verification/approve`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.body.code).toBe(ERROR_CODES.NOT_FOUND);
+      expect(result.body.message).toBe('Driver not found');
+    });
+
+    it('should return `DRIVER_ALREADY_VERIFIED` if driver account is already verified', async () => {
+      await DriverModel.findOneAndUpdate(
+        { _id: newDriverId },
+        { verificationStatus: VERIFICATION_STATUS.APPROVED }
+      );
+
+      const result = await request(app)
+        .patch(`${baseURL}${newDriverId}/verification/approve`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.body.code).toBe(ERROR_CODES.DRIVER_ALREADY_VERIFIED);
+      expect(result.body.message).toBe('Driver is already verified');
+      expect(result.status).toBe(400);
+    });
+  });
+
+  describe('PATCH /api/drivers/id/verification/reject', () => {
+    let newDriverId = null;
+    beforeEach(async () => {
+      const { user } = await createFakeUserWithToken('driver');
+      const driverInfo = await createFakeDriver(user);
+      newDriverId = driverInfo._id;
+    });
+
+    it('should throw error if token not provided', async () => {
+      const result = await request(app).patch(`${baseURL}123/verification/reject`).send({});
+      expect(result.body.code).toBe(ERROR_CODES.INVALID_JWT);
+      expect(result.status).toBe(401);
+    });
+
+    it('should reject driver registration request', async () => {
+      const rejectReason = 'Missing Documents';
+      const result = await request(app)
+        .patch(`${baseURL}${newDriverId}/verification/reject`)
+        .send({ rejectReason })
+        .set('Authorization', `Bearer ${token}`);
+
+      const driverInfo = await DriverModel.findOne({ _id: newDriverId });
+
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBe('Driver registration rejected');
+      expect(driverInfo.verificationStatus).toBe(VERIFICATION_STATUS.REJECTED);
+      expect(driverInfo.reason.type).toBe(REASON_TYPES.REJECTED);
+      expect(driverInfo.reason.description).toBe('Missing Documents');
+    });
+
+    it('should return `Driver not found` if driver not exist', async () => {
+      const rejectReason = 'Missing Documents';
+
+      const fakeId = new mongoose.Types.ObjectId();
+      const result = await request(app)
+        .patch(`${baseURL}${fakeId}/verification/reject`)
+        .send({ rejectReason })
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.body.code).toBe(ERROR_CODES.NOT_FOUND);
+      expect(result.body.message).toBe('Driver not found');
+    });
+
+    it('should return `DRIVER_ALREADY_REJECTED` code if driver registration already rejected', async () => {
+      const rejectReason = 'Missing Documents';
+
+      await DriverModel.findOneAndUpdate(
+        { _id: newDriverId },
+        { verificationStatus: VERIFICATION_STATUS.REJECTED }
+      );
+
+      const result = await request(app)
+        .patch(`${baseURL}${newDriverId}/verification/reject`)
+        .send({ rejectReason })
+        .set('Authorization', `Bearer ${token}`);
+      expect(result.body.code).toBe(ERROR_CODES.DRIVER_ALREADY_REJECTED);
+      expect(result.body.message).toBe('Driver is already rejected');
+      expect(result.status).toBe(400);
     });
   });
 });
