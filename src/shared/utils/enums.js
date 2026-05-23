@@ -83,3 +83,7 @@ export const VERIFICATION_STATUS = {
   APPROVED: 'approved',
   REJECTED: 'rejected',
 };
+
+export const REASON_TYPES = {
+  REJECTED: 'rejected',
+};
