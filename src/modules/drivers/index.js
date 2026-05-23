@@ -12,6 +12,8 @@ export {
   getDriverStatusByDriverId,
   findNearestAndScore,
   fetchDriverByUserId,
+  approveDriverRequest,
+  rejectDriverRequest,
 } from './services/v1/driver.service.js';
 export {
   addDriver,
@@ -19,4 +21,6 @@ export {
   getDriver,
   modifyDriver,
   createDriver,
+  acceptDriverRegistrationRequest,
+  rejectDriverRegistrationRequest,
 } from './controllers/v1/driver.controller.js';
