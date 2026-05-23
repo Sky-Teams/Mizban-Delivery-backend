@@ -1,3 +1,4 @@
+import { reasonSchema } from '#shared/schemas/reason.schema.js';
 import {
   DRIVER_STATUS,
   FUEL_TYPE,
@@ -128,6 +129,10 @@ const DriverSchema = new mongoose.Schema(
     dateOfBirth: {
       type: Date,
       default: null,
+    },
+    reason: {
+      type: reasonSchema,
+      default: {},
     },
   },
   {
