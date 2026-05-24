@@ -4,7 +4,7 @@ const offerSchema = new mongoose.Schema(
   {
     order: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Orders',
+      ref: 'Order',
       required: true,
     },
     driver: {

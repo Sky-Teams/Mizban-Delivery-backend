@@ -14,6 +14,7 @@ import { notFound, unauthorized } from '#shared/errors/error.js';
 import { ROLES } from '#shared/utils/enums.js';
 import { fetchDriverByUserId } from '#modules/drivers/index.js';
 import { DtoService } from '#shared/utils/dtoService.js';
+import { cleanObject } from '#shared/utils/object.helper.js';
 
 export const createOrder = async (req, res) => {
   if (!req.user) throw unauthorized();
@@ -103,7 +104,7 @@ export const getOrders = async (req, res) => {
   if (!req.user) throw unauthorized();
 
   const { page, limit } = req.query;
-  const searchQuery = {
+  let searchQuery = {
     type: req.query?.type,
     priority: req.query?.priority,
     status: req.query?.status,
@@ -116,24 +117,25 @@ export const getOrders = async (req, res) => {
     endDate: req.query?.endDate,
   };
 
+  searchQuery = cleanObject(searchQuery);
+
   const isDriver = req.user.role === ROLES.DRIVER;
 
-  // If the request come from driver, so we inject the current driverId into the searchQuery to ensure that driver only see his own orders
   if (isDriver) {
     const driver = await fetchDriverByUserId(req.user._id);
     if (!driver) throw notFound('driver');
     searchQuery.driverId = driver._id;
   }
 
-  let { orders, totalOrders, totalPage } = await getAllOrders(page, limit, searchQuery);
+  const result = await getAllOrders(page, limit, searchQuery, req.user.role);
 
-  if (isDriver) orders = orders.map((order) => DtoService.order(order));
+  const orders = isDriver ? result.data.map((order) => DtoService.order(order)) : result.data;
 
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
     data: orders,
-    totalOrders,
-    totalPage,
+    totalOrders: result.total,
+    totalPage: result.totalPage,
   });
 };
 

@@ -644,41 +644,54 @@ describe('Controller Order - getOrders', () => {
 
   it('should return orders list', async () => {
     const mockOrders = {
-      orders: [
+      data: [
         { _id: '3', createdAt: '2026-03-05' },
         { _id: '2', createdAt: '2026-03-03' },
         { _id: '1', createdAt: '2026-03-02' },
       ],
-      totalOrders: 10,
+      total: 10,
       totalPage: 2,
+    };
+
+    req = {
+      user: { _id: 'user123', role: ROLES.ADMIN },
+      query: { page: 1, limit: 5 },
     };
 
     getAllOrders.mockResolvedValue(mockOrders);
 
     await getOrders(req, res);
 
-    expect(getAllOrders).toHaveBeenCalledWith(1, 5, {});
+    expect(getAllOrders).toHaveBeenCalledWith(
+      1,
+      5,
+      {}, // cleaned query
+      ROLES.ADMIN
+    );
+
     expect(res.status).toHaveBeenCalledWith(200);
+
     expect(res.json).toHaveBeenCalledWith({
       success: true,
-      data: mockOrders.orders,
-      totalPage: 2,
-      totalOrders: 10,
+      data: mockOrders.data,
+      totalOrders: mockOrders.total,
+      totalPage: mockOrders.totalPage,
     });
   });
 
   it('should return orders list by status: created', async () => {
     req = {
-      user: { _id: 'user123' },
+      user: { _id: 'user123', role: ROLES.ADMIN },
       query: { page: 1, limit: 5, status: ORDER_STATUS.CREATED },
     };
+
     const mockOrders = {
-      orders: [
+      data: [
         { _id: '1', status: ORDER_STATUS.CREATED },
         { _id: '2', status: ORDER_STATUS.CREATED },
         { _id: '3', status: ORDER_STATUS.CREATED },
       ],
-      totalOrders: 10,
+      total: 10,
       totalPage: 2,
     };
 
@@ -686,28 +699,31 @@ describe('Controller Order - getOrders', () => {
 
     await getOrders(req, res);
 
-    expect(getAllOrders).toHaveBeenCalledWith(1, 5, { status: ORDER_STATUS.CREATED });
+    expect(getAllOrders).toHaveBeenCalledWith(1, 5, { status: ORDER_STATUS.CREATED }, ROLES.ADMIN);
+
     expect(res.status).toHaveBeenCalledWith(200);
+
     expect(res.json).toHaveBeenCalledWith({
       success: true,
-      data: mockOrders.orders,
-      totalPage: 2,
-      totalOrders: 10,
+      data: mockOrders.data,
+      totalPage: mockOrders.totalPage,
+      totalOrders: mockOrders.total,
     });
   });
 
   it('should return orders list priority = high', async () => {
     req = {
-      user: { _id: 'user123' },
+      user: { _id: 'user123', role: ROLES.ADMIN },
       query: { page: 1, limit: 2, priority: 'high' },
     };
+
     const mockOrders = {
-      orders: [
+      data: [
         { _id: '1', priority: 'high' },
         { _id: '2', priority: 'high' },
         { _id: '3', priority: 'high' },
       ],
-      totalOrders: 10,
+      total: 10,
       totalPage: 5,
     };
 
@@ -715,19 +731,21 @@ describe('Controller Order - getOrders', () => {
 
     await getOrders(req, res);
 
-    expect(getAllOrders).toHaveBeenCalledWith(1, 2, { priority: 'high' });
+    expect(getAllOrders).toHaveBeenCalledWith(1, 2, { priority: 'high' }, ROLES.ADMIN);
+
     expect(res.status).toHaveBeenCalledWith(200);
+
     expect(res.json).toHaveBeenCalledWith({
       success: true,
-      data: mockOrders.orders,
-      totalPage: 5,
-      totalOrders: 10,
+      data: mockOrders.data,
+      totalPage: mockOrders.totalPage,
+      totalOrders: mockOrders.total,
     });
   });
 
   it('should return orders filtered by date range', async () => {
     req = {
-      user: { _id: 'user123' },
+      user: { _id: 'user123', role: ROLES.ADMIN },
       query: {
         page: 1,
         limit: 5,
@@ -737,11 +755,11 @@ describe('Controller Order - getOrders', () => {
     };
 
     const mockOrders = {
-      orders: [
+      data: [
         { _id: '1', createdAt: '2026-03-05' },
         { _id: '2', createdAt: '2026-03-07' },
       ],
-      totalOrders: 2,
+      total: 2,
       totalPage: 1,
     };
 
@@ -749,17 +767,23 @@ describe('Controller Order - getOrders', () => {
 
     await getOrders(req, res);
 
-    expect(getAllOrders).toHaveBeenCalledWith(1, 5, {
-      startDate: '2026-03-01',
-      endDate: '2026-03-10',
-    });
+    expect(getAllOrders).toHaveBeenCalledWith(
+      1,
+      5,
+      {
+        startDate: '2026-03-01',
+        endDate: '2026-03-10',
+      },
+      ROLES.ADMIN
+    );
 
     expect(res.status).toHaveBeenCalledWith(200);
+
     expect(res.json).toHaveBeenCalledWith({
       success: true,
-      data: mockOrders.orders,
-      totalPage: 1,
-      totalOrders: 2,
+      data: mockOrders.data,
+      totalPage: mockOrders.totalPage,
+      totalOrders: mockOrders.total,
     });
   });
 });

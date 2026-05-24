@@ -1,5 +1,6 @@
-const origins = '*'; // Add real domains in here as an array
+const origins = process.env.FRONTEND_URL;
 
 export const corsOptions = {
   origin: origins,
+  credentials: true,
 };

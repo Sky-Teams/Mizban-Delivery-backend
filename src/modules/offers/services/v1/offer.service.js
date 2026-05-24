@@ -50,7 +50,7 @@ const acceptAnOffer = async (session, offerId, userId) => {
   // Atomic update
   const offer = await OfferModel.findOneAndUpdate(
     { _id: offerId, driver: driver._id, status: OFFER_STATUS.PENDING },
-    { status: OFFER_STATUS.ACCEPTED },
+    { status: OFFER_STATUS.ACCEPTED, respondedAt: new Date() },
     { new: true, session }
   );
 
@@ -104,7 +104,7 @@ const rejectAnOffer = async (session, offerId, userId) => {
 
   const offer = await OfferModel.findOneAndUpdate(
     { _id: offerId, driver: driver._id, status: OFFER_STATUS.PENDING },
-    { status: OFFER_STATUS.REJECTED },
+    { status: OFFER_STATUS.REJECTED, respondedAt: new Date() },
     { new: true, session }
   );
 
@@ -119,8 +119,8 @@ const rejectAnOffer = async (session, offerId, userId) => {
   await DbJobService.cancelOfferTimeout(offerId);
 
   eventBus.emit(EVENT_BUS_EVENTS.OFFER_REJECTED, {
-    orderId: order._id,
-    driverId: order.driverId,
+    orderId: offer.order,
+    driverId: offer.driver,
   });
 
   return offer;
