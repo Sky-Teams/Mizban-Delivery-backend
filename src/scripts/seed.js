@@ -220,7 +220,7 @@ const createFakeDrivers = async () => {
       phone: driver.phone,
       password: driver.password,
       role: 'driver',
-      verificationStatus: VERIFICATION_STATUS.APPROVED,
+      isVerified: true,
     };
   });
   const newUsers = await UserModel.insertMany(users);
@@ -239,6 +239,7 @@ const createFakeDrivers = async () => {
       acceptanceRate: driver.acceptanceRate,
       currentLocation: driver.currentLocation,
       timeAvailability: driver.timeAvailability,
+      verificationStatus: VERIFICATION_STATUS.APPROVED,
     });
   });
 
