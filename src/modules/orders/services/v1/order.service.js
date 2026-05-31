@@ -28,7 +28,6 @@ import mongoose from 'mongoose';
 import { OfferModel } from '#modules/offers/index.js';
 import { deduplicateById, getObjectValues } from '#shared/utils/object.helper.js';
 import { buildPaginatedResponse } from '#shared/utils/pagination.js';
-import { DbJobService } from '#shared/utils/dbJob.service.js';
 
 //#region Admin Services
 
