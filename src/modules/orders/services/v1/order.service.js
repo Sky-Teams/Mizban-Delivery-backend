@@ -237,6 +237,8 @@ export const assignDriver = async (session, orderId, driverId) => {
   // Use fetchDriverByDriverId, because we need the userId of the driver to send him a notification,
   const driver = await fetchDriverByDriverId(driverId);
 
+  if (!driver) throw notFound('driver');
+
   if (driver.status !== DRIVER_STATUS.IDLE)
     throw new AppError(
       `Driver is not available. Driver status is ${driver.status}`,
