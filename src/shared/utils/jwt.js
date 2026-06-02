@@ -13,7 +13,11 @@ export const cookieOptions = {
 };
 
 export const verifyJWT = (token) => {
-  return jwt.verify(token, process.env.JWT_SECRET);
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET);
+  } catch {
+    return null;
+  }
 };
 
 export const generateAccessToken = (user) => {
