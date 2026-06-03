@@ -14,7 +14,7 @@ import { getWithAuth, postWithAuth } from '#tests/utils/testHelpers.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import mongoose from 'mongoose';
 import { DriverModel } from '#modules/drivers/index.js';
-import { DRIVER_STATUS, ORDER_STATUS } from '#shared/utils/enums.js';
+import { DRIVER_STATUS, ORDER_STATUS, REASON_TYPES } from '#shared/utils/enums.js';
 
 const baseURL = '/api/orders';
 let token;
@@ -867,7 +867,8 @@ describe('Order API v1 Integration', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.status).toBe(ORDER_STATUS.CANCELLED);
-      expect(res.body.data.cancelReason).toBe('Customer cancelled');
+      expect(res.body.data.reason.description).toBe('Customer cancelled');
+      expect(res.body.data.reason.type).toBe(REASON_TYPES.CANCELLED);
     });
 
     it('should cancel order without reason', async () => {
@@ -1004,6 +1005,24 @@ describe('Order API v1 Integration', () => {
       });
 
       deliveryId = order._id.toString();
+    });
+
+    it('should throw error when order is in created mode', async () => {
+      const res = await request(app)
+        .patch(`${baseURL}/${deliveryId}/return`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ returnReason: 'Customer not answered' });
+      expect(res.body.code).toBe(ERROR_CODES.RETURN_NOT_ALLOWED);
+    });
+
+    it('should return order with returnReason', async () => {
+      await OrderModel.findOneAndUpdate({ _id: deliveryId }, { status: ORDER_STATUS.PICKEDUP });
+      const res = await request(app)
+        .patch(`${baseURL}/${deliveryId}/return`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ returnReason: 'Customer not answered' });
+      expect(res.body.data.reason.type).toBe(REASON_TYPES.RETURNED);
+      expect(res.body.data.reason.description).toBe('Customer not answered');
     });
 
     it('should return order without reason', async () => {

@@ -550,7 +550,7 @@ describe('Controller Order - returnOrder', () => {
     req = {
       user: { _id: 'user1' },
       params: { id: 'delivery123' },
-      body: { cancelReason: 'No response from customer' },
+      body: { returnReason: 'No response from customer' },
     };
 
     res = {
@@ -569,7 +569,7 @@ describe('Controller Order - returnOrder', () => {
     const mockDelivery = {
       _id: 'delivery123',
       status: ORDER_STATUS.RETURNED,
-      cancelReason: 'No response from customer',
+      returnReason: 'No response from customer',
     };
 
     returnOrderWithTransaction.mockResolvedValue(mockDelivery);
@@ -578,7 +578,7 @@ describe('Controller Order - returnOrder', () => {
 
     expect(returnOrderWithTransaction).toHaveBeenCalledWith(
       req.params.id,
-      req.body.cancelReason,
+      req.body.returnReason,
       req.user
     );
 

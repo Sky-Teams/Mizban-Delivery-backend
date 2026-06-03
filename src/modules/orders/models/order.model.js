@@ -1,3 +1,4 @@
+import { reasonSchema } from '#shared/schemas/reason.schema.js';
 import { ORDER_STATUS } from '#shared/utils/enums.js';
 import { getObjectValues } from '#shared/utils/object.helper.js';
 import mongoose from 'mongoose';
@@ -165,7 +166,7 @@ const OrderSchema = new mongoose.Schema(
       type: [ItemSchema],
       default: [],
     },
-    cancelReason: { type: String, trim: true, default: null },
+    reason: { type: reasonSchema, default: {} },
   },
   {
     timestamps: true,

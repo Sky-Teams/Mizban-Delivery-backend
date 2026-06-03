@@ -73,7 +73,7 @@ export const returnOrder = async (req, res) => {
   if (!req.user) throw unauthorized();
   const updatedOrder = await returnOrderWithTransaction(
     req.params.id,
-    req.body?.cancelReason, //TODO: for now we take the cancelReason as returnReason. In future we should update it to a modern structure
+    req.body?.returnReason,
     req.user
   );
 

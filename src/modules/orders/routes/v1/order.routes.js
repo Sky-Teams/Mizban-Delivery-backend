@@ -16,7 +16,11 @@ import { validate } from '#shared/middleware/validate.js';
 import { createOrderValidator } from '../../dto/create-order.schema.js';
 import { mongoIdValidator } from '#shared/middleware/mongoIdValidator.js';
 import { updateOrderValidator } from '../../dto/update-order.schema.js';
-import { assignDriverValidator, cancelOrderValidator } from '../../dto/order-actions.schema.js';
+import {
+  assignDriverValidator,
+  cancelOrderValidator,
+  returnOrderValidator,
+} from '../../dto/order-actions.schema.js';
 import { orderQueryValidator } from '#modules/orders/dto/order-query-validator.js';
 import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { ROLES } from '#shared/utils/enums.js';
@@ -60,7 +64,7 @@ router.patch(
   '/:id/return',
   authorizeRole(ROLES.ADMIN, ROLES.DRIVER),
   validate(mongoIdValidator),
-  validate(cancelOrderValidator),
+  validate(returnOrderValidator),
   asyncHandler(returnOrder)
 );
 router.put(

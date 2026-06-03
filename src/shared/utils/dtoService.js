@@ -25,6 +25,7 @@ export class DtoService {
       finalPrice: order?.finalPrice,
       items: [...order?.items],
       status: order?.status,
+      reason: order?.reason,
       offer: order?.offer,
     };
 

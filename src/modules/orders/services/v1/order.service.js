@@ -15,6 +15,7 @@ import {
   PAYMENT_STATUS,
   ROLES,
   OFFER_STATUS,
+  REASON_TYPES,
 } from '#shared/utils/enums.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
 import {
@@ -388,7 +389,9 @@ export const cancelAnOrder = async (session, orderId, reason, user) => {
   //TODO: Do we need to add cancelledBy field in DB?
 
   if (reason) {
-    order.cancelReason = reason;
+    order.reason.type = REASON_TYPES.CANCELLED;
+    order.reason.description = reason;
+    order.reason.date = new Date();
   }
 
   await order.save({ session });
@@ -431,10 +434,10 @@ export const returnAnOrder = async (session, orderId, reason, user) => {
   order.timeline.returnedAt = new Date();
   order.paymentStatus = PAYMENT_STATUS.FAILED; //TODO We should add more logic in here in future and also we should check how to pay to driver when an order is returned.
 
-  // for now we add the returnedReason in cancelReason field, but in future we should find a proper way for handling the reason in a more advanced way
-  // because if we add returnReason field in our model, it make the model too messy and can not help us in analytics and calculation of penalty.
   if (reason) {
-    order.cancelReason = reason;
+    order.reason.type = REASON_TYPES.RETURNED;
+    order.reason.description = reason;
+    order.reason.date = new Date();
   }
 
   await order.save({ session });
