@@ -681,4 +681,9 @@ export const ERROR_MESSAGES = {
     fa: 'دلیل رد الزامی است.',
     ps: 'د رد کولو دلیل اړین دی.',
   },
+  [ERROR_CODES.INVALID_RETURN_REASON]: {
+    en: 'Invalid return reason',
+    fa: 'دلیل برگشت نامعتبر است',
+    ps: 'د بیرته ستنولو دلیل ناسم دی',
+  },
 };
