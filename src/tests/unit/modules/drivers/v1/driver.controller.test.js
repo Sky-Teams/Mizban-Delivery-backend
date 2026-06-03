@@ -11,6 +11,10 @@ import {
   createDriver,
   createNewDriver,
   doesDriverExist,
+  acceptDriverRegistrationRequest,
+  approveDriverRequest,
+  rejectDriverRegistrationRequest,
+  rejectDriverRequest,
 } from '#modules/drivers/index.js';
 import { AppError } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
@@ -24,6 +28,8 @@ vi.mock('#modules/drivers/services/v1/driver.service.js', () => ({
   modifyExistedDriver: vi.fn(),
   fetchDrivers: vi.fn(),
   fetchDriverByDriverId: vi.fn(),
+  approveDriverRequest: vi.fn(),
+  rejectDriverRequest: vi.fn(),
 }));
 
 describe('Driver Controllers', () => {
@@ -183,6 +189,61 @@ describe('Driver Controllers', () => {
       fetchDriverByDriverId.mockRejectedValue(error);
 
       await expect(getDriver(req, res)).rejects.toThrow(AppError);
+    });
+  });
+
+  describe('approve driver registration request', () => {
+    beforeEach(() => {
+      req = {
+        user: { _id: 'user123' },
+        params: { id: 'driver123' },
+      };
+    });
+
+    it('should throw unauthorized error if user is missing', async () => {
+      req.user = null;
+      await expect(acceptDriverRegistrationRequest(req, res)).rejects.toBeInstanceOf(AppError);
+    });
+
+    it('should approve driver registration request', async () => {
+      approveDriverRequest.mockResolvedValue();
+
+      await acceptDriverRegistrationRequest(req, res);
+
+      expect(approveDriverRequest).toHaveBeenCalledWith(req.params.id);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Driver registration approved',
+      });
+    });
+  });
+
+  describe('reject driver registration request', () => {
+    beforeEach(() => {
+      req = {
+        user: { _id: 'user123' },
+        params: { id: 'driver123' },
+        body: { rejectReason: 'missing documents' },
+      };
+    });
+
+    it('should throw unauthorized error if user is missing', async () => {
+      req.user = null;
+      await expect(rejectDriverRegistrationRequest(req, res)).rejects.toBeInstanceOf(AppError);
+    });
+
+    it('should reject driver registration request', async () => {
+      rejectDriverRequest.mockResolvedValue();
+
+      await rejectDriverRegistrationRequest(req, res);
+
+      expect(rejectDriverRequest).toHaveBeenCalledWith(req.params.id, req.body.rejectReason);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Driver registration rejected',
+      });
     });
   });
 });

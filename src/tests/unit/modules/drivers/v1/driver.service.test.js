@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   addNewDriver,
+  approveDriverRequest,
   createNewDriver,
   doesDriverExist,
   DriverModel,
@@ -8,12 +9,14 @@ import {
   fetchDrivers,
   getDriverInfoByUserId,
   modifyExistedDriver,
+  rejectDriverRequest,
 } from '#modules/drivers/index.js';
 import { UserModel } from '#modules/users/index.js';
 import { hashPassword } from '#shared/utils/jwt.js';
 import { AppError } from '#shared/errors/error.js';
 import mongoose from 'mongoose';
 import { VERIFICATION_STATUS } from '#shared/utils/enums.js';
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
 // Mock the driver model
 vi.mock('#modules/drivers/models/driver.model.js', () => ({
@@ -251,6 +254,80 @@ describe('Driver Services', () => {
 
       expect(fakeSession.abortTransaction).toHaveBeenCalled();
       expect(fakeSession.endSession).toHaveBeenCalled();
+    });
+  });
+
+  describe('approveDriverRequest', () => {
+    it('should throw notFound error if driver not found', async () => {
+      DriverModel.findOne = vi.fn().mockReturnValue({
+        populate: vi.fn().mockResolvedValue(null),
+      });
+
+      expect(approveDriverRequest('123')).rejects.toBeInstanceOf(AppError);
+    });
+
+    it('should throw error if driver registration request is already approved', async () => {
+      const driverInfo = { driver: '123', verificationStatus: VERIFICATION_STATUS.APPROVED };
+      DriverModel.findOne = vi.fn().mockReturnValue({
+        populate: vi.fn().mockResolvedValue(driverInfo),
+      });
+
+      expect(approveDriverRequest('123')).rejects.toMatchObject({
+        code: ERROR_CODES.DRIVER_ALREADY_VERIFIED,
+        status: 400,
+        message: 'Driver is already verified',
+      });
+    });
+    it('should approve driver registration request', async () => {
+      const driverInfo = {
+        driver: '123',
+        verificationStatus: VERIFICATION_STATUS.PENDING,
+        save: vi.fn().mockResolvedValue(true),
+      };
+      DriverModel.findOne = vi.fn().mockReturnValue({
+        populate: vi.fn().mockResolvedValue(driverInfo),
+        save: vi.fn().mockResolvedValue(true),
+      });
+
+      await approveDriverRequest('123');
+    });
+  });
+
+  describe('rejectDriverRequest', () => {
+    it('should throw notFound error if driver not found', async () => {
+      DriverModel.findOne = vi.fn().mockReturnValue({
+        populate: vi.fn().mockResolvedValue(null),
+      });
+
+      expect(rejectDriverRequest('123')).rejects.toBeInstanceOf(AppError);
+    });
+
+    it('should throw error if driver registration request is already rejected', async () => {
+      const driverInfo = { driver: '123', verificationStatus: VERIFICATION_STATUS.REJECTED };
+      DriverModel.findOne = vi.fn().mockReturnValue({
+        populate: vi.fn().mockResolvedValue(driverInfo),
+      });
+
+      expect(rejectDriverRequest('123')).rejects.toMatchObject({
+        code: ERROR_CODES.DRIVER_ALREADY_REJECTED,
+        status: 400,
+        message: 'Driver is already rejected',
+      });
+    });
+
+    it('should reject driver registration request', async () => {
+      const driverInfo = {
+        driver: '123',
+        verificationStatus: VERIFICATION_STATUS.PENDING,
+        reason: {},
+        save: vi.fn().mockResolvedValue(true),
+      };
+      DriverModel.findOne = vi.fn().mockReturnValue({
+        populate: vi.fn().mockResolvedValue(driverInfo),
+        save: vi.fn().mockResolvedValue(true),
+      });
+
+      await rejectDriverRequest('123');
     });
   });
 });

@@ -664,4 +664,21 @@ export const ERROR_MESSAGES = {
     fa: 'شماره ثبت وسایل نقلیه (شماره پلیت) الزامی است.',
     ps: 'د موټر ثبت نمبر اړین دی.',
   },
+  DRIVER_ALREADY_VERIFIED: {
+    en: 'Driver is already verified.',
+    fa: 'راننده قبلاً تأیید شده است.',
+    ps: 'چلوونکی مخکې له مخکې تصدیق شوی دی.',
+  },
+
+  DRIVER_ALREADY_REJECTED: {
+    en: 'Driver is already rejected.',
+    fa: 'راننده قبلاً رد شده است.',
+    ps: 'چلوونکی مخکې له مخکې رد شوی دی.',
+  },
+
+  REJECT_REASON_REQUIRED: {
+    en: 'Reject reason is required.',
+    fa: 'دلیل رد الزامی است.',
+    ps: 'د رد کولو دلیل اړین دی.',
+  },
 };

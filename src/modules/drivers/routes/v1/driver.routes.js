@@ -1,10 +1,12 @@
 import express from 'express';
 import {
+  acceptDriverRegistrationRequest,
   addDriver,
   createDriver,
   getAllDrivers,
   getDriver,
   modifyDriver,
+  rejectDriverRegistrationRequest,
 } from '../../controllers/v1/driver.controller.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
 import { validate } from '#shared/middleware/validate.js';
@@ -15,6 +17,7 @@ import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { ROLES } from '#shared/utils/enums.js';
 import { createDriverProfileValidator } from '#modules/drivers/dto/user-create-driver.schema.js';
 import uploadFile from '#shared/middleware/uploadFile.js';
+import { rejectDriverValidator } from '#modules/drivers/dto/reject-driver.schema.js';
 
 const router = express.Router();
 
@@ -36,6 +39,21 @@ router.post(
   ]),
   validate(createDriverProfileValidator),
   asyncHandler(createDriver)
+);
+//Accept the driver registration request
+router.patch(
+  '/:id/verification/approve', // id => Driver Id
+  authorizeRole(ROLES.ADMIN),
+  validate(mongoIdValidator),
+  asyncHandler(acceptDriverRegistrationRequest)
+);
+//Reject the driver registration request
+router.patch(
+  '/:id/verification/reject', // id => Driver Id
+  authorizeRole(ROLES.ADMIN),
+  validate(mongoIdValidator),
+  validate(rejectDriverValidator),
+  asyncHandler(rejectDriverRegistrationRequest)
 );
 router.get('/', authorizeRole(ROLES.ADMIN), asyncHandler(getAllDrivers));
 router.get('/:id', authorizeRole(ROLES.ADMIN), validate(mongoIdValidator), asyncHandler(getDriver)); // route /:id => id is driverId
