@@ -35,11 +35,27 @@ export const createOffer = async (orderId, driverId) => {
   }
 };
 
+/**
+ * Get offer by orderId and driverId
+ * @param {String} orderId
+ * @param {String} driverId
+ * @returns Offer object
+ */
 export const getOffer = async (orderId, driverId) => {
   const orderOffer = { order: orderId.toString(), driver: driverId.toString() }; // We convert to string, because from most places we send objectId
   createOfferSchema.parse(orderOffer);
 
   const offer = await OfferModel.findOne(orderOffer);
+  return offer;
+};
+
+/**
+ * Get offer by orderId
+ * @param {String} orderId
+ * @returns Offer object
+ */
+export const getOfferByOrderId = async (orderId) => {
+  const offer = await OfferModel.findOne({ order: orderId });
   return offer;
 };
 
