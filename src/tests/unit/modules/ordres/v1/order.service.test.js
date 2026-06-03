@@ -27,6 +27,7 @@ import {
   OFFER_STATUS,
   ORDER_STATUS,
   PAYMENT_STATUS,
+  REASON_TYPES,
   ROLES,
 } from '#shared/utils/enums.js';
 import { DtoService } from '#shared/utils/dtoService.js';
@@ -825,6 +826,7 @@ describe('cancelOrderWithTransaction', () => {
       save: vi.fn(),
       driverId: 'driver1',
       paymentStatus: PAYMENT_STATUS.PENDING,
+      reason: {},
     };
 
     const driver = {
@@ -856,7 +858,8 @@ describe('cancelOrderWithTransaction', () => {
 
     expect(order.status).toBe(ORDER_STATUS.CANCELLED);
     expect(order.paymentStatus).toBe(PAYMENT_STATUS.FAILED);
-    expect(order.cancelReason).toBe('Customer requested');
+    expect(order.reason.description).toBe('Customer requested');
+    expect(order.reason.type).toBe(REASON_TYPES.CANCELLED);
     expect(order.timeline.cancelledAt).toBeInstanceOf(Date);
     expect(order.save).toHaveBeenCalledWith({ session: fakeSession });
 
@@ -874,6 +877,7 @@ describe('cancelOrderWithTransaction', () => {
       save: vi.fn(),
       driverId: null,
       paymentStatus: PAYMENT_STATUS.PENDING,
+      reason: {},
     };
 
     const user = {
@@ -887,7 +891,8 @@ describe('cancelOrderWithTransaction', () => {
 
     expect(order.status).toBe(ORDER_STATUS.CANCELLED);
     expect(order.paymentStatus).toBe(PAYMENT_STATUS.FAILED);
-    expect(order.cancelReason).toBe('No longer needed');
+    expect(order.reason.description).toBe('No longer needed');
+    expect(order.reason.type).toBe(REASON_TYPES.CANCELLED);
     expect(order.save).toHaveBeenCalledWith({ session: fakeSession });
 
     expect(fakeSession.commitTransaction).toHaveBeenCalled();
@@ -968,6 +973,7 @@ describe('cancelOrderWithTransaction', () => {
       save: vi.fn(),
       driverId: 'driver1',
       paymentStatus: PAYMENT_STATUS.PENDING,
+      reason: {},
     };
 
     const driver = {
@@ -998,6 +1004,7 @@ describe('cancelOrderWithTransaction', () => {
       save: vi.fn(),
       driverId: null,
       paymentStatus: PAYMENT_STATUS.PENDING,
+      reason: {},
     };
 
     const driver = {
@@ -1035,6 +1042,7 @@ describe('cancelOrderWithTransaction', () => {
       save: vi.fn(),
       driverId: 'driver1',
       paymentStatus: PAYMENT_STATUS.PENDING,
+      reason: {},
     };
 
     const driver = {
@@ -1114,6 +1122,7 @@ describe('returnOrderWithTransaction', () => {
       save: vi.fn(),
       driverId: 'driver1',
       paymentStatus: PAYMENT_STATUS.PENDING,
+      reason: {},
     };
 
     const driver = {
@@ -1145,7 +1154,8 @@ describe('returnOrderWithTransaction', () => {
 
     expect(order.status).toBe(ORDER_STATUS.RETURNED);
     expect(order.paymentStatus).toBe(PAYMENT_STATUS.FAILED);
-    expect(order.cancelReason).toBe('No Response from driver');
+    expect(order.reason.description).toBe('No Response from driver');
+    expect(order.reason.type).toBe(REASON_TYPES.RETURNED);
     expect(order.timeline.returnedAt).toBeInstanceOf(Date);
     expect(order.save).toHaveBeenCalledWith({ session: fakeSession });
 
@@ -1211,6 +1221,7 @@ describe('returnOrderWithTransaction', () => {
       driverId: 'driver1',
       paymentStatus: PAYMENT_STATUS.PENDING,
       items: [],
+      reason: {},
     };
 
     const driver = {
@@ -1246,6 +1257,7 @@ describe('returnOrderWithTransaction', () => {
       save: vi.fn(),
       driverId: null,
       paymentStatus: PAYMENT_STATUS.PENDING,
+      reason: {},
     };
 
     const driver = {
@@ -1283,6 +1295,7 @@ describe('returnOrderWithTransaction', () => {
       save: vi.fn(),
       driverId: 'driver1',
       paymentStatus: PAYMENT_STATUS.PENDING,
+      reason: {},
     };
 
     const driver = {
