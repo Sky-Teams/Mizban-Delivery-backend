@@ -234,7 +234,10 @@ export const assignDriver = async (session, orderId, driverId) => {
     );
   }
 
-  const driver = await getDriverStatusByDriverId(driverId);
+  // Use fetchDriverByDriverId, because we need the userId of the driver to send him a notification,
+  const driver = await fetchDriverByDriverId(driverId);
+
+  if (!driver) throw notFound('driver');
 
   if (driver.status !== DRIVER_STATUS.IDLE)
     throw new AppError(
@@ -252,6 +255,7 @@ export const assignDriver = async (session, orderId, driverId) => {
   await order.save({ session });
   await driver.save({ session });
 
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_ASSIGNED, { orderId, userId: driver.user._id });
   return order;
 };
 

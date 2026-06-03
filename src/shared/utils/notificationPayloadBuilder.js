@@ -33,14 +33,14 @@ export const NotificationPayloads = {
 
   orderPickedUp: (orderId, driverId, pickedUpAt) => ({
     type: NOTIFICATION_TYPE.ORDER,
-    title: 'Order pickded Up',
-    message: `Order (${orderId}) is pickdedUp by driver (${driverId}) at ${pickedUpAt}`,
+    title: 'Order picked Up',
+    message: `Order (${orderId}) is pickedUp by driver (${driverId}) at ${pickedUpAt}`,
   }),
 
   orderDelivered: (orderId, driverId, deliveredAt) => ({
     type: NOTIFICATION_TYPE.ORDER,
     title: 'Order delivered',
-    message: `Order (${orderId}) is deliverd by driver (${driverId}) at ${deliveredAt}`,
+    message: `Order (${orderId}) is delivered by driver (${driverId}) at ${deliveredAt}`,
   }),
 
   orderCancelled: (orderId, reason) => ({

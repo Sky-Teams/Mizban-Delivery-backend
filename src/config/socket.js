@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
 import { corsOptions } from './cors.js';
 import { verifyJWT } from '#shared/utils/jwt.js';
-import { getAllAdmins } from '#modules/users/index.js';
+import { getAllAdmins, getUserDevicesByUserId } from '#modules/users/index.js';
 import { pushNotification } from '#shared/utils/pushNotification.js';
 
 export class CustomSocket {
@@ -94,9 +94,25 @@ export class CustomSocket {
    * @param {String} event - Type of event that should be emit
    * @param {Object} payload - Payload that should be send to front
    */
-  static emitToUser(userId, event, payload) {
+  static async emitToUser(userId, event, payload) {
     if (!this.#io) throw new Error('Socket is not initialized');
-    this.getIO().to(userId.toString()).emit(event, payload);
+
+    userId = userId.toString();
+    const isOnline = this.isUserOnline(userId);
+
+    //If user is online, we send notification via websocket, otherwise we send notification via fcmToken
+    if (isOnline) {
+      this.getIO().to(userId).emit(event, payload);
+    } else {
+      const userDevices = await getUserDevicesByUserId(userId);
+      if (userDevices && userDevices.length !== 0) {
+        await Promise.all(
+          userDevices.map((device) => {
+            pushNotification(device.fcmToken, payload.title, payload.message);
+          })
+        );
+      }
+    }
   }
 
   /**
