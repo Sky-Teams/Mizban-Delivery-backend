@@ -86,4 +86,6 @@ export const VERIFICATION_STATUS = {
 
 export const REASON_TYPES = {
   REJECTED: 'rejected',
+  CANCELLED: 'cancelled',
+  RETURNED: 'returned',
 };
