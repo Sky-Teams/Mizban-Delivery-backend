@@ -232,11 +232,12 @@ describe('assignDriverToOrderWithTransaction', () => {
     const driver = {
       _id: 'driver1',
       status: DRIVER_STATUS.IDLE,
+      user: { _id: '123', name: 'ahmad' },
       save: vi.fn(),
     };
 
     OrderModel.findById.mockResolvedValue(order);
-    getDriverStatusByDriverId.mockResolvedValue(driver);
+    fetchDriverByDriverId.mockResolvedValue(driver);
 
     const result = await assignDriverToOrderWithTransaction('delivery1', 'driver1');
 

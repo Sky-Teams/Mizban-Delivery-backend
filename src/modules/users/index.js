@@ -10,6 +10,7 @@ export {
   authenticateWithGoogle,
   generateTokens,
   findOrCreateUser,
+  getUserDevicesByUserId,
 } from './services/v1/auth.service.js';
 export { register, googleLogin } from './controllers/v1/auth.controller.js';
 

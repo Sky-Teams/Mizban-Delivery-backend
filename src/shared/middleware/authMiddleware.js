@@ -13,7 +13,7 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
   const decoded = verifyJWT(token);
-  if (!decoded.id) {
+  if (!decoded?.id) {
     throw new AppError('Unauthorized: Invalid token payload', 401, ERROR_CODES.INVALID_JWT);
   }
 

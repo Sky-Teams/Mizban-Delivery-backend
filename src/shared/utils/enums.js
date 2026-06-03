@@ -35,6 +35,7 @@ export const PAYMENT_STATUS = {
 // Event-bus events
 export const EVENT_BUS_EVENTS = {
   ORDER_CREATED: 'order:created',
+  ORDER_ASSIGNED: 'order:assigned',
   ORDER_PICKEDUP: 'order:pickedUp',
   ORDER_DELIVERED: 'order:delivered',
   ORDER_CANCELLED: 'order:cancelled',
@@ -64,6 +65,7 @@ export const SOCKET_EVENTS = {
   },
   DRIVER: {
     OFFER: 'offer',
+    ORDER: 'order',
   },
 };
 

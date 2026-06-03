@@ -99,6 +99,16 @@ const rotateRefreshToken = async (currentTokenId) => {
 
   return newRefreshToken;
 };
+
+/**
+ * Get devices of a user by user Id
+ * @param {String} userId
+ * @returns Devices of a user as an array of objects
+ */
+export const getUserDevicesByUserId = async (userId) => {
+  const userDevices = await UserModel.findOne({ _id: userId }).select('devices');
+  return userDevices?.devices;
+};
 // -----------
 
 // password helpers
