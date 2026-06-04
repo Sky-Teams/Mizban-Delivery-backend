@@ -67,3 +67,18 @@ export const updateDeviceInfo = async (userId, fcmToken, platform, deviceId) => 
 
   return updatedUser;
 };
+
+/**
+ * Remove FCM token from devices list of a user
+ * @param {String} userId
+ * @param {String} fcmToken
+ */
+export const removeFCMToken = async (userId, fcmToken) => {
+  await UserModel.findByIdAndUpdate(userId, {
+    $pull: {
+      devices: {
+        fcmToken,
+      },
+    },
+  });
+};
