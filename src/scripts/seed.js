@@ -251,7 +251,7 @@ const createFakeDrivers = async () => {
 
 const createInitialSettings = async () => {
   const defaultSettings = [
-    { key: 'commission.rate', value: 5, description: 'Commission rate in percentage' },
+    { key: 'commission.rate', value: 5, description: 'Commission rate as a percentage' },
     {
       key: 'driver.maxWalletGap',
       value: 500,
