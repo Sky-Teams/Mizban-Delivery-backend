@@ -21,3 +21,14 @@ export const calculateItemsTotal = (items) => {
   });
   return result;
 };
+
+/**
+ * Check if a value is number or not
+ * @param {String | Number} value
+ * @returns boolean
+ */
+export const isNumber = (value) => {
+  if (value === '' || value === undefined || value === null || isNaN(value)) return false;
+
+  return true;
+};
