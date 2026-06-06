@@ -91,3 +91,8 @@ export const REASON_TYPES = {
   CANCELLED: 'cancelled',
   RETURNED: 'returned',
 };
+
+export const settingKeys = {
+  COMMISSION_RATE: 'commission.rate',
+  DRIVER_MAX_WALLET_GAP: 'driver.maxWalletGap',
+};
