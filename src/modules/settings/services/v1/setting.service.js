@@ -27,7 +27,7 @@ export const updateSettingByKey = async (key, value) => {
   const updatedSetting = await SettingModel.findOneAndUpdate(
     { key },
     { value },
-    { returnDocument: 'after' }
+    { returnDocument: 'after' } // In newer Mongoose versions, `returnDocument: 'after'` replaces the older `new: true` option.
   );
 
   if (!updatedSetting) throw notFound('Setting');
