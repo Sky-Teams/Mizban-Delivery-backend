@@ -701,4 +701,9 @@ export const ERROR_MESSAGES = {
     fa: 'حداکثر اختلاف کیف پول راننده باید عدد باشد',
     ps: 'د ډرایور د والټ اعظمي توپیر باید شمېره وي',
   },
+  [ERROR_CODES.COMMISSION_RATE_MUST_BE_NUMBER]: {
+    en: 'Commission rate must be a number',
+    fa: 'نرخ کمیشن باید عدد باشد',
+    ps: 'د کمیشن کچه باید عدد وي',
+  },
 };
