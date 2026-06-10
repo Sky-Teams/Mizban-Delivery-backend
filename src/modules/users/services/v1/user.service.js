@@ -84,7 +84,7 @@ export const removeFCMToken = async (userId, fcmToken) => {
 };
 
   
-export const removeFCMTokenForDeviceId = async (userId, deviceId) => {
+export const removeFCMTokenByDeviceId = async (userId, deviceId) => {
   const updatedDevices = await UserModel.findOneAndUpdate(
     {
       _id: userId,
@@ -94,9 +94,6 @@ export const removeFCMTokenForDeviceId = async (userId, deviceId) => {
       $set: {
         'devices.$.fcmToken': null,
       },
-    },
-    { new: true }
+    }
   );
-
-  return updatedDevices;
 };

@@ -94,12 +94,12 @@ export const changePassword = async (req, res) => {
 export const logout = async (req, res) => {
   const refreshToken = req.cookies?.refreshToken;
   const deviceId = req.cookies?.deviceId;
-  const deviceIdFornt = req.body.deviceId;
+  const frontDeviceId = req.body.deviceId;
 
   if (!refreshToken || !deviceId)
     throw new AppError('Invalid session data for logout', 401, ERROR_CODES.LOGOUT_INVALID_SESSION);
 
-  await logoutUser({ refreshToken, deviceId, deviceIdFornt });
+  await logoutUser({ refreshToken, deviceId, frontDeviceId });
 
   res.clearCookie('refreshToken', cookieOptions);
   res.clearCookie('deviceId', cookieOptions);

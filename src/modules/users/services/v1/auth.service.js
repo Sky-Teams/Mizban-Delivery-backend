@@ -13,7 +13,7 @@ import { AppError, notFound, unauthorized } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { agenda } from '#config/agenda.js';
 import { verifyGoogleToken } from '#shared/utils/googleOAuth.js';
-import { removeFCMTokenForDeviceId } from './user.service.js';
+import { removeFCMTokenByDeviceId } from './user.service.js';
 
 
 //!  Helper Functions
@@ -249,7 +249,6 @@ export const loginService = async ({ email, password }, deviceId) => {
       setDefaultsOnInsert: true,
     }
   );
-  console.log('user logged in!')
   return {
     id: user._id,
     email: user.email,
@@ -355,21 +354,21 @@ export const changePasswordService = async (userId, { currentPassword, newPasswo
   await RefreshTokenModel.deleteMany({ user: user._id });
 };
 
-export const logoutUser = async ({ refreshToken, deviceId, deviceIdFornt }) => {
+export const logoutUser = async ({ refreshToken, deviceId, frontDeviceId }) => {
   const hashedToken = hashToken(refreshToken);
 
-  const tokenDoc = await RefreshTokenModel.findOne({
+  const tokenDocument = await RefreshTokenModel.findOne({
     token: hashedToken,
     deviceId,
   }).populate('user');
 
-  if (!tokenDoc) return;
+  if (!tokenDocument) return;
 
-  const userId = tokenDoc.user._id;
+  const userId = tokenDocument.user._id;
 
-  await RefreshTokenModel.deleteOne({ _id: tokenDoc._id });
+  await RefreshTokenModel.deleteOne({ _id: tokenDocument._id });
 
-  if (deviceIdFornt) {
-    await removeFCMTokenForDeviceId(userId, deviceIdFornt);
+  if (frontDeviceId) {
+    await removeFCMTokenByDeviceId(userId, frontDeviceId);
   }  
 };
