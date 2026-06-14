@@ -15,7 +15,7 @@ describe('Auth controller - logout', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    req = { cookies: {} };
+    req = { cookies: {}, body: {},};
 
     res = {
       clearCookie: vi.fn(),

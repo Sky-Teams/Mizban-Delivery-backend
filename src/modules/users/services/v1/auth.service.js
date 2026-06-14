@@ -13,6 +13,8 @@ import { AppError, notFound, unauthorized } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { agenda } from '#config/agenda.js';
 import { verifyGoogleToken } from '#shared/utils/googleOAuth.js';
+import { removeFCMTokenByDeviceId } from './user.service.js';
+
 
 //!  Helper Functions
 
@@ -247,7 +249,6 @@ export const loginService = async ({ email, password }, deviceId) => {
       setDefaultsOnInsert: true,
     }
   );
-
   return {
     id: user._id,
     email: user.email,
@@ -353,8 +354,21 @@ export const changePasswordService = async (userId, { currentPassword, newPasswo
   await RefreshTokenModel.deleteMany({ user: user._id });
 };
 
-export const logoutUser = async ({ refreshToken, deviceId }) => {
+export const logoutUser = async ({ refreshToken, deviceId, frontDeviceId }) => {
   const hashedToken = hashToken(refreshToken);
 
-  await RefreshTokenModel.deleteOne({ token: hashedToken, deviceId });
+  const tokenDocument = await RefreshTokenModel.findOne({
+    token: hashedToken,
+    deviceId,
+  }).populate('user');
+
+  if (!tokenDocument) return;
+
+  const userId = tokenDocument.user._id;
+
+  await RefreshTokenModel.deleteOne({ _id: tokenDocument._id });
+
+  if (frontDeviceId) {
+    await removeFCMTokenByDeviceId(userId, frontDeviceId);
+  }  
 };
