@@ -17,6 +17,7 @@ import { loggerMiddleware } from '#shared/middleware/loggerMiddleware.js';
 import { offerRoutes } from '#modules/offers/index.js';
 import { ROLES } from '#shared/utils/enums.js';
 import { logRoutes } from '#modules/log/index.js';
+import { settingRoutes } from '#modules/settings/index.js';
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use('/api/business-customers', authorizeRole(ROLES.ADMIN), businessCustomerR
 app.use('/api/offers', offerRoutes);
 app.use('/api/logs', authorizeRole(ROLES.ADMIN), logRoutes);
 app.use('/api/devices', deviceRoutes);
+app.use('/api/settings', authorizeRole(ROLES.ADMIN), settingRoutes);
 
 //#endregion
 

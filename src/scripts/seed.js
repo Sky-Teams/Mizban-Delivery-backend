@@ -4,6 +4,7 @@ import { UserModel } from '#modules/users/index.js';
 import { hashPassword } from '#shared/utils/jwt.js';
 import { DriverModel } from '#modules/drivers/index.js';
 import { VEHICLE_TYPE, VERIFICATION_STATUS } from '#shared/utils/enums.js';
+import { SettingModel } from '#modules/settings/index.js';
 
 dotenv.config();
 
@@ -248,10 +249,25 @@ const createFakeDrivers = async () => {
   console.log('Drivers created successfully');
 };
 
+const createInitialSettings = async () => {
+  const defaultSettings = [
+    { key: 'commission.rate', value: 5, description: 'Commission rate as a percentage' },
+    {
+      key: 'driver.maxWalletGap',
+      value: 500,
+      description: 'Gap between driver balance and order value',
+    },
+  ];
+
+  await SettingModel.insertMany(defaultSettings);
+  console.log('Default Settings created successfully');
+};
+
 const seed = async () => {
   try {
     await createAdmin();
     await createFakeDrivers();
+    await createInitialSettings();
     process.exit(0);
   } catch (error) {
     console.error('Error seeding database', error);

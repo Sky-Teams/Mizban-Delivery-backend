@@ -686,4 +686,24 @@ export const ERROR_MESSAGES = {
     fa: 'دلیل برگشت نامعتبر است',
     ps: 'د بیرته ستنولو دلیل ناسم دی',
   },
+  [ERROR_CODES.INVALID_SETTING_KEY]: {
+    en: 'Invalid setting key',
+    fa: 'کلید تنظیمات معتبر نیست',
+    ps: 'د تنظیماتو کیلي معتبره نه ده',
+  },
+  [ERROR_CODES.INVALID_COMMISSION_RATE_RANGE]: {
+    en: 'Commission rate must be between 0 and 100',
+    fa: 'نرخ کمیشن باید بین ۰ تا ۱۰۰ باشد',
+    ps: 'د کمیشن کچه باید د ۰ او ۱۰۰ ترمنځ وي',
+  },
+  [ERROR_CODES.DRIVER_MAX_WALLET_GAP_MUST_BE_NUMBER]: {
+    en: 'Driver max wallet gap must be a number',
+    fa: 'حداکثر اختلاف کیف پول راننده باید عدد باشد',
+    ps: 'د ډرایور د والټ اعظمي توپیر باید شمېره وي',
+  },
+  [ERROR_CODES.COMMISSION_RATE_MUST_BE_NUMBER]: {
+    en: 'Commission rate must be a number',
+    fa: 'نرخ کمیشن باید عدد باشد',
+    ps: 'د کمیشن کچه باید عدد وي',
+  },
 };
