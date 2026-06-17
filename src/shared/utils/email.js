@@ -298,12 +298,21 @@ export const sendEmail = async ({
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,
+    secure: false,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD,
+      user: process.env.EMAIL_USER.trim(),
+      pass: process.env.EMAIL_PASSWORD.trim(),
     },
   });
+  
+  try {
+    await transporter.verify();
+    console.log("SMTP connection is verified");
+  } catch (err) {
+    console.error("the SMTP verification error", err);
+  }
 
+  
   const html =
     template === 'verify_email'
       ? generateVerifyEmailTemplate(username, verifyUrl)
@@ -315,6 +324,5 @@ export const sendEmail = async ({
     subject,
     html,
   };
-
   await transporter.sendMail(emailOption);
 };
