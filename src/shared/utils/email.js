@@ -304,15 +304,14 @@ export const sendEmail = async ({
       pass: process.env.EMAIL_PASSWORD.trim(),
     },
   });
-  
+
   try {
     await transporter.verify();
-    console.log("SMTP connection is verified");
+    console.log('SMTP connection is verified');
   } catch (err) {
-    console.error("the SMTP verification error", err);
+    console.error('the SMTP verification error', err);
   }
 
-  
   const html =
     template === 'verify_email'
       ? generateVerifyEmailTemplate(username, verifyUrl)
