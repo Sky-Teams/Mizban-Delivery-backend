@@ -22,10 +22,11 @@ import { createOfferSchema } from '../../dto/create-offer.schema.js';
     @param {String} driverId
     @returns {Object}  offer object
  */
-export const createOffer = async (orderId, driverId) => {
+export const createOffer = async (orderId, driverId, metadata = {}) => {
   try {
-    const orderOffer = { order: orderId.toString(), driver: driverId.toString() }; // We convert to string, because from most places we send objectId
+    const orderOffer = { order: orderId.toString(), driver: driverId.toString(), metadata }; // We convert to string, because from most places we send objectId
     createOfferSchema.parse(orderOffer);
+    console.log('orderOffer ====== ', orderOffer);
 
     const newOrderOffer = await OfferModel.create(orderOffer);
     return newOrderOffer;
@@ -144,3 +145,9 @@ const rejectAnOffer = async (session, offerId, userId) => {
 
 export const acceptAnOfferWithTransaction = withTransaction(acceptAnOffer);
 export const rejectAnOfferWithTransaction = withTransaction(rejectAnOffer);
+
+export const getCurrentOfferForDriver = async (driverId) => {
+  const offer = await OfferModel.findOne({ driver: driverId, status: OFFER_STATUS.PENDING });
+  console.log(offer);
+  return offer;
+};
