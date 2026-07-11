@@ -1,4 +1,8 @@
-import { acceptOffer, rejectOffer } from '#modules/offers/controllers/v1/offer.controller.js';
+import {
+  acceptOffer,
+  getCurrentOffer,
+  rejectOffer,
+} from '#modules/offers/controllers/v1/offer.controller.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
 import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { mongoIdValidator } from '#shared/middleware/mongoIdValidator.js';
@@ -19,5 +23,7 @@ router.patch(
   authorizeRole(ROLES.DRIVER),
   asyncHandler(rejectOffer)
 );
+
+router.get('/current-offer', authorizeRole(ROLES.DRIVER), asyncHandler(getCurrentOffer));
 
 export default router;
