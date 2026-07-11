@@ -47,20 +47,20 @@ export class OfferService {
       // We need this log for testing purpose
       console.log('Send offer to driver: ', driversInfo[currentIndex].id);
 
-      //TODO: Does we need to store the info about the order details in offer table?
-      const offer = await createOffer(orderId, driversInfo[currentIndex].id);
-
-      if (!offer) {
-        await increaseDriverIndex(orderId);
-        return await OfferService.sendOfferToDriver(orderId);
-      }
-
       // Create Offer payload for the driver to understand the details of the offer
       const orderInfo = DtoService.order(order);
       orderInfo.expiresIn = process.env.Offer_Expires_In_Seconds || 30;
       orderInfo.eta = driversInfo[currentIndex].eta;
       orderInfo.distance = driversInfo[currentIndex].distance;
       const offerPayload = NotificationPayloads.orderOffered(orderInfo);
+
+      //TODO: Does we need to store the info about the order details in offer table?
+      const offer = await createOffer(orderId, driversInfo[currentIndex].id, offerPayload.metadata);
+
+      if (!offer) {
+        await increaseDriverIndex(orderId);
+        return await OfferService.sendOfferToDriver(orderId);
+      }
 
       // Send offer to driver
       await NotificationService.send(
