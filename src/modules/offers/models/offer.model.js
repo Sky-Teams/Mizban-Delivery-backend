@@ -1,24 +1,5 @@
 import mongoose from 'mongoose';
 
-// This metadata is used to show the offer details to the driver
-const OfferMetadataSchema = new mongoose.Schema(
-  {
-    orderType: { type: String },
-    serviceType: { type: String },
-    pickupLocation: { type: mongoose.Schema.Types.Mixed },
-    dropoffLocation: { type: mongoose.Schema.Types.Mixed },
-    distance: { type: Number },
-    eta: { type: Number },
-    packageDetails: { type: mongoose.Schema.Types.Mixed },
-    paymentType: { type: String },
-    amountToCollect: { type: Number },
-    finalPrice: { type: Number },
-    expiresIn: { type: Number },
-    receiverArea: { type: String },
-  },
-  { _id: false }
-);
-
 const offerSchema = new mongoose.Schema(
   {
     order: {
@@ -44,7 +25,11 @@ const offerSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    metadata: OfferMetadataSchema,
+    metadata: {
+      // For now we define it a simple object, in the future may define a schema for it
+      type: Object,
+      default: {},
+    },
   },
   {
     timestamps: true,
