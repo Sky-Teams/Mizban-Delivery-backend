@@ -30,6 +30,6 @@ export const getCurrentOffer = async (req, res) => {
   const driver = await fetchDriverByUserId(req.user._id);
   if (!driver) throw notFound('Driver');
 
-  const offer = await getCurrentOfferForDriver(driver._id);
+  const offer = await getCurrentOfferForDriver(driver._id, req.params.id);
   res.status(200).json({ success: true, data: offer });
 };

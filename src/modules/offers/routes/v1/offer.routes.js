@@ -24,6 +24,6 @@ router.patch(
   asyncHandler(rejectOffer)
 );
 
-router.get('/current-offer', authorizeRole(ROLES.DRIVER), asyncHandler(getCurrentOffer));
+router.get('/current-offer/:id', authorizeRole(ROLES.DRIVER), asyncHandler(getCurrentOffer));
 
 export default router;
