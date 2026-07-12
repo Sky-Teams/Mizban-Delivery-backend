@@ -10,7 +10,7 @@ export const updateDriverLocation = async (userId, data) => {
   /** Validation location data (type, latitude, longitude) */
   updateLocationSchema.parse(data);
 
-  /** Save location to DB */
+  /** Update driver location to DB */
   driver = await DriverModel.findOneAndUpdate(
     { _id: driver.id, user: userId },
     { $set: { currentLocation: data.currentLocation, lastLocationAt: new Date() } },
