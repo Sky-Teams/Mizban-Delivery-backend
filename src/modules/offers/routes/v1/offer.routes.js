@@ -1,6 +1,6 @@
 import {
   acceptOffer,
-  getCurrentOffer,
+  getOfferById,
   rejectOffer,
 } from '#modules/offers/controllers/v1/offer.controller.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
@@ -24,6 +24,6 @@ router.patch(
   asyncHandler(rejectOffer)
 );
 
-router.get('/current-offer/:id', authorizeRole(ROLES.DRIVER), asyncHandler(getCurrentOffer));
+router.get('/:id', authorizeRole(ROLES.DRIVER), asyncHandler(getOfferById));
 
 export default router;

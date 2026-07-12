@@ -1,6 +1,6 @@
 import {
   acceptAnOfferWithTransaction,
-  getCurrentOfferForDriver,
+  getOfferByIdForDriver,
   rejectAnOfferWithTransaction,
 } from '../../services/v1/offer.service.js';
 import { notFound, unauthorized } from '#shared/errors/error.js';
@@ -24,12 +24,12 @@ export const rejectOffer = async (req, res) => {
   res.status(200).json({ success: true, data: offer });
 };
 
-export const getCurrentOffer = async (req, res) => {
+export const getOfferById = async (req, res) => {
   if (!req.user) throw unauthorized();
 
   const driver = await fetchDriverByUserId(req.user._id);
   if (!driver) throw notFound('Driver');
 
-  const offer = await getCurrentOfferForDriver(driver._id, req.params.id);
+  const offer = await getOfferByIdForDriver(driver._id, req.params.id);
   res.status(200).json({ success: true, data: offer });
 };

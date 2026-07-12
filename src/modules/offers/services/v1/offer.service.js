@@ -146,7 +146,7 @@ const rejectAnOffer = async (session, offerId, userId) => {
 export const acceptAnOfferWithTransaction = withTransaction(acceptAnOffer);
 export const rejectAnOfferWithTransaction = withTransaction(rejectAnOffer);
 
-export const getCurrentOfferForDriver = async (driverId, offerId) => {
+export const getOfferByIdForDriver = async (driverId, offerId) => {
   const offer = await OfferModel.findOne({
     _id: offerId,
     driver: driverId,
