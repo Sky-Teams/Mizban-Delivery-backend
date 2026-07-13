@@ -150,8 +150,21 @@ export const getOfferByIdForDriver = async (driverId, offerId) => {
   const offer = await OfferModel.findOne({
     _id: offerId,
     driver: driverId,
-    status: OFFER_STATUS.PENDING,
   });
 
   return offer;
+};
+
+export const getAllOffersForDriver = async (driverId, page, limit) => {
+  const skip = (page - 1) * limit;
+
+  const allOffers = await OfferModel.find({ driver: driverId });
+
+  const paginatedOffers = allOffers.slice(skip, skip + limit);
+
+  return {
+    paginatedOffers,
+    totalOffers: allOffers.length,
+    totalPages: Math.ceil(allOffers.length / limit),
+  };
 };
