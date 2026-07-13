@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   backend:
     build: .
@@ -11,23 +9,4 @@ services:
     env_file:
       - .env
 
-    depends_on:
-      - mongo
-
     restart: unless-stopped
-
-  mongo:
-    image: mongo:7
-
-    container_name: mizban-mongodb
-
-    ports:
-      - "27017:27017"
-
-    restart: unless-stopped
-
-    volumes:
-      - mongo-data:/data/db
-
-volumes:
-  mongo-data:
