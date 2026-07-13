@@ -2,6 +2,7 @@ import {
   acceptAnOfferWithTransaction,
   getOfferByIdForDriver,
   rejectAnOfferWithTransaction,
+  getAllOffersForDriver,
 } from '../../services/v1/offer.service.js';
 import { notFound, unauthorized } from '#shared/errors/error.js';
 import { OfferService } from '#shared/utils/offerService.js';
@@ -32,4 +33,23 @@ export const getOfferById = async (req, res) => {
 
   const offer = await getOfferByIdForDriver(driver._id, req.params.id);
   res.status(200).json({ success: true, data: offer });
+};
+
+export const getAllOffers = async (req, res) => {
+  if (!req.user) throw unauthorized();
+
+  const page = +req.query.page || 1;
+  const limit = +req.query.limit || 8;
+
+  const driver = await fetchDriverByUserId(req.user._id);
+  if (!driver) throw notFound('Driver');
+
+  const result = await getAllOffersForDriver(driver.id, page, limit);
+
+  res.status(200).json({
+    success: true,
+    data: result.paginatedOffers,
+    totalOffers: result.totalOffers,
+    totalPages: result.totalPages,
+  });
 };
