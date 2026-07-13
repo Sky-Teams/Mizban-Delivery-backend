@@ -1,5 +1,6 @@
 import {
   acceptOffer,
+  getAllOffers,
   getOfferById,
   rejectOffer,
 } from '#modules/offers/controllers/v1/offer.controller.js';
@@ -24,6 +25,8 @@ router.patch(
   asyncHandler(rejectOffer)
 );
 
+// These 2 routes fetch offers for a driver
 router.get('/:id', authorizeRole(ROLES.DRIVER), asyncHandler(getOfferById));
+router.get('/', authorizeRole(ROLES.DRIVER), asyncHandler(getAllOffers));
 
 export default router;
