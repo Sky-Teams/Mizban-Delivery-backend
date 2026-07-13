@@ -157,9 +157,11 @@ export const getOfferByIdForDriver = async (driverId, offerId) => {
 
 export const getAllOffersForDriver = async (driverId, page, limit, status) => {
   const skip = (page - 1) * limit;
-  console.log(status);
 
-  const allOffers = await OfferModel.find({ driver: driverId, status });
+  const query = { driver: driverId };
+  if (status) query.status = status;
+
+  const allOffers = await OfferModel.find(query).sort({ createdAt: -1 });
 
   const paginatedOffers = allOffers.slice(skip, skip + limit);
 
