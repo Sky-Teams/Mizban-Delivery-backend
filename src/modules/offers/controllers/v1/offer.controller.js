@@ -40,11 +40,12 @@ export const getAllOffers = async (req, res) => {
 
   const page = +req.query.page || 1;
   const limit = +req.query.limit || 8;
+  const status = req.query.status;
 
   const driver = await fetchDriverByUserId(req.user._id);
   if (!driver) throw notFound('Driver');
 
-  const result = await getAllOffersForDriver(driver.id, page, limit);
+  const result = await getAllOffersForDriver(driver.id, page, limit, status);
 
   res.status(200).json({
     success: true,

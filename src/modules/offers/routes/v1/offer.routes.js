@@ -4,6 +4,7 @@ import {
   getOfferById,
   rejectOffer,
 } from '#modules/offers/controllers/v1/offer.controller.js';
+import { OfferQueryValidator } from '#modules/offers/dto/create-offer.schema.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
 import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { mongoIdValidator } from '#shared/middleware/mongoIdValidator.js';
@@ -26,7 +27,17 @@ router.patch(
 );
 
 // These 2 routes fetch offers for a driver
-router.get('/:id', authorizeRole(ROLES.DRIVER), asyncHandler(getOfferById));
-router.get('/', authorizeRole(ROLES.DRIVER), asyncHandler(getAllOffers));
+router.get(
+  '/:id',
+  validate(mongoIdValidator),
+  authorizeRole(ROLES.DRIVER),
+  asyncHandler(getOfferById)
+);
+router.get(
+  '/',
+  validate(OfferQueryValidator),
+  authorizeRole(ROLES.DRIVER),
+  asyncHandler(getAllOffers)
+);
 
 export default router;

@@ -67,11 +67,11 @@ export class OfferService {
         amountToCollect: offerPayload.metadata.amountToCollect,
         finalPrice: offerPayload.metadata.finalPrice,
         expiresIn: offerPayload.metadata.expiresIn,
+        deliveryPrice: offerPayload.metadata.deliveryPrice,
       };
 
       //TODO: Does we need to store the info about the order details in offer table?
       const offer = await createOffer(orderId, driversInfo[currentIndex].id, metadata);
-
       if (!offer) {
         await increaseDriverIndex(orderId);
         return await OfferService.sendOfferToDriver(orderId);

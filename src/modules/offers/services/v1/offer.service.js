@@ -28,6 +28,7 @@ export const createOffer = async (orderId, driverId, metadata = {}) => {
     createOfferSchema.parse(orderOffer);
 
     const newOrderOffer = await OfferModel.create(orderOffer);
+    console.log(newOrderOffer);
     return newOrderOffer;
   } catch (error) {
     console.log('Error creating orderOffer. ', error);
@@ -154,10 +155,11 @@ export const getOfferByIdForDriver = async (driverId, offerId) => {
   return offer;
 };
 
-export const getAllOffersForDriver = async (driverId, page, limit) => {
+export const getAllOffersForDriver = async (driverId, page, limit, status) => {
   const skip = (page - 1) * limit;
+  console.log(status);
 
-  const allOffers = await OfferModel.find({ driver: driverId });
+  const allOffers = await OfferModel.find({ driver: driverId, status });
 
   const paginatedOffers = allOffers.slice(skip, skip + limit);
 
