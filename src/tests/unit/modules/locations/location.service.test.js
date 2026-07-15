@@ -25,7 +25,7 @@ describe('Driver Services', () => {
         userId: '123',
         currentLocation: {
           type: 'Point',
-          coordinates: [32.2, 64.0],
+          coordinates: [64.0, 32.2],
         },
       };
 
@@ -49,7 +49,7 @@ describe('Driver Services', () => {
           $set: {
             currentLocation: {
               type: 'Point',
-              coordinates: [32.2, 64.0],
+              coordinates: [64.0, 32.2],
             },
             lastLocationAt: expect.any(Date),
           },
