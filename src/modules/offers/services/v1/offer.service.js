@@ -161,13 +161,23 @@ export const getAllOffersForDriver = async (driverId, page, limit, status) => {
   const query = { driver: driverId };
   if (status) query.status = status;
 
-  const allOffers = await OfferModel.find(query).sort({ createdAt: -1 });
+  const result = await OfferModel.aggregate([
+    { $match: query },
+    { $sort: { createdAt: -1 } },
+    {
+      $facet: {
+        paginatedOffers: [{ $skip: skip }, { $limit: limit }],
+        totalOffers: [{ $count: 'count' }],
+      },
+    },
+  ]);
 
-  const paginatedOffers = allOffers.slice(skip, skip + limit);
+  const paginatedOffers = result[0].paginatedOffers;
+  const totalOffers = result[0].totalOffers[0]?.totalOffers[0]?.count || 0;
 
   return {
     paginatedOffers,
-    totalOffers: allOffers.length,
-    totalPages: Math.ceil(allOffers.length / limit),
+    totalOffers,
+    totalPages: Math.ceil(totalOffers / limit),
   };
 };
