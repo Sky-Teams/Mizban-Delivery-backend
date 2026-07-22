@@ -18,7 +18,7 @@ export const NotificationPayloads = {
     type: NOTIFICATION_TYPE.OFFER,
     title: 'New Offer',
     message: 'An offer is ready to pickup',
-    metadata,
+    data: metadata,
   }),
   noDriverFound: (orderId) => ({
     type: NOTIFICATION_TYPE.NO_DRIVER,

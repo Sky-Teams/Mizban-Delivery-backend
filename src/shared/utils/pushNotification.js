@@ -1,5 +1,6 @@
 import admin from '#config/firebaseAdmin.js';
 import { removeFCMToken } from '#modules/users/index.js';
+import { cleanObject } from '#shared/utils/object.helper.js';
 
 /**
  * Push notification with firebase FCM
@@ -8,7 +9,7 @@ import { removeFCMToken } from '#modules/users/index.js';
  * @param {String} message
  * @param {String} userId - userId can be used to delete invalid fcmToken of a user
  */
-export const pushNotification = async (fcmToken, title, message, userId) => {
+export const pushNotification = async (fcmToken, title, message, userId, data = {}) => {
   if (!fcmToken) return;
 
   try {
@@ -18,6 +19,7 @@ export const pushNotification = async (fcmToken, title, message, userId) => {
         title,
         body: message,
       },
+      data: cleanObject(data),
     });
   } catch (err) {
     // These errors are from firebase which show the fcmToken is invalid so we remove them from the database.

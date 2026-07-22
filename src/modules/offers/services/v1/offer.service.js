@@ -12,6 +12,7 @@ import {
   OFFER_STATUS,
   ORDER_STATUS,
 } from '#shared/utils/enums.js';
+import mongoose from 'mongoose';
 import { createOfferSchema } from '../../dto/create-offer.schema.js';
 
 /**
@@ -158,7 +159,7 @@ export const getOfferByIdForDriver = async (driverId, offerId) => {
 export const getAllOffersForDriver = async (driverId, page, limit, status) => {
   const skip = (page - 1) * limit;
 
-  const query = { driver: driverId };
+  const query = { driver: new mongoose.Types.ObjectId(driverId) };
   if (status) query.status = status;
 
   const result = await OfferModel.aggregate([
@@ -173,7 +174,7 @@ export const getAllOffersForDriver = async (driverId, page, limit, status) => {
   ]);
 
   const paginatedOffers = result[0].paginatedOffers;
-  const totalOffers = result[0].totalOffers[0]?.totalOffers[0]?.count || 0;
+  const totalOffers = result[0].totalOffers[0]?.count || 0;
 
   return {
     paginatedOffers,

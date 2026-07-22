@@ -108,7 +108,7 @@ export class CustomSocket {
       if (userDevices && userDevices.length !== 0) {
         await Promise.all(
           userDevices.map((device) => {
-            pushNotification(device.fcmToken, payload.title, payload.message, userId);
+            pushNotification(device.fcmToken, payload.title, payload.message, userId, payload.data);
           })
         );
       }
@@ -131,7 +131,7 @@ export class CustomSocket {
       if (!isOnline && admin.devices.length !== 0) {
         await Promise.all(
           admin.devices.map((device) =>
-            pushNotification(device.fcmToken, payload.title, payload.message, adminId)
+            pushNotification(device.fcmToken, payload.title, payload.message, adminId, payload.data)
           )
         );
       }

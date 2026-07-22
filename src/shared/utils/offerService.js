@@ -52,22 +52,20 @@ export class OfferService {
       orderInfo.expiresIn = process.env.Offer_Expires_In_Seconds || 30;
       orderInfo.eta = driversInfo[currentIndex].eta;
       orderInfo.distance = driversInfo[currentIndex].distance;
-      const offerPayload = NotificationPayloads.orderOffered(orderInfo);
-
       // Create metadata with needed fields to store in offer
       const metadata = {
-        type: offerPayload.metadata.type,
-        serviceType: offerPayload.metadata.serviceType,
-        pickupLocation: offerPayload.metadata.pickupLocation,
-        dropoffLocation: offerPayload.metadata.dropoffLocation,
-        distance: offerPayload.metadata.distance,
-        eta: offerPayload.metadata.eta,
-        packageDetails: offerPayload.metadata.packageDetails,
-        paymentType: offerPayload.metadata.paymentType,
-        amountToCollect: offerPayload.metadata.amountToCollect,
-        finalPrice: offerPayload.metadata.finalPrice,
-        expiresIn: offerPayload.metadata.expiresIn,
-        deliveryPrice: offerPayload.metadata.deliveryPrice,
+        type: orderInfo.type,
+        serviceType: orderInfo.serviceType,
+        pickupLocation: orderInfo.pickupLocation,
+        dropoffLocation: orderInfo.dropoffLocation,
+        distance: orderInfo.distance,
+        eta: orderInfo.eta,
+        packageDetails: orderInfo.packageDetails,
+        paymentType: orderInfo.paymentType,
+        amountToCollect: orderInfo.amountToCollect,
+        finalPrice: orderInfo.finalPrice,
+        expiresIn: orderInfo.expiresIn,
+        deliveryPrice: orderInfo.deliveryPrice,
       };
 
       //TODO: Does we need to store the info about the order details in offer table?
@@ -77,11 +75,15 @@ export class OfferService {
         return await OfferService.sendOfferToDriver(orderId);
       }
 
+      metadata.offerId = offer._id.toString();
+
+      const notificationPayload = NotificationPayloads.orderOffered(metadata);
+
       // Send offer to driver
       await NotificationService.send(
         'driver',
         SOCKET_EVENTS.DRIVER.OFFER,
-        offerPayload,
+        notificationPayload,
         driver.user._id
       );
 
