@@ -29,6 +29,7 @@ import mongoose from 'mongoose';
 import { OfferModel } from '#modules/offers/index.js';
 import { deduplicateById, getObjectValues } from '#shared/utils/object.helper.js';
 import { buildPaginatedResponse } from '#shared/utils/pagination.js';
+import { calculateDeliveryPrice } from './pricing.service.js';
 
 //#region Admin Services
 
@@ -58,15 +59,27 @@ export const addOrder = async (orderData) => {
     orderData.items = calculateItemsTotal(orderData.items);
   }
 
+  const deliveryPrice = calculateDeliveryPrice(orderData); // calculated
+
   // Calculate final price. We can extend it in future
   const amountToCollect = Number(orderData.amountToCollect || 0);
-  const deliveryTotal = Number(orderData.deliveryPrice?.total || 0);
+  console.log('amount to collect',orderData.amountToCollect);
+
+  const deliveryTotalFrontend = Number(orderData.deliveryPrice?.total || 0); // comes within the request
+  const deliveryTotalCalculated = Number(deliveryPrice.total);
+
+  const deliveryTotal = deliveryTotalFrontend !== 0 ? deliveryTotalFrontend : deliveryTotalCalculated;
 
   // We can add discount in future, because discount is not sent from frontend
-  const finalPrice = amountToCollect + deliveryTotal;
+  const finalPrice = (amountToCollect || 0 )+ deliveryTotal;
+
+  console.log('delivery price: ', deliveryPrice)
+  console.log('delivery total', deliveryTotal)
+  console.log('final price: ', finalPrice)
 
   const newOrder = await OrderModel.create({
     ...orderData,
+    deliveryPrice,
     finalPrice,
     status,
     timeline,
