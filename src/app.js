@@ -20,7 +20,6 @@ import { logRoutes } from '#modules/log/index.js';
 import { settingRoutes } from '#modules/settings/index.js';
 import path from 'path';
 
-
 const app = express();
 
 //#region Normal Middleware
@@ -34,7 +33,7 @@ app.use(cookieParser());
 //Logger Middleware
 app.use(loggerMiddleware);
 
-app.use('/src/uploads', express.static(path.join(process.cwd(), 'src/uploads'))); 
+app.use('/src/uploads', express.static(path.join(process.cwd(), 'src/uploads')));
 
 //#region Route Middlewares
 
