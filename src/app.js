@@ -18,6 +18,7 @@ import { offerRoutes } from '#modules/offers/index.js';
 import { ROLES } from '#shared/utils/enums.js';
 import { logRoutes } from '#modules/log/index.js';
 import { settingRoutes } from '#modules/settings/index.js';
+import path from 'path';
 
 const app = express();
 
@@ -31,6 +32,8 @@ app.use(cookieParser());
 //#endregion
 //Logger Middleware
 app.use(loggerMiddleware);
+
+app.use('/src/uploads', express.static(path.join(process.cwd(), 'src/uploads')));
 
 //#region Route Middlewares
 
