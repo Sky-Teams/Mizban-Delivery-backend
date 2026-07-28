@@ -35,6 +35,7 @@ import { eventBus } from '#shared/event-bus/eventBus.js';
 import { OfferModel } from '#modules/offers/index.js';
 
 import * as orderService from '#modules/orders/services/v1/order.service.js';
+import { calculateDeliveryPrice } from '#modules/orders/services/v1/pricing.service.js';
 
 vi.mock('#modules/orders/models/order.model.js', () => ({
   OrderModel: {
@@ -85,6 +86,10 @@ vi.mock('#shared/utils/date.helper.js', () => ({
   },
 }));
 
+vi.mock('#modules/orders/services/v1/pricing.service.js', () => ({
+  calculateDeliveryPrice: vi.fn(),
+}));
+
 const fakeSession = {
   startTransaction: vi.fn(),
   commitTransaction: vi.fn(),
@@ -111,24 +116,43 @@ describe('DeliveryRequest Service', () => {
     dropoffLocation: { type: 'Point', coordinates: [1, 1] },
     paymentType: 'COD',
     amountToCollect: 100,
-    deliveryPrice: { total: 20 },
+    // deliveryPrice: { 
+    //   total: 0, 
+    //   baseFee: 50,
+    //   distanceFee: 0,
+    //   distanceKm: 0,
+    // },
   };
 
   it('should create a order with status "created"', async () => {
+    calculateDeliveryPrice.mockReturnValue({
+      total: 50,
+      baseFee: 50,
+      distanceFee: 0,
+      distanceKm: 0,
+    });
+
     const mockDeliveryRequest = {
       ...baseData,
       _id: '1',
-      finalPrice: 120,
+      finalPrice: 150,
       status: ORDER_STATUS.CREATED,
       timeline: {},
     };
+
     OrderModel.create.mockResolvedValue(mockDeliveryRequest);
 
     const result = await addOrder(baseData);
 
     expect(OrderModel.create).toHaveBeenCalledWith({
       ...baseData,
-      finalPrice: 120,
+      finalPrice: 150,
+      deliveryPrice: {
+        total: 50,
+        baseFee: 50,
+        distanceFee: 0,
+        distanceKm: 0,
+      },
       status: ORDER_STATUS.CREATED,
       timeline: {},
     });
@@ -156,7 +180,13 @@ describe('DeliveryRequest Service', () => {
 
     expect(OrderModel.create).toHaveBeenCalledWith({
       ...data,
-      finalPrice: 120,
+      finalPrice: 150,
+      deliveryPrice: {
+        total: 50,
+        baseFee: 50,
+        distanceFee: 0,
+        distanceKm: 0,
+      },
       status: ORDER_STATUS.ASSIGNED,
       timeline: expect.objectContaining({
         assignedAt: expect.any(Date),
@@ -1375,7 +1405,12 @@ describe('updateOrderInfo', () => {
       _id: deliveryId,
       status: ORDER_STATUS.CREATED,
       amountToCollect: 100,
-      deliveryPrice: { total: 50 },
+      deliveryPrice: { 
+        total: 50,  
+        baseFee: 0,
+        distanceFee: 0,
+        distanceKm: 0,
+      },
     };
 
     OrderModel.findById.mockResolvedValue(existingDelivery);
@@ -1407,7 +1442,12 @@ describe('updateOrderInfo', () => {
       _id: deliveryId,
       status: ORDER_STATUS.CREATED,
       amountToCollect: 100,
-      deliveryPrice: { total: 50 },
+      deliveryPrice: { 
+        total: 50,  
+        baseFee: 50,
+        distanceFee: 0,
+        distanceKm: 0,
+      },
     };
 
     OrderModel.findById.mockResolvedValue(existingDelivery);
@@ -1422,7 +1462,12 @@ describe('updateOrderInfo', () => {
       _id: deliveryId,
       status: ORDER_STATUS.DELIVERED,
       amountToCollect: 100,
-      deliveryPrice: { total: 50 },
+      deliveryPrice: { 
+        total: 50,  
+        baseFee: 50,
+        distanceFee: 0,
+        distanceKm: 0,
+      },
     };
 
     OrderModel.findById.mockResolvedValue(existingDelivery);
