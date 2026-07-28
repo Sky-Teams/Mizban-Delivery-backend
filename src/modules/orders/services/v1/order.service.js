@@ -65,10 +65,10 @@ export const addOrder = async (orderData) => {
   const amountToCollect = Number(orderData.amountToCollect || 0);
   console.log('amount to collect',orderData.amountToCollect);
 
-  const deliveryTotalFrontend = Number(orderData.deliveryPrice?.total || 0); // comes within the request
-  const deliveryTotalCalculated = Number(deliveryPrice.total);
+  // const deliveryTotalFrontend = Number(orderData.deliveryPrice?.total || 0); // comes within the request
+  // const deliveryTotalCalculated = Number(deliveryPrice.total);
 
-  const deliveryTotal = deliveryTotalFrontend !== 0 ? deliveryTotalFrontend : deliveryTotalCalculated;
+  const deliveryTotal = deliveryPrice.total;
 
   // We can add discount in future, because discount is not sent from frontend
   const finalPrice = (amountToCollect || 0 )+ deliveryTotal;
