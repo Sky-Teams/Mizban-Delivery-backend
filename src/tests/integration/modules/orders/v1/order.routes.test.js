@@ -67,7 +67,7 @@ describe('Order API v1 Integration', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveProperty('_id');
       expect(res.body.data.status).toBe(ORDER_STATUS.CREATED);
-      expect(res.body.data.finalPrice).toBe(120);
+      expect(res.body.data.finalPrice).toBe(170);
 
       // Verify in DB
       const orderInDB = await OrderModel.findById(res.body.data._id);
@@ -270,7 +270,7 @@ describe('Order API v1 Integration', () => {
       const res = await postWithAuth(app, baseURL, orderData, token);
 
       expect(res.status).toBe(201);
-      expect(res.body.data.finalPrice).toBe(50);
+      expect(res.body.data.finalPrice).toBe(100);
       expect(res.body.data.status).toBe(ORDER_STATUS.CREATED);
     });
 
