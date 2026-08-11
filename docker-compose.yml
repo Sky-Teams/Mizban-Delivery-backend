@@ -1,0 +1,12 @@
+services:
+  backend:
+    build: .
+    container_name: mizban-backend
+
+    ports:
+      - "3500:3500"
+
+    env_file:
+      - .env
+
+    restart: unless-stopped
