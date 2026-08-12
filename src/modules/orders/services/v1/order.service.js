@@ -710,6 +710,24 @@ export const findOrdersByOfferStatus = async (filter = {}, status) => {
   return offerOrders;
 };
 
+export const calculateOrderDeliveryPrice = async (orderData) => {
+  if (!orderData.pickupLocation?.coordinates) {
+    throw new AppError(
+      'Pickup location is required',
+      400
+    );
+  }
+
+  if (!orderData.dropoffLocation?.coordinates) {
+    throw new AppError(
+      'Dropoff location is required',
+      400
+    );
+  }
+
+  return calculateDeliveryPrice(orderData);
+};
+
 export const assignDriverToOrderWithTransaction = withTransaction(assignDriver);
 
 export const pickupOrderWithTransaction = withTransaction(pickupAnOrder);
