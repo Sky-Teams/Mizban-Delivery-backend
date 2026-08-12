@@ -13,18 +13,18 @@ export const calculateDeliveryPrice = (orderData) => {
       baseFee: BASE_FEE,
       distanceKm: 0,
       distanceFee: 0,
-      total: BASE_FEE + frontendDeliveryTotal,
+      total: frontendDeliveryTotal,
     };
   }
 
-
-  // if the delivery proce is not sent via front then we will calculate that based on the coordinates
+  
+  // if the delivery proce is not sent via front then we will calculate that based on the coordinates  
   const distanceMeters = calculateDistanceMeters(
     orderData.pickupLocation.coordinates,
     orderData.dropoffLocation.coordinates
   );
 
-  const distanceKm = Number((distanceMeters / 1000).toFixed(2));
+  const distanceKm = Number((distanceMeters / METERS_PER_KILOMETER).toFixed(2));
 
   const steps = Math.ceil(distanceMeters / METERS_PER_KILOMETER);
   const distanceFee = steps * PRICE_PER_KILOMETER;
