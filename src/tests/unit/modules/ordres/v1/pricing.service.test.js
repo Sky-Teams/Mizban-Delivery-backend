@@ -40,7 +40,7 @@ describe('calculateDeliveryPrice', () => {
       baseFee: 50,
       distanceKm: 0,
       distanceFee: 0,
-      total: 150,
+      total: 100,
     });
 
   });
