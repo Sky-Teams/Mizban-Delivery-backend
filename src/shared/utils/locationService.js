@@ -1,6 +1,6 @@
-import { CustomSocket } from '#config/socket.js';
 import { updateDriverLocation } from '#modules/locations/index.js';
 import { SOCKET_EVENTS } from './enums.js';
+import { NotificationPayloads } from './notificationPayloadBuilder.js';
 import { NotificationService } from './notificationService.js';
 
 export class LocationService {
