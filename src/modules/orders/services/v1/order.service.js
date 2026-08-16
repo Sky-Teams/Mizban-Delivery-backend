@@ -63,19 +63,10 @@ export const addOrder = async (orderData) => {
 
   // Calculate final price. We can extend it in future
   const amountToCollect = Number(orderData.amountToCollect || 0);
-  console.log('amount to collect',orderData.amountToCollect);
-
-  // const deliveryTotalFrontend = Number(orderData.deliveryPrice?.total || 0); // comes within the request
-  // const deliveryTotalCalculated = Number(deliveryPrice.total);
-
   const deliveryTotal = deliveryPrice.total;
 
   // We can add discount in future, because discount is not sent from frontend
   const finalPrice = (amountToCollect || 0 )+ deliveryTotal;
-
-  console.log('delivery price: ', deliveryPrice)
-  console.log('delivery total', deliveryTotal)
-  console.log('final price: ', finalPrice)
 
   const newOrder = await OrderModel.create({
     ...orderData,

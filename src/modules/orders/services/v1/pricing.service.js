@@ -18,7 +18,7 @@ export const calculateDeliveryPrice = (orderData) => {
   }
 
   
-  // if the delivery proce is not sent via front then we will calculate that based on the coordinates  
+  // if the delivery price is not sent via front then we will calculate that based on the coordinates  
   const distanceMeters = calculateDistanceMeters(
     orderData.pickupLocation.coordinates,
     orderData.dropoffLocation.coordinates
