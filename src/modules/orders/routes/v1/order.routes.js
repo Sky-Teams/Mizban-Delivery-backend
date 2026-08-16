@@ -9,7 +9,7 @@ import {
   returnOrder,
   updateOrder,
   ordersStatistics,
-  calculateDeliveryPrice
+  calculateDeliveryPrice,
 } from '../../controllers/v1/order.controller.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
 import express from 'express';
@@ -27,7 +27,6 @@ import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { ROLES } from '#shared/utils/enums.js';
 import { orderStatisticsQueryValidator } from '../../dto/order-statistics-query-validator.js';
 import { calculateDeliveryPriceValidator } from '#modules/orders/dto/calculate-delivery-price.schema.js';
-
 
 const router = express.Router();
 

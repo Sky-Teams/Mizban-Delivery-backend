@@ -9,7 +9,7 @@ import {
   getAllOrders,
   returnOrderWithTransaction,
   getOrdersStatistics,
-  calculateOrderDeliveryPrice
+  calculateOrderDeliveryPrice,
 } from '../../services/v1/order.service.js';
 import { notFound, unauthorized } from '#shared/errors/error.js';
 import { ROLES } from '#shared/utils/enums.js';

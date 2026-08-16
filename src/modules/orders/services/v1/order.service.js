@@ -66,7 +66,7 @@ export const addOrder = async (orderData) => {
   const deliveryTotal = deliveryPrice.total;
 
   // We can add discount in future, because discount is not sent from frontend
-  const finalPrice = (amountToCollect || 0 )+ deliveryTotal;
+  const finalPrice = (amountToCollect || 0) + deliveryTotal;
 
   const newOrder = await OrderModel.create({
     ...orderData,
@@ -703,17 +703,11 @@ export const findOrdersByOfferStatus = async (filter = {}, status) => {
 
 export const calculateOrderDeliveryPrice = async (orderData) => {
   if (!orderData.pickupLocation?.coordinates) {
-    throw new AppError(
-      'Pickup location is required',
-      400
-    );
+    throw new AppError('Pickup location is required', 400);
   }
 
   if (!orderData.dropoffLocation?.coordinates) {
-    throw new AppError(
-      'Dropoff location is required',
-      400
-    );
+    throw new AppError('Dropoff location is required', 400);
   }
 
   return calculateDeliveryPrice(orderData);

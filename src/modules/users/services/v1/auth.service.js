@@ -15,7 +15,6 @@ import { agenda } from '#config/agenda.js';
 import { verifyGoogleToken } from '#shared/utils/googleOAuth.js';
 import { removeFCMTokenByDeviceId } from './user.service.js';
 
-
 //!  Helper Functions
 
 // Register helpers
@@ -370,5 +369,5 @@ export const logoutUser = async ({ refreshToken, deviceId, frontDeviceId }) => {
 
   if (frontDeviceId) {
     await removeFCMTokenByDeviceId(userId, frontDeviceId);
-  }  
+  }
 };

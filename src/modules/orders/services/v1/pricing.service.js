@@ -1,4 +1,4 @@
-import { calculateDistanceMeters } from "#shared/utils/distance.helper.js";
+import { calculateDistanceMeters } from '#shared/utils/distance.helper.js';
 
 const BASE_FEE = 50;
 const METERS_PER_KILOMETER = 1000;
@@ -7,7 +7,7 @@ const PRICE_PER_KILOMETER = 10;
 export const calculateDeliveryPrice = (orderData) => {
   const frontendDeliveryTotal = Number(orderData.deliveryPrice?.total || 0);
 
-  // If frontend already sends delivery price, then we should have that, 
+  // If frontend already sends delivery price, then we should have that,
   if (frontendDeliveryTotal > 0) {
     return {
       baseFee: BASE_FEE,
@@ -17,8 +17,7 @@ export const calculateDeliveryPrice = (orderData) => {
     };
   }
 
-  
-  // if the delivery price is not sent via front then we will calculate that based on the coordinates  
+  // if the delivery price is not sent via front then we will calculate that based on the coordinates
   const distanceMeters = calculateDistanceMeters(
     orderData.pickupLocation.coordinates,
     orderData.dropoffLocation.coordinates
