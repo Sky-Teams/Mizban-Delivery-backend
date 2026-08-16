@@ -14,4 +14,4 @@ const calculateDeliveryPriceSchema = z.object({
 
 export const calculateDeliveryPriceValidator = (req) => {
   return calculateDeliveryPriceSchema.safeParse(req);
-}
+};

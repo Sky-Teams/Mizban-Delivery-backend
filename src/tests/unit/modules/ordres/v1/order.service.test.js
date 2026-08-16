@@ -116,8 +116,8 @@ describe('DeliveryRequest Service', () => {
     dropoffLocation: { type: 'Point', coordinates: [1, 1] },
     paymentType: 'COD',
     amountToCollect: 100,
-    // deliveryPrice: { 
-    //   total: 0, 
+    // deliveryPrice: {
+    //   total: 0,
     //   baseFee: 50,
     //   distanceFee: 0,
     //   distanceKm: 0,
@@ -1405,8 +1405,8 @@ describe('updateOrderInfo', () => {
       _id: deliveryId,
       status: ORDER_STATUS.CREATED,
       amountToCollect: 100,
-      deliveryPrice: { 
-        total: 50,  
+      deliveryPrice: {
+        total: 50,
         baseFee: 0,
         distanceFee: 0,
         distanceKm: 0,
@@ -1442,8 +1442,8 @@ describe('updateOrderInfo', () => {
       _id: deliveryId,
       status: ORDER_STATUS.CREATED,
       amountToCollect: 100,
-      deliveryPrice: { 
-        total: 50,  
+      deliveryPrice: {
+        total: 50,
         baseFee: 50,
         distanceFee: 0,
         distanceKm: 0,
@@ -1462,8 +1462,8 @@ describe('updateOrderInfo', () => {
       _id: deliveryId,
       status: ORDER_STATUS.DELIVERED,
       amountToCollect: 100,
-      deliveryPrice: { 
-        total: 50,  
+      deliveryPrice: {
+        total: 50,
         baseFee: 50,
         distanceFee: 0,
         distanceKm: 0,
