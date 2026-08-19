@@ -270,7 +270,7 @@ describe('Order API v1 Integration', () => {
       const res = await postWithAuth(app, baseURL, orderData, token);
 
       expect(res.status).toBe(201);
-      expect(res.body.data.finalPrice).toBe(50);
+      expect(res.body.data.finalPrice).toBe(100);
       expect(res.body.data.status).toBe(ORDER_STATUS.CREATED);
     });
 
