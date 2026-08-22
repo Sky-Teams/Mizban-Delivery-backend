@@ -60,14 +60,14 @@ export class OfferService {
         return await OfferService.sendOfferToDriver(orderId);
       }
 
-
-      const notificationPayload = NotificationPayloads.orderOffered();
+      // Create Offer payload for the driver to understand the details of the offer
+      const offerPayload = NotificationPayloads.orderOffered(offer._id);
 
       // Send offer to driver
       await NotificationService.send(
         'driver',
         SOCKET_EVENTS.DRIVER.OFFER,
-        notificationPayload,
+        offerPayload,
         driver.user._id
       );
 
