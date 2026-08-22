@@ -10,7 +10,6 @@ export const createOfferSchema = z.object({
   driver: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
     message: ERROR_CODES.INVALID_DRIVER_ID,
   }),
-  metadata: z.any(),
 });
 
 export const queryValidator = z.object({

@@ -52,32 +52,16 @@ export class OfferService {
       orderInfo.expiresIn = process.env.Offer_Expires_In_Seconds || 30;
       orderInfo.eta = driversInfo[currentIndex].eta;
       orderInfo.distance = driversInfo[currentIndex].distance;
-      // Create metadata with needed fields to store in offer
-      const metadata = {
-        type: orderInfo.type,
-        serviceType: orderInfo.serviceType,
-        pickupLocation: orderInfo.pickupLocation,
-        dropoffLocation: orderInfo.dropoffLocation,
-        distance: orderInfo.distance,
-        eta: orderInfo.eta,
-        packageDetails: orderInfo.packageDetails,
-        paymentType: orderInfo.paymentType,
-        amountToCollect: orderInfo.amountToCollect,
-        finalPrice: orderInfo.finalPrice,
-        expiresIn: orderInfo.expiresIn,
-        deliveryPrice: orderInfo.deliveryPrice,
-      };
 
       //TODO: Does we need to store the info about the order details in offer table?
-      const offer = await createOffer(orderId, driversInfo[currentIndex].id, metadata);
+      const offer = await createOffer(orderId, driversInfo[currentIndex].id);
       if (!offer) {
         await increaseDriverIndex(orderId);
         return await OfferService.sendOfferToDriver(orderId);
       }
 
-      metadata.offerId = offer._id.toString();
 
-      const notificationPayload = NotificationPayloads.orderOffered(metadata);
+      const notificationPayload = NotificationPayloads.orderOffered();
 
       // Send offer to driver
       await NotificationService.send(

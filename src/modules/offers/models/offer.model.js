@@ -25,11 +25,6 @@ const offerSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    metadata: {
-      // For now we define it a simple object, in the future may define a schema for it
-      type: Object,
-      default: {},
-    },
   },
   {
     timestamps: true,

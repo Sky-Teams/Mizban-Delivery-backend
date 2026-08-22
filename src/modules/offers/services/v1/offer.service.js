@@ -23,9 +23,9 @@ import { createOfferSchema } from '../../dto/create-offer.schema.js';
     @param {String} driverId
     @returns {Object}  offer object
  */
-export const createOffer = async (orderId, driverId, metadata = {}) => {
+export const createOffer = async (orderId, driverId) => {
   try {
-    const orderOffer = { order: orderId.toString(), driver: driverId.toString(), metadata }; // We convert to string, because from most places we send objectId
+    const orderOffer = { order: orderId.toString(), driver: driverId.toString() }; // We convert to string, because from most places we send objectId
     createOfferSchema.parse(orderOffer);
 
     const newOrderOffer = await OfferModel.create(orderOffer);
