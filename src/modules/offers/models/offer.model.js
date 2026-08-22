@@ -25,6 +25,10 @@ const offerSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    expiredAt: {
+      type: Date,
+      default: new Date(),
+    } 
   },
   {
     timestamps: true,
