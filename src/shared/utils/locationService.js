@@ -15,7 +15,15 @@ export class LocationService {
 
       let driver = await updateDriverLocation(userId, data);
 
-      /** TODO: Emit LOCATION_UPDATED event */
+      /** Emit LOCATION_UPDATED to admin */
+      await NotificationService.send(
+        'admins',
+        SOCKET_EVENTS.DRIVER.LOCATION_UPDATED,
+        { driverId: driver._id, data },
+        userId,
+        false
+      );
+
       return driver;
     } catch (error) {
       /** If a validation error occurs, notify the client and stop the update process */
