@@ -66,6 +66,7 @@ export const SOCKET_EVENTS = {
   DRIVER: {
     OFFER: 'offer',
     ORDER: 'order',
+    LOCATION_ERROR: 'location_error',
   },
 };
 
