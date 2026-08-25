@@ -19,7 +19,7 @@ export class LocationService {
       await NotificationService.send(
         'admins',
         SOCKET_EVENTS.DRIVER.LOCATION_UPDATED,
-        { driverId: driver._id, data },
+        driver,
         userId,
         false
       );
