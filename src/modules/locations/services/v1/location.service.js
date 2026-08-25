@@ -26,10 +26,11 @@ export const updateDriverLocation = async (userId, data) => {
           coordinates: [long, lat],
         },
         lastLocationAt: new Date(),
+        status: 'delivering',
       },
     },
     { new: true, runValidators: true }
-  );
+  ).populate('user', 'name email phone');
 
   return driver;
 };
