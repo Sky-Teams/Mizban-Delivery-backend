@@ -29,6 +29,7 @@ import mongoose from 'mongoose';
 import { OfferModel } from '#modules/offers/index.js';
 import { deduplicateById, getObjectValues } from '#shared/utils/object.helper.js';
 import { buildPaginatedResponse } from '#shared/utils/pagination.js';
+import { calculateDeliveryPrice } from './pricing.service.js';
 
 //#region Admin Services
 
@@ -58,15 +59,18 @@ export const addOrder = async (orderData) => {
     orderData.items = calculateItemsTotal(orderData.items);
   }
 
+  const deliveryPrice = calculateDeliveryPrice(orderData); // calculated
+
   // Calculate final price. We can extend it in future
   const amountToCollect = Number(orderData.amountToCollect || 0);
-  const deliveryTotal = Number(orderData.deliveryPrice?.total || 0);
+  const deliveryTotal = deliveryPrice.total;
 
   // We can add discount in future, because discount is not sent from frontend
-  const finalPrice = amountToCollect + deliveryTotal;
+  const finalPrice = (amountToCollect || 0) + deliveryTotal;
 
   const newOrder = await OrderModel.create({
     ...orderData,
+    deliveryPrice,
     finalPrice,
     status,
     timeline,
@@ -695,6 +699,18 @@ export const findOrdersByOfferStatus = async (filter = {}, status) => {
   });
 
   return offerOrders;
+};
+
+export const calculateOrderDeliveryPrice = async (orderData) => {
+  if (!orderData.pickupLocation?.coordinates) {
+    throw new AppError('Pickup location is required', 400);
+  }
+
+  if (!orderData.dropoffLocation?.coordinates) {
+    throw new AppError('Dropoff location is required', 400);
+  }
+
+  return calculateDeliveryPrice(orderData);
 };
 
 export const assignDriverToOrderWithTransaction = withTransaction(assignDriver);

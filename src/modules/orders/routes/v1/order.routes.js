@@ -9,6 +9,7 @@ import {
   returnOrder,
   updateOrder,
   ordersStatistics,
+  calculateDeliveryPrice,
 } from '../../controllers/v1/order.controller.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
 import express from 'express';
@@ -25,6 +26,7 @@ import { orderQueryValidator } from '#modules/orders/dto/order-query-validator.j
 import { authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { ROLES } from '#shared/utils/enums.js';
 import { orderStatisticsQueryValidator } from '../../dto/order-statistics-query-validator.js';
+import { calculateDeliveryPriceValidator } from '#modules/orders/dto/calculate-delivery-price.schema.js';
 
 const router = express.Router();
 
@@ -33,6 +35,11 @@ router.post(
   authorizeRole(ROLES.ADMIN),
   validate(createOrderValidator),
   asyncHandler(createOrder)
+);
+router.post(
+  '/calculate-delivery-price',
+  validate(calculateDeliveryPriceValidator),
+  asyncHandler(calculateDeliveryPrice)
 );
 router.patch(
   '/:id/assign',
