@@ -14,10 +14,11 @@ export const NotificationPayloads = {
     message: `Order ${orderId} has been assigned`,
   }),
 
-  orderOffered: () => ({
+  orderOffered: (metadata) => ({
     type: NOTIFICATION_TYPE.OFFER,
     title: 'New Offer',
     message: 'An offer is ready to pickup',
+    metadata,
   }),
   noDriverFound: (orderId) => ({
     type: NOTIFICATION_TYPE.NO_DRIVER,

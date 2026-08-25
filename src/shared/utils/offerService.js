@@ -61,7 +61,8 @@ export class OfferService {
       }
 
       // Create Offer payload for the driver to understand the details of the offer
-      const offerPayload = NotificationPayloads.orderOffered(offer._id);
+      orderInfo.offer = offer._id;
+      const offerPayload = NotificationPayloads.orderOffered(orderInfo);
 
       // Send offer to driver
       await NotificationService.send(
