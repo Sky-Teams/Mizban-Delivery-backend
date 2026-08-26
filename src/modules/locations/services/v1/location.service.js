@@ -8,6 +8,7 @@ export const updateDriverLocation = async (userId, data) => {
   let driver = await fetchDriverByUserId(userId);
   if (!driver) throw notFound('driver');
 
+  // Validate data
   if (!data || !data.currentLocation.coordinates || data.currentLocation.coordinates.length < 2)
     throw new AppError('Invalid data location', 400, ERROR_CODES.INVALID_LOCATION_DATA);
 
