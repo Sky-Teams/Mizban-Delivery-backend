@@ -18,7 +18,7 @@ export class LocationService {
 
       const filterDriver = await DtoService.formatDriver(driver);
       /** Emit LOCATION_UPDATED to admin */
-      await NotificationServiceX.send(
+      await NotificationService.send(
         'admins',
         SOCKET_EVENTS.DRIVER.LOCATION_UPDATED,
         filterDriver,
