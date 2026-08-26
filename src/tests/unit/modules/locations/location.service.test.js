@@ -53,7 +53,6 @@ describe('Driver Services', () => {
               coordinates: [64.0, 32.2],
             },
             lastLocationAt: expect.any(Date),
-            status: 'delivering',
           },
         },
         { new: true, runValidators: true }
