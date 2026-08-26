@@ -1,4 +1,5 @@
 import { updateDriverLocation } from '#modules/locations/index.js';
+import { DtoService } from './dtoService.js';
 import { SOCKET_EVENTS } from './enums.js';
 import { NotificationPayloads } from './notificationPayloadBuilder.js';
 import { NotificationService } from './notificationService.js';
@@ -15,11 +16,12 @@ export class LocationService {
 
       let driver = await updateDriverLocation(userId, data);
 
+      const filterDriver = await DtoService.formatDriver(driver);
       /** Emit LOCATION_UPDATED to admin */
-      await NotificationService.send(
+      await NotificationServiceX.send(
         'admins',
         SOCKET_EVENTS.DRIVER.LOCATION_UPDATED,
-        driver,
+        filterDriver,
         userId,
         false
       );
