@@ -48,4 +48,24 @@ export class DtoService {
       },
     }));
   };
+
+  static formatDriver(driver) {
+    const driverPersonalDetails = driver.user;
+    const coordinates = driver.currentLocation.coordinates;
+    const formattedCoordinates = [coordinates[1], coordinates[0]];
+    const filteredDriverField = {
+      _id: driver._id,
+      vehicleType: driver.vehicleType,
+      currentLocation: {
+        type: 'Point',
+        coordinates: formattedCoordinates,
+      },
+      name: driverPersonalDetails.name,
+      email: driverPersonalDetails.email,
+      phone: driverPersonalDetails.phone,
+      vehicleRegistrationNumber: driver.vehicleRegistrationNumber,
+    };
+
+    return filteredDriverField;
+  }
 }
