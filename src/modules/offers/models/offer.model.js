@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { required } from 'zod/mini';
 
 const offerSchema = new mongoose.Schema(
   {
@@ -19,7 +20,7 @@ const offerSchema = new mongoose.Schema(
     },
     offeredAt: {
       type: Date,
-      default: new Date(),
+      required: true,
     },
     respondedAt: {
       type: Date,
@@ -27,7 +28,7 @@ const offerSchema = new mongoose.Schema(
     },
     expiredAt: {
       type: Date,
-      default: new Date(),
+      required: true,
     } 
   },
   {
