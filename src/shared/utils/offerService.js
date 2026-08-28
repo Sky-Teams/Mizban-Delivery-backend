@@ -47,12 +47,6 @@ export class OfferService {
       // We need this log for testing purpose
       console.log('Send offer to driver: ', driversInfo[currentIndex].id);
 
-      // Create Offer payload for the driver to understand the details of the offer
-      const orderInfo = DtoService.order(order);
-      orderInfo.expiresIn = process.env.Offer_Expires_In_Seconds || 30;
-      orderInfo.eta = driversInfo[currentIndex].eta;
-      orderInfo.distance = driversInfo[currentIndex].distance;
-
       //TODO: Does we need to store the info about the order details in offer table?
       const offer = await createOffer(orderId, driversInfo[currentIndex].id);
       if (!offer) {
@@ -61,7 +55,12 @@ export class OfferService {
       }
 
       // Create Offer payload for the driver to understand the details of the offer
+      const orderInfo = DtoService.order(order);
       orderInfo.offer = offer._id;
+      orderInfo.expiresIn = Math.ceil((offer.expiredAt.getTime() - Date.now()) / 1000);
+      orderInfo.eta = driversInfo[currentIndex].eta;
+      orderInfo.distance = driversInfo[currentIndex].distance;
+
       const offerPayload = NotificationPayloads.orderOffered(orderInfo);
 
       // Send offer to driver
