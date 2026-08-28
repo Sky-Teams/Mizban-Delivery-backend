@@ -14,6 +14,7 @@ import {
 } from '#shared/utils/enums.js';
 import mongoose from 'mongoose';
 import { createOfferSchema } from '../../dto/create-offer.schema.js';
+import { DtoService } from '#shared/utils/dtoService.js';
 
 /**
  * Create a new offer for an order in the system.
@@ -25,10 +26,26 @@ import { createOfferSchema } from '../../dto/create-offer.schema.js';
  */
 export const createOffer = async (orderId, driverId) => {
   try {
-    const orderOffer = { order: orderId.toString(), driver: driverId.toString() }; // We convert to string, because from most places we send objectId
+    const orderOffer = {
+      order: orderId.toString(),
+      driver: driverId.toString(),
+    };
+
     createOfferSchema.parse(orderOffer);
 
-    const newOrderOffer = await OfferModel.create(orderOffer);
+    const expiresInSeconds = Number(process.env.Offer_Expires_In_Seconds) || 30;
+    const offeredAt = new Date();
+
+    const expiredAt = new Date(
+      offeredAt.getTime() + expiresInSeconds * 1000
+    );
+
+    const newOrderOffer = await OfferModel.create({
+      ...orderOffer,
+      offeredAt,
+      expiredAt,
+    });
+
     return newOrderOffer;
   } catch (error) {
     console.log('Error creating orderOffer. ', error);
@@ -150,9 +167,20 @@ export const getOfferByIdForDriver = async (driverId, offerId) => {
   const offer = await OfferModel.findOne({
     _id: offerId,
     driver: driverId,
-  });
+  }).populate('order');
 
-  return offer;
+  if (!offer) return null;
+
+  const orderInfo = DtoService.order(offer.order);
+
+  return {
+    _id: offer._id,
+    status: offer.status,
+    offeredAt: offer.offeredAt,
+    expiredAt: offer.expiredAt,
+    respondedAt: offer.respondedAt,
+    order: orderInfo,
+  };
 };
 
 export const getAllOffersForDriver = async (driverId, page, limit, status) => {
