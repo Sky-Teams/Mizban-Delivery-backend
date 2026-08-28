@@ -18,7 +18,7 @@ export class CustomSocket {
 
     this.#io = new Server(server, { cors: corsOptions });
 
-    this.#io.on('connection', (socket) => {
+    this.#io.on('connection', async (socket) => {
       console.log('Socket connected: ', socket.id);
 
       const token = socket.handshake.auth?.token;
