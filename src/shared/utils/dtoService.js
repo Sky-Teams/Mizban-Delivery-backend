@@ -49,10 +49,23 @@ export class DtoService {
     }));
   };
 
+  /**
+   * Converts coordinates from [longitude, latitude] to [latitude, longitude]
+   * @param {Array} coordinates
+   * @returns [lat, long]
+   */
+  static toLatLng(coordinates) {
+    return [coordinates[1], coordinates[0]];
+  }
+
+  /**
+   * Filter driver fields
+   * @param {Object} driver
+   * @returns filtered fields
+   */
   static formatDriver(driver) {
     const driverPersonalDetails = driver.user;
-    const coordinates = driver.currentLocation.coordinates;
-    const formattedCoordinates = [coordinates[1], coordinates[0]];
+    const formattedCoordinates = this.toLatLng(driver.currentLocation.coordinates);
     const filteredDriverField = {
       _id: driver._id,
       vehicleType: driver.vehicleType,
