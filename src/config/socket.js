@@ -3,6 +3,7 @@ import { corsOptions } from './cors.js';
 import { verifyJWT } from '#shared/utils/jwt.js';
 import { getAllAdmins, getUserDevicesByUserId } from '#modules/users/index.js';
 import { pushNotification } from '#shared/utils/pushNotification.js';
+import { registerSocketEvents } from '#shared/socket/registerSocketEvents.js';
 
 export class CustomSocket {
   static #io = null;
@@ -48,6 +49,9 @@ export class CustomSocket {
       }
 
       console.log(`User ${socket.userId} joined room`);
+
+      // Register socket events
+      registerSocketEvents(socket);
 
       socket.on('disconnect', () => {
         console.log(`Socket disconnected: ${socket.id}`);

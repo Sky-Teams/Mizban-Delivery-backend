@@ -9,6 +9,7 @@ import {
   getAllOrders,
   returnOrderWithTransaction,
   getOrdersStatistics,
+  calculateOrderDeliveryPrice,
 } from '../../services/v1/order.service.js';
 import { notFound, unauthorized } from '#shared/errors/error.js';
 import { ROLES } from '#shared/utils/enums.js';
@@ -22,6 +23,17 @@ export const createOrder = async (req, res) => {
   const order = await addOrder(req.body);
 
   res.status(201).json({ success: true, data: order });
+};
+
+export const calculateDeliveryPrice = async (req, res) => {
+  if (!req.user) throw unauthorized();
+
+  const deliveryPrice = await calculateOrderDeliveryPrice(req.body);
+
+  res.status(200).json({
+    success: true,
+    data: deliveryPrice,
+  });
 };
 
 export const updateOrder = async (req, res) => {
