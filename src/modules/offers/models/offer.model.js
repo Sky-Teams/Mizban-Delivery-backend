@@ -20,7 +20,7 @@ const offerSchema = new mongoose.Schema(
     },
     offeredAt: {
       type: Date,
-      required: true,
+      default: new Date(),
     },
     respondedAt: {
       type: Date,
