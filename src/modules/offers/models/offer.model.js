@@ -12,7 +12,6 @@ const offerSchema = new mongoose.Schema(
       ref: 'Driver',
       required: true,
     },
-
     status: {
       type: String,
       enum: ['pending', 'accepted', 'rejected', 'expired'],
@@ -26,6 +25,10 @@ const offerSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    expiredAt: {
+      type: Date,
+      required: true,
+    } 
   },
   {
     timestamps: true,
