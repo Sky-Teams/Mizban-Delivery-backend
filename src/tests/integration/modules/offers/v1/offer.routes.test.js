@@ -23,6 +23,8 @@ const createFakeOffer = async (overrides = {}) => {
     order,
     driver: overrides.driver,
     status: overrides.status || OFFER_STATUS.PENDING,
+    offeredAt: new Date(),
+    expiredAt: new Date(Date.now() + 15 * 60 * 1000),
     ...overrides,
   });
 };
@@ -54,8 +56,15 @@ describe('Offer API v1 Integration', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
+
       expect(res.body.data._id).toBe(offer._id.toString());
-      expect(res.body.data.driver).toBe(driver._id.toString());
+      expect(res.body.data.status).toBe(offer.status);
+      expect(res.body.data.offeredAt).toBeDefined();
+      expect(res.body.data.expiredAt).toBeDefined();
+      expect(res.body.data.respondedAt).toBeNull();
+
+      expect(res.body.data.order).toBeDefined();
+      expect(res.body.data.order._id).toBe(offer.order.toString());
     });
 
     it('should return null if offer does not belong to the driver', async () => {
