@@ -12,7 +12,9 @@ import {
   OFFER_STATUS,
   ORDER_STATUS,
 } from '#shared/utils/enums.js';
+import mongoose from 'mongoose';
 import { createOfferSchema } from '../../dto/create-offer.schema.js';
+import { DtoService } from '#shared/utils/dtoService.js';
 
 /**
  * Create a new offer for an order in the system.
@@ -24,10 +26,24 @@ import { createOfferSchema } from '../../dto/create-offer.schema.js';
  */
 export const createOffer = async (orderId, driverId) => {
   try {
-    const orderOffer = { order: orderId.toString(), driver: driverId.toString() }; // We convert to string, because from most places we send objectId
+    const orderOffer = {
+      order: orderId.toString(),
+      driver: driverId.toString(),
+    };
+
     createOfferSchema.parse(orderOffer);
 
-    const newOrderOffer = await OfferModel.create(orderOffer);
+    const expiresInSeconds = Number(process.env.Offer_Expires_In_Seconds) || 30;
+
+    const expiredAt = new Date(
+      Date.now() + expiresInSeconds * 1000
+    );
+
+    const newOrderOffer = await OfferModel.create({
+      ...orderOffer,
+      expiredAt,
+    });
+
     return newOrderOffer;
   } catch (error) {
     console.log('Error creating orderOffer. ', error);
@@ -144,3 +160,50 @@ const rejectAnOffer = async (session, offerId, userId) => {
 
 export const acceptAnOfferWithTransaction = withTransaction(acceptAnOffer);
 export const rejectAnOfferWithTransaction = withTransaction(rejectAnOffer);
+
+export const getOfferByIdForDriver = async (driverId, offerId) => {
+  const offer = await OfferModel.findOne({
+    _id: offerId,
+    driver: driverId,
+  }).populate('order');
+
+  if (!offer) return null;
+
+  const orderInfo = DtoService.order(offer.order);
+
+  return {
+    _id: offer._id,
+    status: offer.status,
+    offeredAt: offer.offeredAt,
+    expiredAt: offer.expiredAt,
+    respondedAt: offer.respondedAt,
+    order: orderInfo,
+  };
+};
+
+export const getAllOffersForDriver = async (driverId, page, limit, status) => {
+  const skip = (page - 1) * limit;
+
+  const query = { driver: new mongoose.Types.ObjectId(driverId) };
+  if (status) query.status = status;
+
+  const result = await OfferModel.aggregate([
+    { $match: query },
+    { $sort: { createdAt: -1 } },
+    {
+      $facet: {
+        paginatedOffers: [{ $skip: skip }, { $limit: limit }],
+        totalOffers: [{ $count: 'count' }],
+      },
+    },
+  ]);
+
+  const paginatedOffers = result[0].paginatedOffers;
+  const totalOffers = result[0].totalOffers[0]?.count || 0;
+
+  return {
+    paginatedOffers,
+    totalOffers,
+    totalPages: Math.ceil(totalOffers / limit),
+  };
+};
