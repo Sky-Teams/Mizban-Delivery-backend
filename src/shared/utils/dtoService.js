@@ -9,6 +9,8 @@ export class DtoService {
    */
   static order(order) {
     if (!order) return {};
+    const formattedPickupLocation = this.toLatLng(order?.pickupLocation?.coordinates);
+    const formattedDropoffLocation = this.toLatLng(order?.dropoffLocation?.coordinates);
 
     const filteredOrderField = {
       _id: order?._id,
@@ -16,8 +18,8 @@ export class DtoService {
       serviceType: order?.serviceType,
       sender: { ...order?.sender },
       receiver: { ...order?.receiver },
-      pickupLocation: { coordinates: order?.pickupLocation?.coordinates },
-      dropoffLocation: { coordinates: order?.dropoffLocation?.coordinates },
+      pickupLocation: { coordinates: formattedPickupLocation },
+      dropoffLocation: { coordinates: formattedDropoffLocation },
       packageDetails: { ...order?.packageDetails },
       paymentType: order?.paymentType,
       amountToCollect: order?.amountToCollect,
