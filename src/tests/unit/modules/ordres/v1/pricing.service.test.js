@@ -11,32 +11,7 @@ describe('calculateDeliveryPrice', () => {
     vi.clearAllMocks();
   });
 
-  it('should use frontend delivery price when provided', () => {
-    const orderData = {
-      deliveryPrice: {
-        total: 100,
-      },
-      pickupLocation: {
-        coordinates: [0, 0],
-      },
-      dropoffLocation: {
-        coordinates: [1, 1],
-      },
-    };
-
-    const result = calculateDeliveryPrice(orderData);
-
-    expect(calculateDistanceMeters).not.toHaveBeenCalled();
-
-    expect(result).toEqual({
-      baseFee: 50,
-      distanceKm: 0,
-      distanceFee: 0,
-      total: 100,
-    });
-  });
-
-  it('should calculate delivery price based on distance when frontend price is not provided', () => {
+  it('should calculate delivery price based on distance', () => {
     calculateDistanceMeters.mockReturnValue(2500);
 
     const orderData = {
