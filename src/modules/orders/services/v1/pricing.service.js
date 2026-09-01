@@ -5,18 +5,6 @@ const METERS_PER_KILOMETER = 1000;
 const PRICE_PER_KILOMETER = 10;
 
 export const calculateDeliveryPrice = (orderData) => {
-  const frontendDeliveryTotal = Number(orderData.deliveryPrice?.total || 0);
-
-  // If frontend already sends delivery price, then we should have that,
-  if (frontendDeliveryTotal > 0) {
-    return {
-      baseFee: BASE_FEE,
-      distanceKm: 0,
-      distanceFee: 0,
-      total: frontendDeliveryTotal,
-    };
-  }
-
   // if the delivery price is not sent via front then we will calculate that based on the coordinates
   const distanceMeters = calculateDistanceMeters(
     orderData.pickupLocation.coordinates,
@@ -36,4 +24,20 @@ export const calculateDeliveryPrice = (orderData) => {
     distanceFee,
     total,
   };
+};
+
+// for making full comparison 
+export const compareDeliveryPrice = (orderData, calculatedDeliveryPrice) => {
+  const frontendDeliveryTotal = Number(
+    orderData.deliveryPrice?.total || 0
+  );
+
+  if (frontendDeliveryTotal > 0 && frontendDeliveryTotal !== calculatedDeliveryPrice.total) {
+    return {
+      ...calculatedDeliveryPrice,
+      total: frontendDeliveryTotal,
+    };
+  }
+
+  return calculatedDeliveryPrice;
 };

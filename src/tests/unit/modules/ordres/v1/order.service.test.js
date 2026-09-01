@@ -24,18 +24,18 @@ import { getOrderById, updateOrderInfo } from '#modules/orders/services/v1/order
 import {
   DRIVER_STATUS,
   EVENT_BUS_EVENTS,
-  OFFER_STATUS,
   ORDER_STATUS,
   PAYMENT_STATUS,
   REASON_TYPES,
   ROLES,
+  OFFER_STATUS,
 } from '#shared/utils/enums.js';
 import { DtoService } from '#shared/utils/dtoService.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
 import { OfferModel } from '#modules/offers/index.js';
 
 import * as orderService from '#modules/orders/services/v1/order.service.js';
-import { calculateDeliveryPrice } from '#modules/orders/services/v1/pricing.service.js';
+import { calculateDeliveryPrice, compareDeliveryPrice } from '#modules/orders/services/v1/pricing.service.js';
 
 vi.mock('#modules/orders/models/order.model.js', () => ({
   OrderModel: {
@@ -88,6 +88,7 @@ vi.mock('#shared/utils/date.helper.js', () => ({
 
 vi.mock('#modules/orders/services/v1/pricing.service.js', () => ({
   calculateDeliveryPrice: vi.fn(),
+  compareDeliveryPrice: vi.fn(),
 }));
 
 const fakeSession = {
@@ -139,6 +140,12 @@ describe('DeliveryRequest Service', () => {
       status: ORDER_STATUS.CREATED,
       timeline: {},
     };
+    compareDeliveryPrice.mockReturnValue({
+      baseFee: 50,
+      distanceFee: 0,
+      distanceKm: 0,
+      total: 50,
+    });
 
     OrderModel.create.mockResolvedValue(mockDeliveryRequest);
 

@@ -29,7 +29,7 @@ import mongoose from 'mongoose';
 import { OfferModel } from '#modules/offers/index.js';
 import { deduplicateById, getObjectValues } from '#shared/utils/object.helper.js';
 import { buildPaginatedResponse } from '#shared/utils/pagination.js';
-import { calculateDeliveryPrice } from './pricing.service.js';
+import { calculateDeliveryPrice, compareDeliveryPrice } from './pricing.service.js';
 
 //#region Admin Services
 
@@ -59,8 +59,9 @@ export const addOrder = async (orderData) => {
     orderData.items = calculateItemsTotal(orderData.items);
   }
 
-  const deliveryPrice = calculateDeliveryPrice(orderData); // calculated
-
+  const deliveryPriceCalculated = calculateDeliveryPrice(orderData);
+  const deliveryPrice = compareDeliveryPrice(orderData, deliveryPriceCalculated)
+  
   // Calculate final price. We can extend it in future
   const amountToCollect = Number(orderData.amountToCollect || 0);
   const deliveryTotal = deliveryPrice.total;
