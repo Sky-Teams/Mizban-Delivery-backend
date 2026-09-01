@@ -12,7 +12,6 @@ export class DtoService {
     const formattedPickupLocation = this.toLatLng(order?.pickupLocation?.coordinates);
     const formattedDropoffLocation = this.toLatLng(order?.dropoffLocation?.coordinates);
 
-
     const filteredOrderField = {
       _id: order?._id,
       type: order?.type,
@@ -51,7 +50,8 @@ export class DtoService {
       },
     }));
   };
-   /**
+
+  /**
    * Converts coordinates from [longitude, latitude] to [latitude, longitude]
    * @param {Array} coordinates
    * @returns [lat, long]
@@ -65,4 +65,22 @@ export class DtoService {
    * @param {Object} driver
    * @returns filtered fields
    */
+  static formatDriver(driver) {
+    const driverPersonalDetails = driver.user;
+    const formattedCoordinates = this.toLatLng(driver.currentLocation.coordinates);
+    const filteredDriverField = {
+      _id: driver._id,
+      vehicleType: driver.vehicleType,
+      currentLocation: {
+        type: 'Point',
+        coordinates: formattedCoordinates,
+      },
+      name: driverPersonalDetails.name,
+      email: driverPersonalDetails.email,
+      phone: driverPersonalDetails.phone,
+      vehicleRegistrationNumber: driver.vehicleRegistrationNumber,
+    };
+
+    return filteredDriverField;
+  }
 }

@@ -67,6 +67,7 @@ export const SOCKET_EVENTS = {
     OFFER: 'offer',
     ORDER: 'order',
     LOCATION_ERROR: 'location_error',
+    LOCATION_UPDATED: 'location_updated',
   },
 };
 

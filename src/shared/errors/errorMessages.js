@@ -706,4 +706,9 @@ export const ERROR_MESSAGES = {
     fa: 'نرخ کمیشن باید عدد باشد',
     ps: 'د کمیشن کچه باید عدد وي',
   },
+  [ERROR_CODES.INVALID_LOCATION_DATA]: {
+    en: 'Invalid location data',
+    fa: 'اطلاعات موقعیت مکانی نامعتبر است',
+    ps: 'د موقعیت معلومات ناسم دي',
+  },
 };

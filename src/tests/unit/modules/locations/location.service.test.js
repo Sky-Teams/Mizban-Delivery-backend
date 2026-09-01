@@ -30,8 +30,9 @@ describe('Driver Services', () => {
       };
 
       fetchDriverByUserId.mockResolvedValue(mockDriver);
-      DriverModel.findOneAndUpdate.mockResolvedValue(mockDriver);
-
+      DriverModel.findOneAndUpdate.mockReturnValue({
+        populate: vi.fn().mockResolvedValue(mockDriver),
+      });
       const result = await updateDriverLocation('123', {
         currentLocation: {
           type: 'Point',
