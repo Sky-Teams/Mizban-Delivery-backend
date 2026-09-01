@@ -4,6 +4,7 @@ import http from 'http';
 import { CustomSocket } from './config/socket.js';
 import { registerNotificationListeners } from '#modules/notifications/listeners/index.js';
 import { startAgenda } from './workers.js';
+import redisClient from '#config/redis.js';
 
 connectDB();
 
@@ -16,6 +17,9 @@ registerNotificationListeners();
 
 // For now we need to initialize the agenda with our API server in same the process.Different process cause big problem for us.
 startAgenda();
+
+// Redis connection
+redisClient.connect();
 
 const PORT = process.env.PORT || 5000;
 
