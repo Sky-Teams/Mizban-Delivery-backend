@@ -21,7 +21,7 @@ export class RedisService {
    * @param {string} key
    * @returns
    */
-  static async getRedisData(key) {
+  static getRedisData(key) {
     return redisClient.hGetAll(key);
   }
 
@@ -29,7 +29,7 @@ export class RedisService {
    * Remove Data From Redis
    * @param {string} key
    */
-  static async removeRedisData(key) {
-    redisClient.del(key);
+  static removeRedisData(key) {
+    return redisClient.del(key);
   }
 }
