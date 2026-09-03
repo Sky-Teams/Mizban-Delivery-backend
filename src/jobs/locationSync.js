@@ -1,22 +1,22 @@
 import { updateDriverLocation } from '#modules/locations/index.js';
-import { getDriverLocationFromRedis } from '#shared/utils/redisLocationService.js';
+import { REDIS_KEYS } from '#shared/utils/enums.js';
+import { RedisService } from '#shared/utils/redisLocationService.js';
 
 const LOCATION_TRACKING_INTERVAL = Number(process.env.LOCATION_TRACKING_INTERVAL) || 20;
 
-let locationSyncIntervals = new Map();
+const locationSyncIntervals = new Map();
 
 /** Start Saving Location to DB */
 export const startLocationSync = (driverId) => {
-  const key = String(driverId);
+  const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driverId}`;
 
-  if (locationSyncIntervals.has(key)) return;
+  if (locationSyncIntervals.has(driverLocationKey)) return;
 
   console.log(`Start location sync for driver:${driverId}`);
 
   const interval = setInterval(async () => {
     try {
-      const location = await getDriverLocationFromRedis(driverId);
-
+      const location = await RedisService.getRedisData(driverLocationKey);
       const data = {
         currentLocation: {
           type: 'Point',
@@ -32,20 +32,20 @@ export const startLocationSync = (driverId) => {
     }
   }, LOCATION_TRACKING_INTERVAL * 1000);
 
-  locationSyncIntervals.set(key, interval);
+  locationSyncIntervals.set(driverLocationKey, interval);
 };
 
 /** Stop Saving Location to DB */
 export const stopLocationSync = (driverId) => {
-  const key = String(driverId);
+  const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driverId}`;
 
-  const interval = locationSyncIntervals.get(key);
+  const interval = locationSyncIntervals.get(driverLocationKey);
 
   if (!interval) return;
 
   clearInterval(interval);
 
-  locationSyncIntervals.delete(key);
+  locationSyncIntervals.delete(driverLocationKey);
 
   console.log(`Stopped location sync for driver: ${driverId}`);
 };

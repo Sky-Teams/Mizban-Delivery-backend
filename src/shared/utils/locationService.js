@@ -4,14 +4,10 @@ import { updateDriverLocation } from '#modules/locations/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { DtoService } from './dtoService.js';
-import { SOCKET_EVENTS } from './enums.js';
+import { REDIS_KEYS, SOCKET_EVENTS } from './enums.js';
 import { NotificationPayloads } from './notificationPayloadBuilder.js';
 import { NotificationService } from './notificationService.js';
-import {
-  deleteDriverLocationFromRedis,
-  getDriverLocationFromRedis,
-  saveLocationInRedis,
-} from './redisLocationService.js';
+import { RedisService } from './redisLocationService.js';
 
 export class LocationService {
   /**
@@ -37,11 +33,17 @@ export class LocationService {
         },
       });
 
+      const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driver._id}`;
+
       /** Save locations in Redis caching  */
-      await saveLocationInRedis(driver._id, [lat, lng]);
+      await RedisService.saveDataToRedis(driverLocationKey, {
+        lat: String(lat),
+        lng: String(lng),
+        updatedAt: new Date().toISOString(),
+      });
 
       // Get drivers location from redis
-      const location = await getDriverLocationFromRedis(driver._id);
+      const location = await RedisService.getRedisData(driverLocationKey);
       const filtered = await DtoService.formatDriver(driver);
       /** Emit LOCATION_UPDATED to admin */
       await NotificationService.send(
@@ -160,8 +162,10 @@ export class LocationService {
       const driver = await fetchDriverByUserId(userId);
       if (!driver) throw notFound('driver');
 
+      const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driver._id}`;
+
       /** Save Last Location in DB */
-      const location = await getDriverLocationFromRedis(driver._id);
+      const location = await RedisService.getRedisData(driverLocationKey);
       const data = {
         currentLocation: {
           type: 'Point',
@@ -171,7 +175,7 @@ export class LocationService {
       await updateDriverLocation(driver._id, data);
 
       /** Remove Driver Location From Redis */
-      await deleteDriverLocationFromRedis(driver._id);
+      await RedisService.removeRedisData(driverLocationKey);
 
       return driver;
     } catch (error) {
