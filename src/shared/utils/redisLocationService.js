@@ -1,27 +1,35 @@
 import redisClient from '#config/redis.js';
 
-export const driverLocationRedisKey = `driver:location:`;
+export class RedisService {
+  /**
+   * Save Data In Redis
+   * @param {string} key
+   * @param {object} data
+   */
+  static async saveDataToRedis(key, data) {
+    const REDIS_DATA_EXPIRATION_TIME =
+      Number(process.env.REDIS_DATA_EXPIRATION_HOUR || 2) * 60 * 60;
 
-/** Save Location In Redis */
-export const saveLocationInRedis = async (driverId, [lat, lng]) => {
-  await redisClient.hSet(`${driverLocationRedisKey}${driverId}`, {
-    lat: String(lat),
-    lng: String(lng),
-    updatedAt: new Date().toISOString(),
-  });
-};
+    await redisClient.hSet(key, data);
 
-/** Get Driver Location From Redis */
-export const getDriverLocationFromRedis = async (driverId) => {
-  const location = await redisClient.hGetAll(`${driverLocationRedisKey}${driverId}`);
+    // Set Expiration Time For Redis Data
+    await redisClient.expire(key, REDIS_DATA_EXPIRATION_TIME);
+  }
 
-  return {
-    lat: Number(location.lat),
-    lng: Number(location.lng),
-  };
-};
+  /**
+   * Get Data From Redis
+   * @param {string} key
+   * @returns
+   */
+  static async getRedisData(key) {
+    return redisClient.hGetAll(key);
+  }
 
-/** Remove Driver Location From Redis */
-export const deleteDriverLocationFromRedis = async (driverId) => {
-  await redisClient.del(`${driverLocationRedisKey}${driverId}`);
-};
+  /**
+   * Remove Data From Redis
+   * @param {string} key
+   */
+  static async removeRedisData(key) {
+    redisClient.del(key);
+  }
+}
