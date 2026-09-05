@@ -713,6 +713,11 @@ export const calculateOrderDeliveryPrice = async (orderData) => {
   return calculateDeliveryPrice(orderData);
 };
 
+export const getDriverOrderByStatus = async (driverId, status) => {
+  const result = await OrderModel.findOne({ driverId, status });
+  return result;
+};
+
 export const assignDriverToOrderWithTransaction = withTransaction(assignDriver);
 
 export const pickupOrderWithTransaction = withTransaction(pickupAnOrder);
