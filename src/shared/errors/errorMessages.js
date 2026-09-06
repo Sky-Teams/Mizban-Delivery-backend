@@ -711,4 +711,9 @@ export const ERROR_MESSAGES = {
     fa: 'اطلاعات موقعیت مکانی نامعتبر است',
     ps: 'د موقعیت معلومات ناسم دي',
   },
+  [ERROR_CODES.TRACKING_NOT_AVAILABLE]: {
+    en: 'Tracking is not available. The driver must have a picked-up order.',
+    fa: 'امکان ردیابی وجود ندارد. راننده باید یک سفارش دریافت‌شده داشته باشد.',
+    ps: 'د تعقیب امکان نشته. ډرایور باید یو اخیستل شوی فرمایش ولري.',
+  },
 };
