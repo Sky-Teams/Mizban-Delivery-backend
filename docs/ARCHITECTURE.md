@@ -115,23 +115,11 @@ The backend uses MongoDB with Mongoose.
 Evidence in code:
 
 - src/config/db.js calls mongoose.connect(process.env.DB_URI)
-- src/modules/*/models/*.model.js define Mongoose schemas and exported models
+- src/modules/_/models/_.model.js define Mongoose schemas and exported models
 - User model includes unique indexes for email and Google ID; driver/device logic also uses unique partial indexes
 - The app initializes the database on startup from src/server.js
 
 The app does not implement a custom repository layer; service files call Mongoose models directly.
-
-## Redis
-
-This repository does not currently implement a direct Redis cache or Redis-backed queue in the source code.
-
-Evidence:
-
-- There is no redis package in package.json.
-- No src/config/redis.js or redis client integration appears in the codebase.
-- Background jobs are implemented with Agenda + MongoDB backend, not Redis.
-
-Agents should not describe Redis as a current architectural component unless the code actually adds it. The source of truth here is the implementation, not generic backend documentation.
 
 ## Realtime
 
@@ -213,10 +201,3 @@ When modifying architecture:
 - do not create new abstraction layers when a feature already has a clear pattern
 - respect current route, service, and model boundaries
 - preserve requests and responses consistent with current handlers
-
-## Known Documentation Discrepancies
-
-- The README provides a generic modular backend example, but the current implementation is a real delivery system with modules such as businesses, drivers, users, orders, offers, notifications, and settings.
-- The README's generic examples do not fully match the actual directory layout and module names.
-- This document follows the implementation as the source of truth.
-- Redis is not implemented in the current backend, despite being a common generic architecture pattern in some docs. The code uses Agenda + MongoDB, not Redis.
