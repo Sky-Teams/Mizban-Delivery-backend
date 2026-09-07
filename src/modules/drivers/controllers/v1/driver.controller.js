@@ -29,7 +29,8 @@ export const modifyDriver = async (req, res) => {
 
 // Fetch All Drivers
 export const getAllDrivers = async (req, res) => {
-  if (!req.user) throw unauthorized();
+  const requester = req.user || req.service; // request maybe from a user or service
+  if (!requester) throw unauthorized();
 
   const limit = Number(req.query.limit) || 8;
   const page = Number(req.query.page) || 1;
