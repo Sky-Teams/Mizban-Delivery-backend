@@ -704,7 +704,7 @@ export const findOrdersByOfferStatus = async (filter = {}, status) => {
 
 export const calculateOrderDeliveryPrice = async (orderData) => {
   if (!orderData.pickupLocation?.coordinates) {
-    throw new AppError('Pickup location is required', 400);
+    throw new AppError('Pickup location is required', 400,  ERROR_CODES.INVALID_PICKUP_COORDINATES, ERROR_CODES.INVALID_DROPOFF_COORDINATES,);
   }
 
   if (!orderData.dropoffLocation?.coordinates) {
