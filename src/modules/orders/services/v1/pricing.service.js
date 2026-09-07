@@ -26,11 +26,9 @@ export const calculateDeliveryPrice = (orderData) => {
   };
 };
 
-// for making full comparison 
+// for making full comparison
 export const compareDeliveryPrice = (orderData, calculatedDeliveryPrice) => {
-  const frontendDeliveryTotal = Number(
-    orderData.deliveryPrice?.total || 0
-  );
+  const frontendDeliveryTotal = Number(orderData.deliveryPrice?.total || 0);
 
   if (frontendDeliveryTotal > 0 && frontendDeliveryTotal !== calculatedDeliveryPrice.total) {
     return {

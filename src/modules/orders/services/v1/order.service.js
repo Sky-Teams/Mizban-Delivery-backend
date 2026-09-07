@@ -60,8 +60,8 @@ export const addOrder = async (orderData) => {
   }
 
   const deliveryPriceCalculated = calculateDeliveryPrice(orderData);
-  const deliveryPrice = compareDeliveryPrice(orderData, deliveryPriceCalculated)
-  
+  const deliveryPrice = compareDeliveryPrice(orderData, deliveryPriceCalculated);
+
   // Calculate final price. We can extend it in future
   const amountToCollect = Number(orderData.amountToCollect || 0);
   const deliveryTotal = deliveryPrice.total;

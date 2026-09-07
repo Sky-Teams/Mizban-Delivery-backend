@@ -35,7 +35,10 @@ import { eventBus } from '#shared/event-bus/eventBus.js';
 import { OfferModel } from '#modules/offers/index.js';
 
 import * as orderService from '#modules/orders/services/v1/order.service.js';
-import { calculateDeliveryPrice, compareDeliveryPrice } from '#modules/orders/services/v1/pricing.service.js';
+import {
+  calculateDeliveryPrice,
+  compareDeliveryPrice,
+} from '#modules/orders/services/v1/pricing.service.js';
 
 vi.mock('#modules/orders/models/order.model.js', () => ({
   OrderModel: {
