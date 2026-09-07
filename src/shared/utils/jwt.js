@@ -4,17 +4,21 @@ import crypto from 'crypto';
 import { AppError } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 
-const MIZBAN_SERVICE_PUBLIC_KEY = process.env.MIZBAN_SERVICE_PUBLIC_KEY?.trim().replace(
-  /\\n/g,
-  '\n'
-);
-
-if (!MIZBAN_SERVICE_PUBLIC_KEY)
-  throw new AppError(
-    'MIZBAN_SERVICE_PUBLIC_KEY is not set in the environment',
-    500,
-    'MIZBAN_SERVICE_PUBLIC_KEY_IS_NOT_SET'
+const validateMizbanPublicKey = () => {
+  const MIZBAN_SERVICE_PUBLIC_KEY = process.env.MIZBAN_SERVICE_PUBLIC_KEY?.trim().replace(
+    /\\n/g,
+    '\n'
   );
+
+  if (!MIZBAN_SERVICE_PUBLIC_KEY)
+    throw new AppError(
+      'MIZBAN_SERVICE_PUBLIC_KEY is not set in the environment',
+      500,
+      'MIZBAN_SERVICE_PUBLIC_KEY_IS_NOT_SET'
+    );
+
+  return MIZBAN_SERVICE_PUBLIC_KEY;
+};
 
 export const REFRESH_TOKEN_EXPIRES_TIME = 7 * 24 * 60 * 60 * 1000;
 
@@ -57,8 +61,10 @@ export const generateRandomPassword = () => {
 
 // Verify service token
 export const verifyServiceToken = (token) => {
+  const publicKey = validateMizbanPublicKey();
+
   try {
-    const decoded = jwt.verify(token, MIZBAN_SERVICE_PUBLIC_KEY, {
+    const decoded = jwt.verify(token, publicKey, {
       algorithms: ['RS256'],
       issuer: 'mizban',
       audience: 'delivery-service',
