@@ -16,7 +16,7 @@
     "worker": "node src/workers.js",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint src/**/*.js --fix",
-    "format": "prettier --write src/**/*.js",
+    "format": "prettier --write \"src/**/*.js\"",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
