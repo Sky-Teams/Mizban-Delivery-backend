@@ -1,6 +1,20 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { AppError } from '#shared/errors/error.js';
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
+
+const MIZBAN_SERVICE_PUBLIC_KEY = process.env.MIZBAN_SERVICE_PUBLIC_KEY?.trim().replace(
+  /\\n/g,
+  '\n'
+);
+
+if (!MIZBAN_SERVICE_PUBLIC_KEY)
+  throw new AppError(
+    'MIZBAN_SERVICE_PUBLIC_KEY is not set in the environment',
+    500,
+    'MIZBAN_SERVICE_PUBLIC_KEY_IS_NOT_SET'
+  );
 
 export const REFRESH_TOKEN_EXPIRES_TIME = 7 * 24 * 60 * 60 * 1000;
 
@@ -8,7 +22,6 @@ export const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'none',
-  secure: true,
   maxAge: REFRESH_TOKEN_EXPIRES_TIME,
 };
 
@@ -40,4 +53,22 @@ export const hashPassword = async (password) => {
 
 export const generateRandomPassword = () => {
   return crypto.randomBytes(32).toString('hex');
+};
+
+// Verify service token
+export const verifyServiceToken = (token) => {
+  try {
+    const decoded = jwt.verify(token, MIZBAN_SERVICE_PUBLIC_KEY, {
+      algorithms: ['RS256'],
+      issuer: 'mizban',
+      audience: 'delivery-service',
+    });
+
+    if (decoded.sub !== 'mizban' || decoded.type !== 'service')
+      throw new AppError('Invalid token', 401, ERROR_CODES.INVALID_TOKEN);
+
+    return decoded;
+  } catch {
+    throw new AppError('Invalid token', 401, ERROR_CODES.INVALID_TOKEN);
+  }
 };
