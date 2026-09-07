@@ -17,9 +17,10 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
   const unverifiedPayload = jwt.decode(token);
 
   const isServiceToken =
-    unverifiedPayload.typ === 'mizban' ||
-    unverifiedPayload.iss === 'mizban' ||
-    unverifiedPayload.aud === 'delivery-service';
+    unverifiedPayload &&
+    (unverifiedPayload.typ === 'mizban' ||
+      unverifiedPayload.iss === 'mizban' ||
+      unverifiedPayload.aud === 'delivery-service');
 
   if (isServiceToken) {
     verifyServiceToken(token);

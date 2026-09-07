@@ -21,15 +21,14 @@ export const authorize = ({ roles = [], services = [] }) => {
       );
     }
 
-    if (req.user)
-      if (!roles.includes(user.role))
-        return next(
-          new AppError(
-            "Forbidden: You don't have permission to access this resource",
-            403,
-            ERROR_CODES.FORBIDDEN
-          )
-        );
+    if (!req.user || !roles.includes(req.user.role))
+      return next(
+        new AppError(
+          "Forbidden: You don't have permission to access this resource",
+          403,
+          ERROR_CODES.FORBIDDEN
+        )
+      );
 
     next();
   };
