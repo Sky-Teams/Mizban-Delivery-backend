@@ -1,8 +1,9 @@
 import { UserModel } from '#modules/users/index.js';
 import { ERROR_CODES } from '../errors/customCodes.js';
 import { AppError } from '../errors/error.js';
-import { verifyJWT } from '../utils/jwt.js';
+import { verifyJWT, verifyServiceToken } from '../utils/jwt.js';
 import { asyncHandler } from './asyncHandler.js';
+import jwt from 'jsonwebtoken';
 
 export const authMiddleware = asyncHandler(async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -12,6 +13,24 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
   }
 
   const token = authHeader.split(' ')[1];
+
+  const unverifiedPayload = jwt.decode(token);
+
+  const isServiceToken =
+    unverifiedPayload.typ === 'mizban' ||
+    unverifiedPayload.iss === 'mizban' ||
+    unverifiedPayload.aud === 'delivery-service';
+
+  if (isServiceToken) {
+    verifyServiceToken(token);
+
+    req.service = {
+      name: 'mizban',
+    };
+
+    return next();
+  }
+
   const decoded = verifyJWT(token);
   if (!decoded?.id) {
     throw new AppError('Unauthorized: Invalid token payload', 401, ERROR_CODES.INVALID_JWT);
