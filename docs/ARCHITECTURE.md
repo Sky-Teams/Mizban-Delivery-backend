@@ -4,6 +4,8 @@
 
 The repository is organized as a modular Express backend with feature folders under src/modules and cross-cutting infrastructure under src/shared, src/config, src/jobs, and src/tests.
 
+The project should also operate as a microservice, exposing well-defined APIs that can be called by other services.
+
 ```text
 src/
 ├── app.js
