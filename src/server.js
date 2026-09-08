@@ -1,5 +1,3 @@
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
 import app from './app.js';
 import { connectDB } from './config/db.js';
 import http from 'http';
