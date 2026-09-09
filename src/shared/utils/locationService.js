@@ -6,7 +6,7 @@ import { startLocationSync, stopLocationSync } from '../../jobs/locationSync.js'
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { DtoService } from './dtoService.js';
-import { REDIS_KEYS, SOCKET_EVENTS } from './enums.js';
+import { ORDER_STATUS, REDIS_KEYS, SOCKET_EVENTS } from './enums.js';
 import { NotificationPayloads } from './notificationPayloadBuilder.js';
 import { NotificationService } from './notificationService.js';
 import { RedisService } from './redisLocationService.js';
@@ -164,7 +164,7 @@ export class LocationService {
       const driver = await fetchDriverByUserId(userId);
       if (!driver) throw notFound('driver');
 
-      const order = await getDriverOrderByStatus(driver._id, 'pickedUp');
+      const order = await getDriverOrderByStatus(driver._id, ORDER_STATUS.PICKEDUP);
 
       if (!order)
         throw new AppError(
