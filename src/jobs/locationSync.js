@@ -17,6 +17,9 @@ export const startLocationSync = (driverId) => {
   const interval = setInterval(async () => {
     try {
       const location = await RedisService.getRedisData(driverLocationKey);
+
+      if (!location) return;
+
       const data = {
         currentLocation: {
           type: 'Point',

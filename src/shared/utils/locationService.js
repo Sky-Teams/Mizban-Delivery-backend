@@ -166,6 +166,9 @@ export class LocationService {
 
       /** Save Last Location in DB */
       const location = await RedisService.getRedisData(driverLocationKey);
+
+      if (!location) return;
+
       const data = {
         currentLocation: {
           type: 'Point',
