@@ -23,16 +23,6 @@ export class LocationService {
       let driver = await fetchDriverByUserId(userId);
       if (!driver) throw notFound('driver');
 
-      // Check order existing for driver with pickedUp status
-      const order = await getDriverOrderByStatus(driver._id, 'pickedUp');
-
-      if (!order)
-        throw new AppError(
-          'Driver must have a picked-up order to start tracking',
-          400,
-          ERROR_CODES.TRACKING_NOT_AVAILABLE
-        );
-
       // Validate data
       if (!data || !data.currentLocation.coordinates || data.currentLocation.coordinates.length < 2)
         throw new AppError('Invalid data location', 400, ERROR_CODES.INVALID_LOCATION_DATA);
