@@ -1,3 +1,4 @@
+import { CustomSocket } from '#config/socket.js';
 import { fetchDriverByUserId } from '#modules/drivers/index.js';
 import { updateLocationSchema } from '#modules/locations/dto/update-location.schema.js';
 import { updateDriverLocation } from '#modules/locations/index.js';
@@ -51,21 +52,13 @@ export class LocationService {
       const filterOrderDetail = await DtoService.order(order);
 
       /** Emit LOCATION_UPDATED to admin */
-      await NotificationService.send(
-        'admins',
-        SOCKET_EVENTS.DRIVER.LOCATION_UPDATED,
-        {
-          ...filtered,
-          currentLocation: {
-            type: 'Point',
-            coordinates: [Number(location.lat), Number(location.lng)],
-          },
-          type: filterOrderDetail.type,
-          packageDetails: filterOrderDetail.packageDetails,
+      CustomSocket.sendLiveLocationToAdmins(SOCKET_EVENTS.DRIVER.LOCATION_UPDATED, {
+        ...filtered,
+        currentLocation: {
+          type: 'Point',
+          coordinates: [Number(location.lat), Number(location.lng)],
         },
-        userId,
-        false
-      );
+      });
 
       return driver;
     } catch (error) {
@@ -234,6 +227,9 @@ export class LocationService {
 
       /** Save Last Location in DB */
       const location = await RedisService.getRedisData(driverLocationKey);
+
+      if (!location) return;
+
       const data = {
         currentLocation: {
           type: 'Point',
