@@ -51,7 +51,7 @@ export class LocationService {
       const location = await RedisService.getRedisData(driverLocationKey);
       const filtered = await DtoService.formatDriver(driver);
       const filterOrderDetail = await DtoService.order(order);
-
+      const { _id, ...orderFields } = filterOrderDetail;
       /** Emit LOCATION_UPDATED to admin */
       CustomSocket.sendLiveLocationToAdmins(SOCKET_EVENTS.DRIVER.LOCATION_UPDATED, {
         ...filtered,
@@ -59,7 +59,7 @@ export class LocationService {
           type: 'Point',
           coordinates: [Number(location.lat), Number(location.lng)],
         },
-        ...filterOrderDetail,
+        ...orderFields,
       });
 
       return driver;
