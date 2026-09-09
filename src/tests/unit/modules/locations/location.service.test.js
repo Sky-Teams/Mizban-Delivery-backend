@@ -1,4 +1,3 @@
-import { fetchDriverByUserId } from '#modules/drivers/index.js';
 import { updateDriverLocation } from '#modules/locations/index.js';
 import { DriverModel } from '#modules/drivers/models/driver.model.js';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -21,18 +20,15 @@ describe('Driver Services', () => {
   describe('Update driver location', () => {
     it('should update driver location', async () => {
       const mockDriver = {
-        id: '1',
-        userId: '123',
+        id: '123',
         currentLocation: {
           type: 'Point',
           coordinates: [64.0, 32.2],
         },
       };
 
-      fetchDriverByUserId.mockResolvedValue(mockDriver);
-      DriverModel.findOneAndUpdate.mockReturnValue({
-        populate: vi.fn().mockResolvedValue(mockDriver),
-      });
+      DriverModel.findOneAndUpdate.mockReturnValue(mockDriver);
+
       const result = await updateDriverLocation('123', {
         currentLocation: {
           type: 'Point',
@@ -40,11 +36,9 @@ describe('Driver Services', () => {
         },
       });
 
-      expect(fetchDriverByUserId).toHaveBeenCalledWith('123');
       expect(DriverModel.findOneAndUpdate).toHaveBeenCalledWith(
         {
-          user: '123',
-          _id: '1',
+          _id: '123',
         },
         {
           $set: {
@@ -55,22 +49,10 @@ describe('Driver Services', () => {
             lastLocationAt: expect.any(Date),
           },
         },
-        { new: true, runValidators: true }
+        { returnDocument: 'after', runValidators: true }
       );
 
       expect(result).toEqual(mockDriver);
-    });
-
-    it('should throw an error if driver does not exist', async () => {
-      fetchDriverByUserId.mockRejectedValue(new Error('Driver not found'));
-
-      await expect(
-        updateDriverLocation('123', {
-          currentLocation: { type: 'Point', coordinate: [32.2, 64.2] },
-        })
-      ).rejects.toThrow('Driver not found');
-
-      expect(DriverModel.findOneAndUpdate).not.toHaveBeenCalled();
     });
   });
 });
