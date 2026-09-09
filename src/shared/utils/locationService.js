@@ -24,6 +24,7 @@ export class LocationService {
       let driver = await fetchDriverByUserId(userId);
       if (!driver) throw notFound('driver');
 
+      let order = await getDriverOrderByStatus(driver._id, ORDER_STATUS.PICKEDUP);
       // Validate data
       if (!data || !data.currentLocation.coordinates || data.currentLocation.coordinates.length < 2)
         throw new AppError('Invalid data location', 400, ERROR_CODES.INVALID_LOCATION_DATA);
@@ -58,6 +59,7 @@ export class LocationService {
           type: 'Point',
           coordinates: [Number(location.lat), Number(location.lng)],
         },
+        ...filterOrderDetail,
       });
 
       return driver;
