@@ -35,9 +35,7 @@ export const createOffer = async (orderId, driverId) => {
 
     const expiresInSeconds = Number(process.env.Offer_Expires_In_Seconds) || 30;
 
-    const expiredAt = new Date(
-      Date.now() + expiresInSeconds * 1000
-    );
+    const expiredAt = new Date(Date.now() + expiresInSeconds * 1000);
 
     const newOrderOffer = await OfferModel.create({
       ...orderOffer,
