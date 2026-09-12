@@ -162,4 +162,9 @@ export class CustomSocket {
 
     return room && room.size > 0;
   }
+
+  // Send live location to admin
+  static async sendLiveLocationToAdmins(event, payload) {
+    this.getIO().to('admins').emit(event, payload);
+  }
 }
