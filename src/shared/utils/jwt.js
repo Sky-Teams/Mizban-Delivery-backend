@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { AppError } from '#shared/errors/error.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import { SERVICE } from '#shared/utils/enums.js';
 
 const validateMizbanPublicKey = () => {
   const MIZBAN_SERVICE_PUBLIC_KEY = process.env.MIZBAN_SERVICE_PUBLIC_KEY?.trim().replace(
@@ -70,7 +71,7 @@ export const verifyServiceToken = (token) => {
       audience: 'delivery-service',
     });
 
-    if (decoded.sub !== 'mizban' || decoded.type !== 'service')
+    if (decoded.sub !== SERVICE.MIZBAN || decoded.type !== 'service')
       throw new AppError('Invalid token', 401, ERROR_CODES.INVALID_TOKEN);
 
     return decoded;

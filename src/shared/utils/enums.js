@@ -3,7 +3,7 @@ export const ROLES = {
   DRIVER: 'driver',
 };
 
-export const SERVICES = {
+export const SERVICE = {
   MIZBAN: 'mizban',
 };
 

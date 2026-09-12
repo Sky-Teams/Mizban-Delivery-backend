@@ -1,4 +1,5 @@
 import { UserModel } from '#modules/users/index.js';
+import { SERVICE } from '#shared/utils/enums.js';
 import { ERROR_CODES } from '../errors/customCodes.js';
 import { AppError } from '../errors/error.js';
 import { verifyJWT, verifyServiceToken } from '../utils/jwt.js';
@@ -18,15 +19,15 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
 
   const isServiceToken =
     unverifiedPayload &&
-    (unverifiedPayload.typ === 'mizban' ||
-      unverifiedPayload.iss === 'mizban' ||
+    (unverifiedPayload.typ === SERVICE.MIZBAN ||
+      unverifiedPayload.iss === SERVICE.MIZBAN ||
       unverifiedPayload.aud === 'delivery-service');
 
   if (isServiceToken) {
     verifyServiceToken(token);
 
     req.service = {
-      name: 'mizban',
+      name: SERVICE.MIZBAN,
     };
 
     return next();
@@ -57,5 +58,6 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
     email: user.email,
     role: user.role,
   };
+
   next();
 });
