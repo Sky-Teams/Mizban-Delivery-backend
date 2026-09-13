@@ -3,6 +3,10 @@ export const ROLES = {
   DRIVER: 'driver',
 };
 
+export const SERVICE = {
+  MIZBAN: 'mizban',
+};
+
 export const OFFER_STATUS = {
   PENDING: 'pending',
   REJECTED: 'rejected',
