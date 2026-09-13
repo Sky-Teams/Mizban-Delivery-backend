@@ -1,3 +1,4 @@
+import { CustomSocket } from '#config/socket.js';
 import { updateDriverLocation } from '#modules/locations/index.js';
 import { DtoService } from './dtoService.js';
 import { SOCKET_EVENTS } from './enums.js';
@@ -18,13 +19,7 @@ export class LocationService {
 
       const filterDriver = await DtoService.formatDriver(driver);
       /** Emit LOCATION_UPDATED to admin */
-      await NotificationService.send(
-        'admins',
-        SOCKET_EVENTS.DRIVER.LOCATION_UPDATED,
-        filterDriver,
-        userId,
-        false
-      );
+      CustomSocket.sendLiveLocationData(SOCKET_EVENTS.DRIVER.LOCATION_UPDATED, filterDriver);
 
       return driver;
     } catch (error) {

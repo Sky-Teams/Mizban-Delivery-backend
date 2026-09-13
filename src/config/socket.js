@@ -1,9 +1,10 @@
 import { Server } from 'socket.io';
 import { corsOptions } from './cors.js';
-import { verifyJWT } from '#shared/utils/jwt.js';
 import { getAllAdmins, getUserDevicesByUserId } from '#modules/users/index.js';
 import { pushNotification } from '#shared/utils/pushNotification.js';
 import { registerSocketEvents } from '#shared/socket/registerSocketEvents.js';
+import { socketAuthentication } from '#shared/utils/socketAuthentication.js';
+import { SERVICES } from '#shared/utils/enums.js';
 
 export class CustomSocket {
   static #io = null;
@@ -29,11 +30,19 @@ export class CustomSocket {
         return;
       }
 
-      const payload = verifyJWT(token);
+      const payload = socketAuthentication(token);
 
       if (!payload) {
         console.log('Invalid token, disconnecting socket', socket.id);
         socket.disconnect();
+        return;
+      }
+      console.log('payload', payload);
+      if (payload.sub === SERVICES.MIZBAN) {
+        socket.service = payload.sub;
+
+        socket.join(SERVICES.MIZBAN);
+
         return;
       }
 
@@ -161,5 +170,13 @@ export class CustomSocket {
     const room = this.#io.sockets.adapter.rooms.get(userId);
 
     return room && room.size > 0;
+  }
+
+  static sendLiveLocationData(event, payload) {
+    this.getIO().to('admins').emit(event, payload);
+
+    if (this.getIO().sockets.adapter.rooms.has(SERVICES.MIZBAN)) {
+      this.getIO().to(SERVICES.MIZBAN).emit(event, payload);
+    }
   }
 }
