@@ -26,7 +26,11 @@ export const startLocationSync = (driverId) => {
       const redisUpdateAt = new Date(location.updatedAt);
       const lastLocationAt = new Date(driverLocationDetails.lastLocationAt);
 
-      if (redisUpdateAt < lastLocationAt) return;
+      if (redisUpdateAt < lastLocationAt) {
+        clearInterval(interval);
+        locationSyncIntervals.delete(driverLocationKey);
+        return;
+      }
 
       const data = {
         currentLocation: {
