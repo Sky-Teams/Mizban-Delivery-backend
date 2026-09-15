@@ -7,7 +7,7 @@ export const socketAuthentication = (token) => {
 
   const isServiceToken =
     payload &&
-    (payload.typo === SERVICE.MIZBAN ||
+    (payload.type === SERVICE.MIZBAN ||
       payload.iss === SERVICE.MIZBAN ||
       payload.aud === 'delivery-service');
 

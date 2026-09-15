@@ -19,7 +19,7 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
 
   const isServiceToken =
     unverifiedPayload &&
-    (unverifiedPayload.typ === SERVICE.MIZBAN ||
+    (unverifiedPayload.type === SERVICE.MIZBAN ||
       unverifiedPayload.iss === SERVICE.MIZBAN ||
       unverifiedPayload.aud === 'delivery-service');
 
