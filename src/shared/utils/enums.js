@@ -3,7 +3,7 @@ export const ROLES = {
   DRIVER: 'driver',
 };
 
-export const SERVICES = {
+export const SERVICE = {
   MIZBAN: 'mizban',
 };
 
@@ -72,6 +72,9 @@ export const SOCKET_EVENTS = {
     ORDER: 'order',
     LOCATION_ERROR: 'location_error',
     LOCATION_UPDATED: 'location_updated',
+    START_TRACKING: 'start_tracking',
+    STOP_TRACKING: 'stop_tracking',
+    UPDATE_LOCATION: 'update_location',
   },
 };
 
@@ -101,4 +104,9 @@ export const REASON_TYPES = {
 export const settingKeys = {
   COMMISSION_RATE: 'commission.rate',
   DRIVER_MAX_WALLET_GAP: 'driver.maxWalletGap',
+};
+
+// Redis keys
+export const REDIS_KEYS = {
+  DRIVER_LOCATION: 'driver:location:',
 };

@@ -14,7 +14,7 @@ import { mongoIdValidator } from '#shared/middleware/mongoIdValidator.js';
 import { createDriverValidator } from '../../dto/create-driver.schema.js';
 import { updateDriverValidator } from '../../dto/update-driver.schema.js';
 import { authorize, authorizeRole } from '#shared/middleware/authorizeRole.js';
-import { ROLES, SERVICES } from '#shared/utils/enums.js';
+import { ROLES, SERVICE } from '#shared/utils/enums.js';
 import { createDriverProfileValidator } from '#modules/drivers/dto/user-create-driver.schema.js';
 import uploadFile from '#shared/middleware/uploadFile.js';
 import { rejectDriverValidator } from '#modules/drivers/dto/reject-driver.schema.js';
@@ -57,7 +57,7 @@ router.patch(
 );
 router.get(
   '/',
-  authorize({ roles: [ROLES.ADMIN], services: [SERVICES.MIZBAN] }),
+  authorize({ roles: [ROLES.ADMIN], services: [SERVICE.MIZBAN] }),
   asyncHandler(getAllDrivers)
 );
 router.get('/:id', authorizeRole(ROLES.ADMIN), validate(mongoIdValidator), asyncHandler(getDriver)); // route /:id => id is driverId

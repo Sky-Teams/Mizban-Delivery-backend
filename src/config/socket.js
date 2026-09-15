@@ -4,7 +4,7 @@ import { getAllAdmins, getUserDevicesByUserId } from '#modules/users/index.js';
 import { pushNotification } from '#shared/utils/pushNotification.js';
 import { registerSocketEvents } from '#shared/socket/registerSocketEvents.js';
 import { socketAuthentication } from '#shared/utils/socketAuthentication.js';
-import { SERVICES } from '#shared/utils/enums.js';
+import { SERVICE } from '#shared/utils/enums.js';
 
 export class CustomSocket {
   static #io = null;
@@ -37,11 +37,11 @@ export class CustomSocket {
         socket.disconnect();
         return;
       }
-      console.log('payload', payload);
-      if (payload.sub === SERVICES.MIZBAN) {
+
+      if (payload.sub === SERVICE.MIZBAN) {
         socket.service = payload.sub;
 
-        socket.join(SERVICES.MIZBAN);
+        socket.join(SERVICE.MIZBAN);
 
         return;
       }
@@ -172,11 +172,12 @@ export class CustomSocket {
     return room && room.size > 0;
   }
 
-  static sendLiveLocationData(event, payload) {
+  // Send live location to admin
+  static sendLiveLocationToAdmins(event, payload) {
     this.getIO().to('admins').emit(event, payload);
 
-    if (this.getIO().sockets.adapter.rooms.has(SERVICES.MIZBAN)) {
-      this.getIO().to(SERVICES.MIZBAN).emit(event, payload);
+    if (this.getIO().sockets.adapter.rooms.has(SERVICE.MIZBAN)) {
+      this.getIO().to(SERVICE.MIZBAN).emit(event, payload);
     }
   }
 }
