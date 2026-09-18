@@ -23,8 +23,8 @@ import {
   returnOrderValidator,
 } from '../../dto/order-actions.schema.js';
 import { orderQueryValidator } from '#modules/orders/dto/order-query-validator.js';
-import { authorizeRole } from '#shared/middleware/authorizeRole.js';
-import { ROLES } from '#shared/utils/enums.js';
+import { authorize, authorizeRole } from '#shared/middleware/authorizeRole.js';
+import { ROLES, SERVICE } from '#shared/utils/enums.js';
 import { orderStatisticsQueryValidator } from '../../dto/order-statistics-query-validator.js';
 import { calculateDeliveryPriceValidator } from '#modules/orders/dto/calculate-delivery-price.schema.js';
 
@@ -43,7 +43,7 @@ router.post(
 );
 router.patch(
   '/:id/assign',
-  authorizeRole(ROLES.ADMIN),
+  authorize({ roles: [ROLES.ADMIN], services: [SERVICE.MIZBAN] }),
   validate(mongoIdValidator),
   validate(assignDriverValidator),
   asyncHandler(assignDriver)
