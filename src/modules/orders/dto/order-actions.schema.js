@@ -1,12 +1,14 @@
 import { z } from 'zod';
 import mongoose from 'mongoose';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import { createOrderSchema } from '#modules/orders/dto/create-order.schema.js';
 
 export const assignDriverSchema = z.object({
   body: z.object({
     driverId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
       message: ERROR_CODES.INVALID_DRIVER_ID,
     }),
+    orderData: createOrderSchema.shape.body.optional(),
   }),
 });
 
