@@ -5,6 +5,7 @@ import { ensureISODate } from '#shared/utils/ensureISODate.js';
 import mongoose from 'mongoose';
 import { createGeoPointSchema } from '#shared/utils/dto.helper.js';
 import { isValidPhoneNumber } from 'libphonenumber-js';
+import { SERVICE } from '#shared/utils/enums.js';
 
 // Enums from schema
 const deliveryTypes = ['food', 'parcel', 'grocery', 'other'];
@@ -15,8 +16,16 @@ const serviceLevels = ['standard', 'express'];
 const paymentTypes = ['online', 'COD'];
 const paymentStatuses = ['pending', 'paid', 'failed'];
 
-const createOrderSchema = z.object({
+export const createOrderSchema = z.object({
   body: z.object({
+    source: z.literal(SERVICE.MIZBAN).optional(),
+    sourceOrderId: z.string().refine(
+      (val) => {
+        if (val === undefined || val === null || val === '') return true;
+        return mongoose.Types.ObjectId.isValid(val);
+      },
+      { message: ERROR_CODES.INVALID_SOURCE_ORDER_ID }
+    ),
     type: z.enum(deliveryTypes, {
       errorMap: () => ({ message: ERROR_CODES.INVALID_DELIVERY_TYPE }),
     }),
