@@ -27,8 +27,6 @@ export const startLocationSync = (driverId) => {
       const lastLocationAt = new Date(driverLocationDetails.lastLocationAt);
 
       if (redisUpdateAt < lastLocationAt) {
-        clearInterval(interval);
-        locationSyncIntervals.delete(driverLocationKey);
         return;
       }
 
