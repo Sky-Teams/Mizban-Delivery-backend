@@ -33,27 +33,7 @@ import { calculateDeliveryPrice } from './pricing.service.js';
 
 //#region Admin Services
 
-export const addOrder = async (orderData) => {
-  // orderData is validated by Zod, so no extra fields can exist
-
-  let status = ORDER_STATUS.CREATED;
-  const timeline = {};
-
-  // Driver validation
-  if (orderData.driverId) {
-    const driver = await getDriverStatusByDriverId(orderData.driverId);
-
-    if (driver.status !== DRIVER_STATUS.IDLE)
-      throw new AppError(
-        `Driver is not available. Driver status is ${driver.status}`,
-        409,
-        ERROR_CODES.DRIVER_NOT_IDLE
-      );
-
-    status = ORDER_STATUS.ASSIGNED;
-    timeline.assignedAt = new Date();
-  }
-
+export const addOrder = async (orderData, session) => {
   // Calculate items total if items exist
   if (orderData.items?.length) {
     orderData.items = calculateItemsTotal(orderData.items);
@@ -68,25 +48,37 @@ export const addOrder = async (orderData) => {
   // We can add discount in future, because discount is not sent from frontend
   const finalPrice = (amountToCollect || 0) + deliveryTotal;
 
-  const newOrder = await OrderModel.create({
-    ...orderData,
-    deliveryPrice,
-    finalPrice,
-    status,
-    timeline,
-  });
+  const [newOrder] = await OrderModel.create(
+    [
+      {
+        ...orderData,
+        deliveryPrice,
+        finalPrice,
+      },
+    ],
+    { session }
+  );
 
-  // emit events
-  eventBus.emit(EVENT_BUS_EVENTS.ORDER_CREATED, {
-    orderId: newOrder._id,
-    pickupLocation: newOrder.pickupLocation,
-  });
+  if (!orderData.driverId) {
+    eventBus.emit(EVENT_BUS_EVENTS.ORDER_CREATED, {
+      orderId: newOrder._id,
+      pickupLocation: newOrder.pickupLocation,
+    });
+  }
+
   return newOrder;
 };
 
 export const getOrderById = async (orderId) => {
   const order = await OrderModel.findById(orderId);
   if (!order) throw notFound('Order');
+
+  return order;
+};
+
+export const getOrderBySourceId = async (sourceOrderId) => {
+  const order = await OrderModel.findById(sourceOrderId);
+  // if (!order) throw notFound('Order');
 
   return order;
 };
@@ -227,8 +219,11 @@ export const updateOrderInfo = async (orderId, orderData) => {
   return updatedOrder;
 };
 
-export const assignDriver = async (session, orderId, driverId) => {
-  const order = await getOrderById(orderId);
+export const assignDriver = async (session, orderId, driverId, orderData) => {
+  orderData.driverId = driverId;
+
+  let order = await getOrderBySourceId(orderData.sourceOrderId);
+  if (!order) order = await addOrder(orderData, session);
 
   if (order.status !== ORDER_STATUS.CREATED) {
     throw new AppError(
