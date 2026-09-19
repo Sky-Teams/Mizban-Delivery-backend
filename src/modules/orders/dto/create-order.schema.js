@@ -18,14 +18,17 @@ const paymentStatuses = ['pending', 'paid', 'failed'];
 
 export const createOrderSchema = z.object({
   body: z.object({
-    source: z.literal(SERVICE.MIZBAN).optional(),
-    sourceOrderId: z.string().refine(
-      (val) => {
-        if (val === undefined || val === null || val === '') return true;
-        return mongoose.Types.ObjectId.isValid(val);
-      },
-      { message: ERROR_CODES.INVALID_SOURCE_ORDER_ID }
-    ),
+    source: z.literal(SERVICE.MIZBAN),
+    sourceOrderId: z
+      .string()
+      .min(1, ERROR_CODES.INVALID_SOURCE_ORDER_ID)
+      .refine(
+        (val) => {
+          if (val === undefined || val === null || val === '') return true;
+          return mongoose.Types.ObjectId.isValid(val);
+        },
+        { message: ERROR_CODES.INVALID_SOURCE_ORDER_ID }
+      ),
     type: z.enum(deliveryTypes, {
       errorMap: () => ({ message: ERROR_CODES.INVALID_DELIVERY_TYPE }),
     }),
