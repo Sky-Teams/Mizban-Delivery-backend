@@ -28,7 +28,7 @@ export const registerOrderListeners = () => {
 
     // Cancel the process of sending offer to drivers
     const offer = await getOfferByOrderId(data.orderId);
-    await DbJobService.cancelOfferTimeout(offer._id);
+    if (offer) await DbJobService.cancelOfferTimeout(offer._id);
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_PICKEDUP, async (data) => {
