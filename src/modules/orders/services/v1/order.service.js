@@ -16,6 +16,7 @@ import {
   ROLES,
   OFFER_STATUS,
   REASON_TYPES,
+  SERVICE,
 } from '#shared/utils/enums.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
 import {
@@ -34,19 +35,32 @@ import { calculateDeliveryPrice } from './pricing.service.js';
 //#region Admin Services
 
 export const addOrder = async (orderData, session) => {
-  // Calculate items total if items exist
-  if (orderData.items?.length) {
-    orderData.items = calculateItemsTotal(orderData.items);
+  const isExternalOrder = orderData.source;
+  let deliveryPrice = null;
+  let finalPrice = null;
+
+  // if order is external we don't calculate it just take it
+  if (isExternalOrder) {
+    deliveryPrice = {
+      distanceKm: Number(orderData.deliveryPrice?.distanceKm || 0),
+      total: Number(orderData.deliveryPrice?.fee || 0),
+    };
+    finalPrice = Number(orderData.finalPrice || 0);
+  } else {
+    // Calculate items total if items exist
+    if (orderData.items?.length) {
+      orderData.items = calculateItemsTotal(orderData.items);
+    }
+
+    deliveryPrice = calculateDeliveryPrice(orderData); // calculated
+
+    // Calculate final price. We can extend it in future
+    const amountToCollect = Number(orderData.amountToCollect || 0);
+    const deliveryTotal = deliveryPrice.total;
+
+    // We can add discount in future, because discount is not sent from frontend
+    finalPrice = (amountToCollect || 0) + deliveryTotal;
   }
-
-  const deliveryPrice = calculateDeliveryPrice(orderData); // calculated
-
-  // Calculate final price. We can extend it in future
-  const amountToCollect = Number(orderData.amountToCollect || 0);
-  const deliveryTotal = deliveryPrice.total;
-
-  // We can add discount in future, because discount is not sent from frontend
-  const finalPrice = (amountToCollect || 0) + deliveryTotal;
 
   const [newOrder] = await OrderModel.create(
     [
@@ -77,8 +91,7 @@ export const getOrderById = async (orderId) => {
 };
 
 export const getOrderBySourceId = async (sourceOrderId) => {
-  const order = await OrderModel.findById(sourceOrderId);
-  // if (!order) throw notFound('Order');
+  const order = await OrderModel.findOne({ source: SERVICE.MIZBAN, sourceOrderId });
 
   return order;
 };
@@ -254,7 +267,7 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
   await order.save({ session });
   await driver.save({ session });
 
-  eventBus.emit(EVENT_BUS_EVENTS.ORDER_ASSIGNED, { orderId, userId: driver.user._id });
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_ASSIGNED, { orderId: order._id, userId: driver.user._id });
   return order;
 };
 
