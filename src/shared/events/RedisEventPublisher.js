@@ -1,5 +1,5 @@
 import redisClient from '#config/redis.js';
-import { EventPublisher } from './eventPublisher.js';
+import { EventPublisher } from './EventPublisher.js';
 
 export class RedisEventPublisher extends EventPublisher {
   constructor(channel) {
@@ -8,6 +8,7 @@ export class RedisEventPublisher extends EventPublisher {
   }
 
   async publish(event) {
+    console.log(event)
     await redisClient.publish(this.channel, JSON.stringify(event));
   }
 }
