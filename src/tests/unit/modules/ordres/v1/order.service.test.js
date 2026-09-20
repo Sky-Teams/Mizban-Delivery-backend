@@ -191,9 +191,6 @@ describe('DeliveryRequest Service', () => {
           finalPrice: 150,
           deliveryPrice: {
             total: 50,
-            baseFee: 50,
-            distanceFee: 0,
-            distanceKm: 0,
           },
         },
       ],
@@ -372,7 +369,7 @@ describe('assignDriver', () => {
     fetchDriverByDriverId.mockResolvedValue(driver);
 
     await expect(assignDriver(fakeSession, 'delivery1', 'driver1')).rejects.toMatchObject({
-      statusCode: 409,
+      status: 409,
       code: ERROR_CODES.DRIVER_NOT_IDLE,
     });
   });
@@ -382,7 +379,7 @@ describe('assignDriver', () => {
     OrderModel.findById.mockResolvedValue(order);
 
     await expect(assignDriver(fakeSession, 'delivery1', 'driver1')).rejects.toMatchObject({
-      statusCode: 409,
+      status: 409,
       code: ERROR_CODES.DRIVER_ASSIGNMENT_NOT_ALLOWED,
     });
   });
@@ -432,7 +429,15 @@ describe('assignDriver', () => {
     OrderModel.create.mockResolvedValue([order]);
     fetchDriverByDriverId.mockResolvedValue(driver);
 
-    const orderData = { ...baseData };
+    const orderData = {
+      type: 'parcel',
+      sender: { name: 'Alice', phone: '123' },
+      receiver: { name: 'Bob', phone: '456', address: 'Herat' },
+      pickupLocation: { type: 'Point', coordinates: [0, 0] },
+      dropoffLocation: { type: 'Point', coordinates: [1, 1] },
+      paymentType: 'COD',
+      amountToCollect: 100,
+    };
     await assignDriver(fakeSession, null, 'driver1', orderData);
 
     expect(OrderModel.create).toHaveBeenCalled();
