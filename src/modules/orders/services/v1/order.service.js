@@ -26,7 +26,7 @@ import mongoose from 'mongoose';
 import { OfferModel } from '#modules/offers/index.js';
 import { deduplicateById, getObjectValues } from '#shared/utils/object.helper.js';
 import { buildPaginatedResponse } from '#shared/utils/pagination.js';
-import { calculateDeliveryPrice } from './pricing.service.js';
+import { calculateDeliveryPrice, compareDeliveryPrice } from './pricing.service.js';
 
 //#region Admin Services
 
@@ -712,11 +712,15 @@ export const findOrdersByOfferStatus = async (filter = {}, status) => {
 
 export const calculateOrderDeliveryPrice = async (orderData) => {
   if (!orderData.pickupLocation?.coordinates) {
-    throw new AppError('Pickup location is required', 400);
+    throw new AppError('Pickup location is required', 400, ERROR_CODES.INVALID_PICKUP_COORDINATES);
   }
 
   if (!orderData.dropoffLocation?.coordinates) {
-    throw new AppError('Dropoff location is required', 400);
+    throw new AppError(
+      'Dropoff location is required',
+      400,
+      ERROR_CODES.INVALID_DROPOFF_COORDINATES
+    );
   }
 
   return calculateDeliveryPrice(orderData);
