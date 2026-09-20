@@ -109,4 +109,5 @@ export const settingKeys = {
 // Redis keys
 export const REDIS_KEYS = {
   DRIVER_LOCATION: 'driver:location:',
+  DRIVER_LOCATION_UPDATED: 'driver.location.updated',
 };
