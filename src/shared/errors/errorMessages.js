@@ -711,4 +711,9 @@ export const ERROR_MESSAGES = {
     fa: 'اطلاعات موقعیت مکانی نامعتبر است',
     ps: 'د موقعیت معلومات ناسم دي',
   },
+  [ERROR_CODES.INVALID_SOURCE_ORDER_ID]: {
+    en: 'Invalid source order ID',
+    fa: 'آیدی سفارش منبع نامعتبر است',
+    ps: 'د سرچینې امر پېژند ناسم دی',
+  },
 };
