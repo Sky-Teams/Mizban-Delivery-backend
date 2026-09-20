@@ -51,17 +51,18 @@ export class LocationService {
 
       // Get drivers location from redis
       const location = await RedisService.getRedisData(driverLocationKey);
-      const filtered = await DtoService.formatDriver(driver);
-      const filterOrderDetail = await DtoService.order(order);
-      const { _id, ...orderFields } = filterOrderDetail;
+      const driverDetails = await DtoService.formatDriver(driver);
+      const orderDetails = await DtoService.order(order);
       /** Emit LOCATION_UPDATED to admin */
       CustomSocket.sendLiveLocationToAdmins(SOCKET_EVENTS.DRIVER.LOCATION_UPDATED, {
-        ...filtered,
-        currentLocation: {
-          type: 'Point',
-          coordinates: [Number(location.lat), Number(location.lng)],
+        orderDetails,
+        driverDetails: {
+          ...driverDetails,
+          currentLocation: {
+            type: 'Point',
+            coordinates: [Number(location.lat), Number(location.lng)],
+          },
         },
-        ...orderFields,
       });
 
       return driver;
