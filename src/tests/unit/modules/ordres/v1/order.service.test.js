@@ -20,7 +20,11 @@ import {
 import mongoose from 'mongoose';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { orderUpdateQuery } from '#shared/utils/queryBuilder.js';
-import { getOrderById, updateOrderInfo } from '#modules/orders/services/v1/order.service.js';
+import {
+  assignDriver,
+  getOrderById,
+  updateOrderInfo,
+} from '#modules/orders/services/v1/order.service.js';
 import {
   DRIVER_STATUS,
   EVENT_BUS_EVENTS,
@@ -41,6 +45,7 @@ vi.mock('#modules/orders/models/order.model.js', () => ({
   OrderModel: {
     create: vi.fn(),
     findById: vi.fn(),
+    findOne: vi.fn(),
     findByIdAndUpdate: vi.fn(),
     find: vi.fn(),
     countDocuments: vi.fn(),
@@ -140,58 +145,60 @@ describe('DeliveryRequest Service', () => {
       timeline: {},
     };
 
-    OrderModel.create.mockResolvedValue(mockDeliveryRequest);
+    OrderModel.create.mockResolvedValue([mockDeliveryRequest]);
 
     const result = await addOrder(baseData);
 
-    expect(OrderModel.create).toHaveBeenCalledWith({
-      ...baseData,
-      finalPrice: 150,
-      deliveryPrice: {
-        total: 50,
-        baseFee: 50,
-        distanceFee: 0,
-        distanceKm: 0,
-      },
-      status: ORDER_STATUS.CREATED,
-      timeline: {},
-    });
+    expect(OrderModel.create).toHaveBeenCalledWith(
+      [
+        {
+          ...baseData,
+          finalPrice: 150,
+          deliveryPrice: {
+            total: 50,
+            baseFee: 50,
+            distanceFee: 0,
+            distanceKm: 0,
+          },
+        },
+      ],
+      { session: undefined }
+    );
     expect(result).toEqual(mockDeliveryRequest);
   });
 
-  it('should assign driver if driverId exists and set status "assigned"', async () => {
+  it('should create an order with status "created" when driverId exists', async () => {
     const data = { ...baseData, driverId: 'driver123' };
 
-    getDriverStatusByDriverId.mockResolvedValue({ status: DRIVER_STATUS.IDLE });
+    calculateDeliveryPrice.mockReturnValue({ total: 50 });
 
     const mockDeliveryRequest = {
       ...data,
       _id: '1',
       finalPrice: 120,
-      status: ORDER_STATUS.ASSIGNED,
-      timeline: { assignedAt: new Date() },
+      status: ORDER_STATUS.CREATED,
+      timeline: {},
     };
 
-    OrderModel.create.mockResolvedValue(mockDeliveryRequest);
+    OrderModel.create.mockResolvedValue([mockDeliveryRequest]);
 
     const result = await addOrder(data);
 
-    expect(getDriverStatusByDriverId).toHaveBeenCalledWith('driver123');
-
-    expect(OrderModel.create).toHaveBeenCalledWith({
-      ...data,
-      finalPrice: 150,
-      deliveryPrice: {
-        total: 50,
-        baseFee: 50,
-        distanceFee: 0,
-        distanceKm: 0,
-      },
-      status: ORDER_STATUS.ASSIGNED,
-      timeline: expect.objectContaining({
-        assignedAt: expect.any(Date),
-      }),
-    });
+    expect(OrderModel.create).toHaveBeenCalledWith(
+      [
+        {
+          ...data,
+          finalPrice: 150,
+          deliveryPrice: {
+            total: 50,
+            baseFee: 50,
+            distanceFee: 0,
+            distanceKm: 0,
+          },
+        },
+      ],
+      { session: undefined }
+    );
 
     expect(result).toEqual(mockDeliveryRequest);
   });
@@ -205,7 +212,7 @@ describe('DeliveryRequest Service', () => {
     const data = { ...baseData, items };
 
     doesDriverExistByDriverId.mockResolvedValue(false);
-    OrderModel.create.mockImplementation(async (obj) => obj);
+    OrderModel.create.mockImplementation(async ([obj]) => [obj]);
 
     const result = await addOrder(data);
 
@@ -215,20 +222,12 @@ describe('DeliveryRequest Service', () => {
     expect(calculateItemsTotal).toHaveBeenCalledWith(items);
   });
 
-  it('should throw error if driver is not idle', async () => {
-    const data = { ...baseData, driverId: 'driver123' };
-
-    getDriverStatusByDriverId.mockResolvedValue({
-      status: 'busy',
-    });
-
-    await expect(addOrder(data)).rejects.toThrow(AppError);
-  });
-
   it('should handle optional fields correctly', async () => {
     const data = { ...baseData };
     delete data.amountToCollect;
     delete data.deliveryPrice;
+
+    calculateDeliveryPrice.mockReturnValue({ total: 0 });
 
     const mockDeliveryRequest = {
       ...data,
@@ -237,7 +236,7 @@ describe('DeliveryRequest Service', () => {
       status: ORDER_STATUS.CREATED,
       timeline: {},
     };
-    OrderModel.create.mockResolvedValue(mockDeliveryRequest);
+    OrderModel.create.mockResolvedValue([mockDeliveryRequest]);
 
     const result = await addOrder(data);
 
@@ -301,7 +300,7 @@ describe('assignDriverToOrderWithTransaction', () => {
     const driver = { _id: 'driver1', status: ORDER_STATUS.ASSIGNED, save: vi.fn() };
 
     OrderModel.findById.mockResolvedValue(order);
-    getDriverStatusByDriverId.mockResolvedValue(driver);
+    fetchDriverByDriverId.mockResolvedValue(driver);
 
     await expect(assignDriverToOrderWithTransaction('delivery1', 'driver1')).rejects.toThrow(
       new AppError(
@@ -332,6 +331,116 @@ describe('assignDriverToOrderWithTransaction', () => {
 
     expect(fakeSession.abortTransaction).toHaveBeenCalled();
     expect(fakeSession.endSession).toHaveBeenCalled();
+  });
+});
+
+describe('assignDriver', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    eventBus.emit = vi.fn();
+  });
+
+  const createOrder = (status = ORDER_STATUS.CREATED) => ({
+    _id: 'delivery1',
+    status,
+    timeline: {},
+    driverId: null,
+    save: vi.fn(),
+  });
+
+  const createDriver = (status = DRIVER_STATUS.IDLE) => ({
+    _id: 'driver1',
+    status,
+    user: { _id: 'user1' },
+    save: vi.fn(),
+  });
+
+  it('should throw notFound if driver does not exist', async () => {
+    const order = createOrder();
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(null);
+
+    await expect(assignDriver(fakeSession, 'delivery1', 'driver1')).rejects.toThrow(
+      notFound('driver')
+    );
+  });
+
+  it('should throw 409 if driver is not idle', async () => {
+    const order = createOrder();
+    const driver = createDriver(DRIVER_STATUS.ASSIGNED);
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    await expect(assignDriver(fakeSession, 'delivery1', 'driver1')).rejects.toMatchObject({
+      statusCode: 409,
+      code: ERROR_CODES.DRIVER_NOT_IDLE,
+    });
+  });
+
+  it('should throw 409 if order is not created', async () => {
+    const order = createOrder(ORDER_STATUS.ASSIGNED);
+    OrderModel.findById.mockResolvedValue(order);
+
+    await expect(assignDriver(fakeSession, 'delivery1', 'driver1')).rejects.toMatchObject({
+      statusCode: 409,
+      code: ERROR_CODES.DRIVER_ASSIGNMENT_NOT_ALLOWED,
+    });
+  });
+
+  it('should assign an existing order and driver', async () => {
+    const order = createOrder();
+    const driver = createDriver();
+    OrderModel.findById.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    const result = await assignDriver(fakeSession, 'delivery1', 'driver1');
+
+    expect(result).toBe(order);
+    expect(order.status).toBe(ORDER_STATUS.ASSIGNED);
+    expect(order.driverId).toBe('driver1');
+    expect(order.timeline.assignedAt).toBeInstanceOf(Date);
+    expect(driver.status).toBe(DRIVER_STATUS.ASSIGNED);
+    expect(order.save).toHaveBeenCalledWith({ session: fakeSession });
+    expect(driver.save).toHaveBeenCalledWith({ session: fakeSession });
+    expect(eventBus.emit).toHaveBeenCalledWith(EVENT_BUS_EVENTS.ORDER_ASSIGNED, {
+      orderId: order._id,
+      userId: driver.user._id,
+    });
+  });
+
+  it('should find an order by sourceOrderId', async () => {
+    const order = createOrder();
+    const driver = createDriver();
+    OrderModel.findById.mockResolvedValue(null);
+    OrderModel.findOne.mockResolvedValue(order);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    await assignDriver(fakeSession, null, 'driver1', { sourceOrderId: 'source1' });
+
+    expect(OrderModel.findOne).toHaveBeenCalledWith({
+      source: 'mizban',
+      sourceOrderId: 'source1',
+    });
+  });
+
+  it('should create an order from orderData when no order exists', async () => {
+    const order = createOrder();
+    const driver = createDriver();
+    OrderModel.findById.mockResolvedValue(null);
+    OrderModel.findOne.mockResolvedValue(null);
+    calculateDeliveryPrice.mockReturnValue({ total: 0 });
+    OrderModel.create.mockResolvedValue([order]);
+    fetchDriverByDriverId.mockResolvedValue(driver);
+
+    const orderData = { ...baseData };
+    await assignDriver(fakeSession, null, 'driver1', orderData);
+
+    expect(OrderModel.create).toHaveBeenCalled();
+    expect(order.status).toBe(ORDER_STATUS.ASSIGNED);
+  });
+
+  it('should reject when no orderId or orderData is provided', async () => {
+    await expect(assignDriver(fakeSession, null, 'driver1')).rejects.toThrow();
   });
 });
 

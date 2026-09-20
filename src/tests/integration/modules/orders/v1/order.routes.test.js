@@ -173,28 +173,24 @@ describe('Order API v1 Integration', () => {
 
       const res = await postWithAuth(app, baseURL, orderData, token);
       expect(res.status).toBe(201);
-      expect(res.body.data.status).toBe(ORDER_STATUS.ASSIGNED);
-      expect(res.body.data.timeline.assignedAt).toBeDefined();
+      expect(res.body.data.status).toBe(ORDER_STATUS.CREATED);
     });
 
     it('should throw notFound if driverId does not exist', async () => {
-      const orderData = {
+      const order = await OrderModel.create({
         type: 'parcel',
-        serviceType: 'immediate',
-        driverId: new mongoose.Types.ObjectId(),
         sender: { name: 'Alice', phone: '0790909090' },
-        receiver: {
-          name: 'Bob',
-          phone: '0790909090',
-          address: 'Herat',
-        },
+        receiver: { name: 'Bob', phone: '0790909090', address: 'Herat' },
         pickupLocation: { type: 'Point', coordinates: [62.2, 34.35] },
         dropoffLocation: { type: 'Point', coordinates: [62.2, 34.35] },
         paymentType: 'COD',
-        amountToCollect: 100,
-      };
+        status: ORDER_STATUS.CREATED,
+      });
 
-      const res = await postWithAuth(app, baseURL, orderData, token);
+      const res = await request(app)
+        .patch(`${baseURL}/${order._id}/assign`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ driverId: new mongoose.Types.ObjectId() });
 
       expect(res.status).toBe(404);
       expect(res.body.message).toMatch(/Driver not found/i);
