@@ -7,7 +7,7 @@ export class RedisService {
    * @param {object} data
    */
   static async saveDataToRedis(key, data) {
-    if (!data) return;
+    if (!data || Object.values(data).length === 0) return;
 
     const REDIS_DATA_EXPIRATION_TIME =
       Number(process.env.REDIS_DATA_EXPIRATION_HOURS || 2) * 60 * 60;
