@@ -1,7 +1,6 @@
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'libphonenumber-js';
-import { ensureNumber } from '#shared/utils/ensureNumber.js';
 import mongoose from 'mongoose';
 import { createGeoPointSchema } from '#shared/utils/dto.helper.js';
 
