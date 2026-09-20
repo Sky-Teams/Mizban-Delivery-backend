@@ -26,7 +26,11 @@ export class LocationService {
 
       let order = await getDriverOrderByStatus(driver._id, ORDER_STATUS.PICKEDUP);
       // Validate data
-      if (!data || !data.currentLocation.coordinates || data.currentLocation.coordinates.length < 2)
+      if (
+        !data ||
+        !data.currentLocation?.coordinates ||
+        data.currentLocation.coordinates?.length < 2
+      )
         throw new AppError('Invalid data location', 400, ERROR_CODES.INVALID_LOCATION_DATA);
 
       const [lat, lng] = data.currentLocation.coordinates;
