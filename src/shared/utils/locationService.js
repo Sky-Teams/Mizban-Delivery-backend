@@ -19,7 +19,7 @@ export class LocationService {
    * @param {string} userId
    * @param {object} data
    */
-  static async updateLocation(userId, data) {
+  static async updateLocation(userId, data, eventPublisher) {
     try {
       let driver = await fetchDriverByUserId(userId);
       if (!driver) throw notFound('driver');
@@ -40,11 +40,12 @@ export class LocationService {
 
       const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driver._id}`;
 
+      const updatedAt = new Date().toISOString();
       /** Save locations in Redis caching  */
       await RedisService.saveDataToRedis(driverLocationKey, {
         lat: String(lat),
         lng: String(lng),
-        updatedAt: new Date().toISOString(),
+        updatedAt,
       });
 
       // Get drivers location from redis
@@ -52,6 +53,25 @@ export class LocationService {
       const filtered = await DtoService.formatDriver(driver);
       const filterOrderDetail = await DtoService.order(order);
       const { _id, ...orderFields } = filterOrderDetail;
+
+      /** Publish driver location event*/
+      try {
+        await eventPublisher.publish({
+          type: REDIS_KEYS.DRIVER_LOCATION_UPDATED,
+          data: {
+            driverId: filtered._id,
+            orderId: _id,
+            location: {
+              lat,
+              lng,
+            },
+            updatedAt,
+          },
+        });
+      } catch (error) {
+        console.error('Failed to publish location event:', error);
+      }
+
       /** Emit LOCATION_UPDATED to admin */
       CustomSocket.sendLiveLocationToAdmins(SOCKET_EVENTS.DRIVER.LOCATION_UPDATED, {
         ...filtered,
@@ -59,6 +79,7 @@ export class LocationService {
           type: 'Point',
           coordinates: [Number(location.lat), Number(location.lng)],
         },
+        orderId: _id,
         ...orderFields,
       });
 
