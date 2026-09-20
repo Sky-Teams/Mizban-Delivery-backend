@@ -233,9 +233,14 @@ export const updateOrderInfo = async (orderId, orderData) => {
 };
 
 export const assignDriver = async (session, orderId, driverId, orderData) => {
-  orderData.driverId = driverId;
+  if (orderData?.driverId) orderData.driverId = driverId;
 
-  let order = await getOrderBySourceId(orderData.sourceOrderId);
+  let order = null;
+
+  if (orderId) order = await getOrderById(orderId);
+
+  if (!order && orderData?.sourceOrderId) order = await getOrderBySourceId(orderData.sourceOrderId);
+
   if (!order) order = await addOrder(orderData, session);
 
   if (order.status !== ORDER_STATUS.CREATED) {
