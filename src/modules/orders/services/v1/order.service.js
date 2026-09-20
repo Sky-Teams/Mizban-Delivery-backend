@@ -1,8 +1,4 @@
-import {
-  fetchDriverByDriverId,
-  fetchDriverByUserId,
-  getDriverStatusByDriverId,
-} from '#modules/drivers/index.js';
+import { fetchDriverByDriverId, fetchDriverByUserId } from '#modules/drivers/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, noFieldsProvidedForUpdate, notFound } from '#shared/errors/error.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
@@ -43,7 +39,7 @@ export const addOrder = async (orderData, session) => {
   if (isExternalOrder) {
     deliveryPrice = {
       distanceKm: Number(orderData.deliveryPrice?.distanceKm || 0),
-      total: Number(orderData.deliveryPrice?.fee || 0),
+      total: Number(orderData.deliveryPrice?.total || 0),
     };
     finalPrice = Number(orderData.finalPrice || 0);
   } else {
