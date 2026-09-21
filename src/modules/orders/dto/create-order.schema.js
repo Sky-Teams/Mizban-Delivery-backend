@@ -161,11 +161,24 @@ export const createOrderSchema = z.object({
 
     deliveryPrice: z
       .object({
+        distanceKm: z
+          .preprocess(
+            (val) => ensureNumber(val, 'deliveryPrice.distanceKm', ERROR_CODES.INVALID_DISTANCE_KM),
+            z.number().nonnegative({ message: ERROR_CODES.INVALID_DISTANCE_KM })
+          )
+          .optional(),
         total: z.preprocess(
           (val) => ensureNumber(val, 'deliveryPrice.total', ERROR_CODES.INVALID_DELIVERY_PRICE),
           z.number().nonnegative({ message: ERROR_CODES.INVALID_DELIVERY_PRICE })
         ),
       })
+      .optional(),
+
+    finalPrice: z
+      .preprocess(
+        (val) => ensureNumber(val, 'finalPrice', ERROR_CODES.INVALID_FINAL_PRICE),
+        z.number().nonnegative({ message: ERROR_CODES.INVALID_FINAL_PRICE })
+      )
       .optional(),
 
     driverId: z

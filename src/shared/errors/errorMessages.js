@@ -377,6 +377,18 @@ export const ERROR_MESSAGES = {
     ps: 'د تحویلي قیمت ناسم دی',
   },
 
+  [ERROR_CODES.INVALID_DISTANCE_KM]: {
+    en: 'Invalid distance in kilometers',
+    fa: 'مسافت به کیلومتر نامعتبر است',
+    ps: 'په کیلومترو کې واټن ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_FINAL_PRICE]: {
+    en: 'Invalid final price',
+    fa: 'قیمت نهایی نامعتبر است',
+    ps: 'وروستی قیمت ناسم دی',
+  },
+
   [ERROR_CODES.INVALID_SENDER_NAME]: {
     en: 'Invalid sender name',
     fa: 'نام فرستنده نامعتبر است',
