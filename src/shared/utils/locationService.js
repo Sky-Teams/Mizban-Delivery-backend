@@ -2,13 +2,14 @@ import { CustomSocket } from '#config/socket.js';
 import { fetchDriverByUserId } from '#modules/drivers/index.js';
 import { updateLocationSchema } from '#modules/locations/dto/update-location.schema.js';
 import { updateDriverLocation } from '#modules/locations/index.js';
+import { getDriverOrderByStatus } from '#modules/orders/index.js';
+import { startLocationSync, stopLocationSync } from '../../jobs/locationSync.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { DtoService } from './dtoService.js';
-import { REDIS_KEYS, SOCKET_EVENTS } from './enums.js';
-import { NotificationPayloads } from './notificationPayloadBuilder.js';
-import { NotificationService } from './notificationService.js';
+import { ORDER_STATUS, REDIS_KEYS, SOCKET_EVENTS } from './enums.js';
 import { RedisService } from './redisLocationService.js';
+import { handleLocationError } from './handleLocationError.js';
 
 export class LocationService {
   /**
@@ -21,8 +22,13 @@ export class LocationService {
       let driver = await fetchDriverByUserId(userId);
       if (!driver) throw notFound('driver');
 
+      let order = await getDriverOrderByStatus(driver._id, ORDER_STATUS.PICKEDUP);
       // Validate data
-      if (!data || !data.currentLocation.coordinates || data.currentLocation.coordinates.length < 2)
+      if (
+        !data ||
+        !data.currentLocation?.coordinates ||
+        data.currentLocation?.coordinates?.length < 2
+      )
         throw new AppError('Invalid data location', 400, ERROR_CODES.INVALID_LOCATION_DATA);
 
       const [lat, lng] = data.currentLocation.coordinates;
@@ -45,105 +51,51 @@ export class LocationService {
 
       // Get drivers location from redis
       const location = await RedisService.getRedisData(driverLocationKey);
-      const filtered = await DtoService.formatDriver(driver);
+      const driverDetails = await DtoService.formatDriver(driver);
+      const orderDetails = await DtoService.order(order);
       /** Emit LOCATION_UPDATED to admin */
       CustomSocket.sendLiveLocationToAdmins(SOCKET_EVENTS.DRIVER.LOCATION_UPDATED, {
-        ...filtered,
-        currentLocation: {
-          type: 'Point',
-          coordinates: [Number(location.lat), Number(location.lng)],
+        orderDetails,
+        driverDetails: {
+          ...driverDetails,
+          currentLocation: {
+            type: 'Point',
+            coordinates: [Number(location.lat), Number(location.lng)],
+          },
         },
       });
 
       return driver;
     } catch (error) {
-      /** If a validation error occurs, notify the client and stop the update process */
-      if (error.name === 'ZodError') {
-        console.warn(`Validation error ${error.message}`);
-
-        const payload = {
-          code: 'VALIDATION_ERROR',
-          message: error.message,
-        };
-        await NotificationService.send(
-          'driver',
-          SOCKET_EVENTS.DRIVER.LOCATION_ERROR,
-          payload,
-          userId,
-          false
-        );
-
-        return;
-      }
-
-      /** If the driver is not found, notify the driver and stop the location update process */
-      if (error.status === 404) {
-        console.warn(error);
-
-        const payload = {
-          code: 'DRIVER_NOT_FOUND',
-          message: error.message,
-        };
-        await NotificationService.send(
-          'driver',
-          SOCKET_EVENTS.DRIVER.LOCATION_ERROR,
-          payload,
-          userId,
-          false
-        );
-        return;
-      }
-
-      /** For unexpected errors, notify admins and send a socket event to the driver */
-      console.error('Error in Location Update:', error);
-      const systemErrorPayload = NotificationPayloads.systemError(error.message);
-      /** Send notification to admin */
-      await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.SYSTEM, systemErrorPayload);
-      /** Send a socket event to user */
-      await NotificationService.send(
-        'driver',
-        SOCKET_EVENTS.DRIVER.LOCATION_ERROR,
-        {
-          code: 'SYSTEM_ERROR',
-          message: 'System error',
-        },
-        userId,
-        false
-      );
-
-      return;
+      await handleLocationError(error, userId);
     }
   }
 
   /**
    *  Start Driver Tracking
    * @param {string} userId
-   * @returns {object}
+   * @returns
    */
   static async startDriverTracking(userId) {
     try {
       const driver = await fetchDriverByUserId(userId);
       if (!driver) throw notFound('driver');
 
+      const order = await getDriverOrderByStatus(driver._id, ORDER_STATUS.PICKEDUP);
+
+      if (!order)
+        throw new AppError(
+          'Driver must have a picked-up order to start tracking',
+          400,
+          ERROR_CODES.TRACKING_NOT_AVAILABLE
+        );
+
+      /** Start Location Sync With Database */
+      await startLocationSync(driver._id);
+
       return driver;
     } catch (error) {
-      /** If the driver is not found, notify the driver and stop the location update process */
-      if (error.status === 404) {
-        console.warn(error);
-
-        const payload = {
-          code: 'DRIVER_NOT_FOUND',
-          message: error.message,
-        };
-        await NotificationService.send(
-          'driver',
-          SOCKET_EVENTS.DRIVER.LOCATION_ERROR,
-          payload,
-          userId,
-          false
-        );
-        return;
-      }
+      await handleLocationError(error, userId);
     }
   }
 
@@ -175,25 +127,12 @@ export class LocationService {
       /** Remove Driver Location From Redis */
       await RedisService.removeRedisData(driverLocationKey);
 
+      /** Stop Location Saving In Database */
+      await stopLocationSync(driver._id);
+
       return driver;
     } catch (error) {
-      /** If the driver is not found, notify the driver and stop the location update process */
-      if (error.status === 404) {
-        console.warn(error);
-
-        const payload = {
-          code: 'DRIVER_NOT_FOUND',
-          message: error.message,
-        };
-        await NotificationService.send(
-          'driver',
-          SOCKET_EVENTS.DRIVER.LOCATION_ERROR,
-          payload,
-          userId,
-          false
-        );
-        return;
-      }
+      await handleLocationError(error, userId);
     }
   }
 }

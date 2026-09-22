@@ -14,6 +14,7 @@ export {
   fetchDriverByUserId,
   approveDriverRequest,
   rejectDriverRequest,
+  getDriverLocationByDriverId,
 } from './services/v1/driver.service.js';
 export {
   addDriver,

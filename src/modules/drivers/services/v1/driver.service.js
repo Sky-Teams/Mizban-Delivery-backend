@@ -362,4 +362,12 @@ export const getDriverInfoByUserId = async (userId) => {
   return driverInfo;
 };
 
+export const getDriverLocationByDriverId = async (driverId) => {
+  const driver = await DriverModel.findById(driverId).select(['lastLocationAt', 'currentLocation']);
+
+  if (!driver) throw notFound('Driver');
+
+  return driver;
+};
+
 //#endregion
