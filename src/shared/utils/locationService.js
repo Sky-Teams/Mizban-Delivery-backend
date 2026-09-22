@@ -27,7 +27,7 @@ export class LocationService {
       if (
         !data ||
         !data.currentLocation?.coordinates ||
-        data.currentLocation.coordinates?.length < 2
+        data.currentLocation?.coordinates?.length < 2
       )
         throw new AppError('Invalid data location', 400, ERROR_CODES.INVALID_LOCATION_DATA);
 
