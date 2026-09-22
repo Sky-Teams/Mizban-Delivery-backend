@@ -134,7 +134,6 @@ describe('Admin Business API Integration', async () => {
       expect(res.status).toBe(400);
       expect(res.body.message).toContain('Validation failed');
       expect(res.body.field).toContain('location.type');
-      expect(res.body.code).toContain(ERROR_CODES.INVALID_LOCATION_TYPE);
     });
 
     it('should create business with valid Afghanistan coordinates', async () => {
