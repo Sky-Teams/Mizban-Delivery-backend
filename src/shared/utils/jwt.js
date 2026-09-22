@@ -26,7 +26,7 @@ export const REFRESH_TOKEN_EXPIRES_TIME = 7 * 24 * 60 * 60 * 1000;
 export const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'none',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   maxAge: REFRESH_TOKEN_EXPIRES_TIME,
 };
 

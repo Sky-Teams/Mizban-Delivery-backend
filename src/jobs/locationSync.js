@@ -1,3 +1,4 @@
+import { getDriverLocationByDriverId } from '#modules/drivers/index.js';
 import { updateDriverLocation } from '#modules/locations/index.js';
 import { REDIS_KEYS } from '#shared/utils/enums.js';
 import { RedisService } from '#shared/utils/redisLocationService.js';
@@ -19,6 +20,15 @@ export const startLocationSync = (driverId) => {
       const location = await RedisService.getRedisData(driverLocationKey);
 
       if (!location) return;
+
+      const driverLocationDetails = await getDriverLocationByDriverId(driverId);
+
+      const redisUpdateAt = new Date(location.updatedAt);
+      const lastLocationAt = new Date(driverLocationDetails.lastLocationAt);
+
+      if (redisUpdateAt < lastLocationAt) {
+        return;
+      }
 
       const data = {
         currentLocation: {

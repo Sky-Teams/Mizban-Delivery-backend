@@ -27,5 +27,6 @@ export {
   findOrdersByOfferStatus,
   findOrdersByOrderStatus,
   findOrders,
+  getDriverOrderByStatus,
 } from './services/v1/order.service.js';
 export { OrderModel } from './models/order.model.js';
