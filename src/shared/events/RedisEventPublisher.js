@@ -8,7 +8,6 @@ export class RedisEventPublisher extends EventPublisher {
   }
 
   async publish(event) {
-    console.log(event)
     await redisClient.publish(this.channel, JSON.stringify(event));
   }
 }
