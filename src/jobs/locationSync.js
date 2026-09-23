@@ -19,7 +19,7 @@ export const startLocationSync = (driverId) => {
     try {
       const location = await RedisService.getRedisData(driverLocationKey);
 
-      if (!location) return;
+      if (!location || !Number(location.lat) || !Number(location.lng)) return;
 
       const driverLocationDetails = await getDriverLocationByDriverId(driverId);
 
