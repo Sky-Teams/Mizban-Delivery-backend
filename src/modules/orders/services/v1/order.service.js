@@ -86,12 +86,6 @@ export const getOrderById = async (orderId) => {
   return order;
 };
 
-export const getOrderBySourceId = async (sourceOrderId) => {
-  const order = await OrderModel.findOne({ source: SERVICE.MIZBAN, sourceOrderId });
-
-  return order;
-};
-
 /**
  * Retrieve orders based on filters, status, and pagination.
  *
@@ -229,13 +223,13 @@ export const updateOrderInfo = async (orderId, orderData) => {
 };
 
 export const assignDriver = async (session, orderId, driverId, orderData) => {
-  if (orderData?.driverId) orderData.driverId = driverId;
+  orderData.driverId = driverId;
 
   let order = null;
 
   if (orderId) order = await getOrderById(orderId);
 
-  if (!order && orderData?.sourceOrderId) order = await getOrderBySourceId(orderData.sourceOrderId);
+  if (!order && orderData?.sourceOrderId) order = await getOrderById(orderData.sourceOrderId);
 
   if (!order) order = await addOrder(orderData, session);
 
@@ -252,12 +246,12 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
 
   if (!driver) throw notFound('driver');
 
-  if (driver.status !== DRIVER_STATUS.IDLE)
-    throw new AppError(
-      `Driver is not available. Driver status is ${driver.status}`,
-      409,
-      ERROR_CODES.DRIVER_NOT_IDLE
-    );
+  // if (driver.status !== DRIVER_STATUS.IDLE)
+  //   throw new AppError(
+  //     `Driver is not available. Driver status is ${driver.status}`,
+  //     409,
+  //     ERROR_CODES.DRIVER_NOT_IDLE
+  //   );
 
   order.driverId = driver._id;
   order.status = ORDER_STATUS.ASSIGNED;
