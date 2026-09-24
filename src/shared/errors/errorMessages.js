@@ -727,9 +727,10 @@ export const ERROR_MESSAGES = {
     en: 'Invalid source order ID',
     fa: 'آیدی سفارش منبع نامعتبر است',
     ps: 'د سرچینې امر پېژند ناسم دی',
-  [ERROR_CODES.TRACKING_NOT_AVAILABLE]: {
-    en: 'Tracking is not available. The driver must have a picked-up order.',
-    fa: 'امکان ردیابی وجود ندارد. راننده باید یک سفارش دریافت‌شده داشته باشد.',
-    ps: 'د تعقیب امکان نشته. ډرایور باید یو اخیستل شوی فرمایش ولري.',
+    [ERROR_CODES.TRACKING_NOT_AVAILABLE]: {
+      en: 'Tracking is not available. The driver must have a picked-up order.',
+      fa: 'امکان ردیابی وجود ندارد. راننده باید یک سفارش دریافت‌شده داشته باشد.',
+      ps: 'د تعقیب امکان نشته. ډرایور باید یو اخیستل شوی فرمایش ولري.',
+    },
   },
 };

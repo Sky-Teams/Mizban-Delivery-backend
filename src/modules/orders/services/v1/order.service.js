@@ -86,6 +86,12 @@ export const getOrderById = async (orderId) => {
   return order;
 };
 
+export const getOrderBySourceId = async (sourceOrderId) => {
+  const order = await OrderModel.findById(sourceOrderId);
+
+  return order;
+};
+
 /**
  * Retrieve orders based on filters, status, and pagination.
  *
@@ -229,7 +235,7 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
 
   if (orderId) order = await getOrderById(orderId);
 
-  if (!order && orderData?.sourceOrderId) order = await getOrderById(orderData.sourceOrderId);
+  if (!order && orderData?.sourceOrderId) order = await getOrderBySourceId(orderData.sourceOrderId);
 
   if (!order) order = await addOrder(orderData, session);
 
@@ -245,13 +251,6 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
   const driver = await fetchDriverByDriverId(driverId);
 
   if (!driver) throw notFound('driver');
-
-  // if (driver.status !== DRIVER_STATUS.IDLE)
-  //   throw new AppError(
-  //     `Driver is not available. Driver status is ${driver.status}`,
-  //     409,
-  //     ERROR_CODES.DRIVER_NOT_IDLE
-  //   );
 
   order.driverId = driver._id;
   order.status = ORDER_STATUS.ASSIGNED;
