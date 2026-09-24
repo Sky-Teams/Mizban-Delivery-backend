@@ -7,6 +7,7 @@ import {
   doesDriverExist,
   fetchDriverByDriverId,
   fetchDrivers,
+  getDriverStatisticsService,
   modifyExistedDriver,
   rejectDriverRequest,
 } from '../../services/v1/driver.service.js';
@@ -82,6 +83,15 @@ export const rejectDriverRegistrationRequest = async (req, res) => {
   await rejectDriverRequest(driverId, rejectReason);
 
   res.status(200).json({ success: true, message: 'Driver registration rejected' });
+};
+
+export const getDriverStatistics = async (req, res) => {
+  const drivers = await getDriverStatisticsService();
+
+  res.status(200).json({
+    success: true,
+    data: drivers,
+  });
 };
 
 //#endregion
