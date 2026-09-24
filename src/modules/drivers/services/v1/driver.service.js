@@ -278,6 +278,32 @@ export const findNearestAndScore = async (pickupCoordinates) => {
   return scoredDrivers;
 };
 
+export const getDriverStatisticsService = async () => {
+  const result = await DriverModel.aggregate([
+    {
+      $group: {
+        _id: '$status',
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const stats = {
+    total: 0,
+    idle: 0,
+    delivering: 0,
+    assigned: 0,
+    offline: 0,
+  };
+
+  result.forEach((res) => {
+    stats[res._id] = res.count;
+    stats.total += res.count;
+  });
+
+  return stats;
+};
+
 //#endregion
 
 //#region User Services => For now we dont need these services, in future we can use them
