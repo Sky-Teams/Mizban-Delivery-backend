@@ -60,7 +60,12 @@ router.get(
   authorize({ roles: [ROLES.ADMIN], services: [SERVICE.MIZBAN] }),
   asyncHandler(getAllDrivers)
 );
-router.get('/:id', authorizeRole(ROLES.ADMIN), validate(mongoIdValidator), asyncHandler(getDriver)); // route /:id => id is driverId
+router.get(
+  '/:id',
+  authorize({ roles: [ROLES.ADMIN], services: [SERVICE.MIZBAN] }),
+  validate(mongoIdValidator),
+  asyncHandler(getDriver)
+); // route /:id => id is driverId
 router.put(
   '/:id', // route /:id => id is driverId
   authorizeRole(ROLES.ADMIN),
