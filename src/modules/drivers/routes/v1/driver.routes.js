@@ -5,6 +5,7 @@ import {
   createDriver,
   getAllDrivers,
   getDriver,
+  getDriverStatistics,
   modifyDriver,
   rejectDriverRegistrationRequest,
 } from '../../controllers/v1/driver.controller.js';
@@ -20,6 +21,13 @@ import uploadFile from '#shared/middleware/uploadFile.js';
 import { rejectDriverValidator } from '#modules/drivers/dto/reject-driver.schema.js';
 
 const router = express.Router();
+
+// Get driver statistics
+router.get(
+  '/statistics',
+  authorize({ roles: [ROLES.ADMIN], services: [SERVICE.MIZBAN] }),
+  asyncHandler(getDriverStatistics)
+);
 
 router.post(
   '/',
@@ -68,5 +76,6 @@ router.put(
   validate(updateDriverValidator),
   asyncHandler(modifyDriver)
 );
+
 
 export default router;
