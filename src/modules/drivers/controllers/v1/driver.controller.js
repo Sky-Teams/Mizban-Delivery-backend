@@ -54,7 +54,8 @@ export const getAllDrivers = async (req, res) => {
 
 // Get driver by driverId
 export const getDriver = async (req, res) => {
-  if (!req.user) throw unauthorized();
+  const requester = req.user || req.service; // request maybe from a user or service
+  if (!requester) throw unauthorized();
 
   const driver = await fetchDriverByDriverId(req.params.id);
 
