@@ -77,5 +77,4 @@ router.put(
   asyncHandler(modifyDriver)
 );
 
-
 export default router;
