@@ -48,11 +48,11 @@ export const assignDriver = async (req, res) => {
   const requester = req.user || req.service;
   if (!requester) throw unauthorized();
 
-  const updatedOrder = await assignDriverToOrderWithTransaction(
-    req.params.id, // order Id
-    req.body.driverId,
-    req.body.orderData
-  );
+  const updatedOrder = await assignDriverToOrderWithTransaction({
+    driverId: req.body.driverId,
+    orderId: req.params.id,
+    orderData: req.body.orderData,
+  });
 
   res.status(200).json({ success: true, data: updatedOrder });
 };

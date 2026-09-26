@@ -12,7 +12,6 @@ import {
   ROLES,
   OFFER_STATUS,
   REASON_TYPES,
-  SERVICE,
 } from '#shared/utils/enums.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
 import {
@@ -26,9 +25,27 @@ import mongoose from 'mongoose';
 import { OfferModel } from '#modules/offers/index.js';
 import { deduplicateById, getObjectValues } from '#shared/utils/object.helper.js';
 import { buildPaginatedResponse } from '#shared/utils/pagination.js';
-import { calculateDeliveryPrice, compareDeliveryPrice } from './pricing.service.js';
+import { calculateDeliveryPrice } from './pricing.service.js';
 
 //#region Admin Services
+
+const getOrCreateOrder = async (orderId, orderData, driverId, session) => {
+  let order = orderId ? await findOrderById(orderId) : null;
+  console.log('order 1', order?._id);
+
+  if (!order && orderData?.sourceOrderId) {
+    order = await getOrderBySourceId(orderData.sourceOrderId);
+    console.log('order 2', order?._id);
+  }
+
+  if (!order) {
+    if (!orderData) throw notFound('order');
+    order = await addOrder({ ...orderData, driverId }, session);
+    console.log('order 3', order?._id);
+  }
+
+  return order;
+};
 
 export const addOrder = async (orderData, session) => {
   const isExternalOrder = orderData.source;
@@ -87,9 +104,15 @@ export const getOrderById = async (orderId) => {
 };
 
 export const getOrderBySourceId = async (sourceOrderId) => {
-  const order = await OrderModel.findById(sourceOrderId);
+  const order = await OrderModel.findOne({
+    sourceOrderId,
+  });
 
   return order;
+};
+
+export const findOrderById = async (orderId) => {
+  return await OrderModel.findById(orderId);
 };
 
 /**
@@ -228,16 +251,8 @@ export const updateOrderInfo = async (orderId, orderData) => {
   return updatedOrder;
 };
 
-export const assignDriver = async (session, orderId, driverId, orderData) => {
-  orderData.driverId = driverId;
-
-  let order = null;
-
-  if (orderId) order = await getOrderById(orderId);
-
-  if (!order && orderData?.sourceOrderId) order = await getOrderBySourceId(orderData.sourceOrderId);
-
-  if (!order) order = await addOrder(orderData, session);
+export const assignDriver = async (session, { driverId, orderId, orderData } = {}) => {
+  const order = await getOrCreateOrder(orderId, orderData, driverId, session);
 
   if (order.status !== ORDER_STATUS.CREATED) {
     throw new AppError(
@@ -249,13 +264,11 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
 
   // Use fetchDriverByDriverId, because we need the userId of the driver to send him a notification,
   const driver = await fetchDriverByDriverId(driverId);
-
   if (!driver) throw notFound('driver');
 
   order.driverId = driver._id;
   order.status = ORDER_STATUS.ASSIGNED;
   order.timeline.assignedAt = new Date();
-
   driver.status = DRIVER_STATUS.ASSIGNED;
 
   await order.save({ session });
