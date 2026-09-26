@@ -4,9 +4,6 @@ import { verifyJWT } from '#shared/utils/jwt.js';
 import { getAllAdmins, getUserDevicesByUserId } from '#modules/users/index.js';
 import { pushNotification } from '#shared/utils/pushNotification.js';
 import { registerSocketEvents } from '#shared/socket/registerSocketEvents.js';
-import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
-import { REDIS_KEYS } from '#shared/utils/enums.js';
-const locationEventPublisher = new RedisEventPublisher(REDIS_KEYS.DRIVER_LOCATION_UPDATED);
 
 export class CustomSocket {
   static #io = null;
@@ -54,7 +51,7 @@ export class CustomSocket {
       console.log(`User ${socket.userId} joined room`);
 
       // Register socket events
-      registerSocketEvents(socket, locationEventPublisher);
+      registerSocketEvents(socket);
 
       socket.on('disconnect', () => {
         console.log(`Socket disconnected: ${socket.id}`);

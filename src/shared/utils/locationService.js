@@ -10,6 +10,9 @@ import { DtoService } from './dtoService.js';
 import { ORDER_STATUS, REDIS_KEYS, SOCKET_EVENTS } from './enums.js';
 import { RedisService } from './redisLocationService.js';
 import { handleLocationError } from './handleLocationError.js';
+import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
+
+const locationEventPublisher = new RedisEventPublisher(REDIS_KEYS.DRIVER_LOCATION_UPDATED);
 
 export class LocationService {
   /**
@@ -17,7 +20,7 @@ export class LocationService {
    * @param {string} userId
    * @param {object} data
    */
-  static async updateLocation(userId, data, eventPublisher) {
+  static async updateLocation(userId, data) {
     try {
       let driver = await fetchDriverByUserId(userId);
       if (!driver) throw notFound('driver');
@@ -57,7 +60,7 @@ export class LocationService {
 
       /** Publish driver location event*/
       try {
-        await eventPublisher.publish({
+        await locationEventPublisher.publish({
           type: REDIS_KEYS.DRIVER_LOCATION_UPDATED,
           data: {
             driverId: driverDetails._id,
