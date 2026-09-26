@@ -16,6 +16,15 @@ const ItemSchema = new mongoose.Schema(
 //TODO Most of the fields are optional, because for now we just want to be able to create a delivery request easily without any complex logic.We will extend it in future
 const OrderSchema = new mongoose.Schema(
   {
+    source: {
+      type: String,
+      default: "mizban",
+    },
+    sourceOrderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: "6ab24b957e601d49d583df21",
+    },
+
     type: {
       type: String,
       enum: ['food', 'parcel', 'grocery', 'other'],
