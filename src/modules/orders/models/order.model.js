@@ -100,7 +100,7 @@ const OrderSchema = new mongoose.Schema(
 
     dropoffLocation: {
       type: { type: String, enum: ['Point'], default: 'Point' },
-      coordinates: { type: [Number], required: true },
+      coordinates: { type: [Number] },
     },
 
     packageDetails: {

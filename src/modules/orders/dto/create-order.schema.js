@@ -98,8 +98,8 @@ export const createOrderSchema = z.object({
 
     pickupLocation: createGeoPointSchema(ERROR_CODES.INVALID_PICKUP_COORDINATES),
 
-    dropoffLocation: createGeoPointSchema(ERROR_CODES.INVALID_DROPOFF_COORDINATES),
-
+    // For now we dont need to validate the dropoffLocation
+    dropoffLocation: z.any().optional(),
     items: z
       .array(
         z.object({
