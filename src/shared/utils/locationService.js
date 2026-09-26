@@ -7,7 +7,7 @@ import { startLocationSync, stopLocationSync } from '../../jobs/locationSync.js'
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { DtoService } from './dtoService.js';
-import { ORDER_STATUS, REDIS_KEYS, SOCKET_EVENTS } from './enums.js';
+import { ORDER_STATUS, REDIS_KEYS, SERVICE, SOCKET_EVENTS } from './enums.js';
 import { RedisService } from './redisLocationService.js';
 import { handleLocationError } from './handleLocationError.js';
 import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
@@ -58,22 +58,24 @@ export class LocationService {
       const driverDetails = await DtoService.formatDriver(driver);
       const orderDetails = await DtoService.order(order);
 
-      /** Publish driver location event*/
-      try {
-        await locationEventPublisher.publish({
-          type: REDIS_KEYS.DRIVER_LOCATION_UPDATED,
-          data: {
-            driverId: driverDetails._id,
-            orderId: orderDetails._id,
-            location: {
-              lat,
-              lng,
+      if (order.source === SERVICE.MIZBAN) {
+        /** Publish an event to send details to mizban service*/
+        try {
+          await locationEventPublisher.publish({
+            type: REDIS_KEYS.DRIVER_LOCATION_UPDATED,
+            data: {
+              driverId: driverDetails._id,
+              orderId: orderDetails.sourceOrderId,
+              location: {
+                lat,
+                lng,
+              },
+              updatedAt,
             },
-            updatedAt,
-          },
-        });
-      } catch (error) {
-        console.error('Failed to publish location event:', error);
+          });
+        } catch (error) {
+          console.error('Failed to publish location event:', error);
+        }
       }
 
       /** Emit LOCATION_UPDATED to admin */
