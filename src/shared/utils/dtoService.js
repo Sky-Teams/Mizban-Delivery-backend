@@ -29,6 +29,8 @@ export class DtoService {
       status: order?.status,
       reason: order?.reason,
       offer: order?.offer,
+      source: order?.source,
+      sourceOrderId: order?.sourceOrderId,
     };
 
     return filteredOrderField;
