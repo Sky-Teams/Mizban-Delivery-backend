@@ -279,27 +279,21 @@ export const findNearestAndScore = async (pickupCoordinates) => {
 };
 
 export const getDriverStatisticsService = async () => {
-  const result = await DriverModel.aggregate([
+  const [stats] = await DriverModel.aggregate([
     {
       $group: {
-        _id: '$status',
-        count: { $sum: 1 },
+        _id: null,
+        total: { $sum: 1 },
+        idle: { $sum: { $cond: [{ $eq: ['$status', 'idle'] }, 1, 0] } },
+        delivering: { $sum: { $cond: [{ $eq: ['$status', 'delivering'] }, 1, 0] } },
+        assigned: { $sum: { $cond: [{ $eq: ['$status', 'assigned'] }, 1, 0] } },
+        offline: { $sum: { $cond: [{ $eq: ['$status', 'offline'] }, 1, 0] } },
       },
     },
+    {
+      $project: { _id: 0 },
+    },
   ]);
-
-  const stats = {
-    total: 0,
-    idle: 0,
-    delivering: 0,
-    assigned: 0,
-    offline: 0,
-  };
-
-  result.forEach((res) => {
-    stats[res._id] = res.count;
-    stats.total += res.count;
-  });
 
   return stats;
 };
