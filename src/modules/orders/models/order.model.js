@@ -18,11 +18,11 @@ const OrderSchema = new mongoose.Schema(
   {
     source: {
       type: String,
-      default: "mizban",
+      default: null,
     },
     sourceOrderId: {
       type: mongoose.Schema.Types.ObjectId,
-      default: "6ab24b957e601d49d583df21",
+      default: null,
     },
 
     type: {
