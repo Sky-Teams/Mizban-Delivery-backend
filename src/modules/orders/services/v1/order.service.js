@@ -31,17 +31,14 @@ import { calculateDeliveryPrice } from './pricing.service.js';
 
 const getOrCreateOrder = async (orderId, orderData, driverId, session) => {
   let order = orderId ? await findOrderById(orderId) : null;
-  console.log('order 1', order?._id);
 
   if (!order && orderData?.sourceOrderId) {
     order = await getOrderBySourceId(orderData.sourceOrderId);
-    console.log('order 2', order?._id);
   }
 
   if (!order) {
     if (!orderData) throw notFound('order');
     order = await addOrder({ ...orderData, driverId }, session);
-    console.log('order 3', order?._id);
   }
 
   return order;
@@ -251,7 +248,7 @@ export const updateOrderInfo = async (orderId, orderData) => {
   return updatedOrder;
 };
 
-export const assignDriver = async (session, { driverId, orderId, orderData } = {}) => {
+export const assignDriver = async (session, { driverId, orderId, orderData }) => {
   const order = await getOrCreateOrder(orderId, orderData, driverId, session);
 
   if (order.status !== ORDER_STATUS.CREATED) {
