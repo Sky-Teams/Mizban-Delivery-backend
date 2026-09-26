@@ -266,6 +266,14 @@ export const assignDriver = async (session, { driverId, orderId, orderData } = {
   const driver = await fetchDriverByDriverId(driverId);
   if (!driver) throw notFound('driver');
 
+  if (driver.status === DRIVER_STATUS.OFFLINE) {
+    throw new AppError(
+      `Cannot assign driver. Driver status is Offline.`,
+      409,
+      ERROR_CODES.DRIVER_ASSIGNMENT_NOT_ALLOWED
+    );
+  }
+
   order.driverId = driver._id;
   order.status = ORDER_STATUS.ASSIGNED;
   order.timeline.assignedAt = new Date();
