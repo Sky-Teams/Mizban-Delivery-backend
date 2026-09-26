@@ -86,6 +86,9 @@ export const rejectDriverRegistrationRequest = async (req, res) => {
 };
 
 export const getDriverStatistics = async (req, res) => {
+  const requester = req.user || req.service;
+  if (!requester) throw unauthorized();
+
   const drivers = await getDriverStatisticsService();
 
   res.status(200).json({
