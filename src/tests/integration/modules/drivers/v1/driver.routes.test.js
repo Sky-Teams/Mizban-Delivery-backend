@@ -263,6 +263,35 @@ describe('Drivers API v1 Integration', () => {
     });
   });
 
+  describe('GET /api/drivers/statistics', () => {
+    it('should return aggregated driver statistics for admin', async () => {
+      const idleDriver = await createFakeDriver();
+      await DriverModel.findByIdAndUpdate(idleDriver._id, { status: 'idle' });
+
+      const deliveringDriver = await createFakeDriver();
+      await DriverModel.findByIdAndUpdate(deliveringDriver._id, { status: 'delivering' });
+
+      const offlineDriver = await createFakeDriver();
+      await DriverModel.findByIdAndUpdate(offlineDriver._id, { status: 'offline' });
+
+      const res = await request(app)
+        .get(`${baseURL}statistics`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toEqual(
+        expect.objectContaining({
+          total: 3,
+          idle: 1,
+          delivering: 1,
+          assigned: 0,
+          offline: 1,
+        })
+      );
+    });
+  });
+
   describe('GET /api/drivers/:id', () => {
     let driverId;
 
