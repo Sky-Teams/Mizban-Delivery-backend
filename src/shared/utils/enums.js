@@ -110,3 +110,8 @@ export const settingKeys = {
 export const REDIS_KEYS = {
   DRIVER_LOCATION: 'driver:location:',
 };
+
+// Redis channel
+export const REDIS_CHANNEL = {
+  LIVE_LOCATION_CHANNEL: process.env.LIVE_LOCATION_CHANNEL || 'driver.location.updated',
+};

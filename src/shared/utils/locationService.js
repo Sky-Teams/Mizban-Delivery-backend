@@ -7,9 +7,12 @@ import { startLocationSync, stopLocationSync } from '../../jobs/locationSync.js'
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { DtoService } from './dtoService.js';
-import { ORDER_STATUS, REDIS_KEYS, SOCKET_EVENTS } from './enums.js';
+import { ORDER_STATUS, REDIS_CHANNEL, REDIS_KEYS, SERVICE, SOCKET_EVENTS } from './enums.js';
 import { RedisService } from './redisLocationService.js';
 import { handleLocationError } from './handleLocationError.js';
+import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
+
+const locationEventPublisher = new RedisEventPublisher(REDIS_CHANNEL.LIVE_LOCATION_CHANNEL);
 
 export class LocationService {
   /**
@@ -42,17 +45,39 @@ export class LocationService {
 
       const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driver._id}`;
 
+      const updatedAt = new Date().toISOString();
       /** Save locations in Redis caching  */
       await RedisService.saveDataToRedis(driverLocationKey, {
         lat: String(lat),
         lng: String(lng),
-        updatedAt: new Date().toISOString(),
+        updatedAt,
       });
 
       // Get drivers location from redis
       const location = await RedisService.getRedisData(driverLocationKey);
       const driverDetails = await DtoService.formatDriver(driver);
       const orderDetails = await DtoService.order(order);
+
+      if (order.source === SERVICE.MIZBAN) {
+        /** Publish an event to send details to mizban service*/
+        try {
+          await locationEventPublisher.publish({
+            type: REDIS_CHANNEL.LIVE_LOCATION_CHANNEL,
+            data: {
+              driverId: driverDetails._id,
+              orderId: orderDetails.sourceOrderId,
+              location: {
+                lat,
+                lng,
+              },
+              updatedAt,
+            },
+          });
+        } catch (error) {
+          console.error('Failed to publish location event:', error);
+        }
+      }
+
       /** Emit LOCATION_UPDATED to admin */
       CustomSocket.sendLiveLocationToAdmins(SOCKET_EVENTS.DRIVER.LOCATION_UPDATED, {
         orderDetails,
@@ -114,7 +139,7 @@ export class LocationService {
       /** Save Last Location in DB */
       const location = await RedisService.getRedisData(driverLocationKey);
 
-      if (!location) return;
+      if (!location || !Number(location.lat) || !Number(location.lng)) return;
 
       const data = {
         currentLocation: {
