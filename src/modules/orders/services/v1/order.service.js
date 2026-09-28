@@ -248,7 +248,7 @@ export const updateOrderInfo = async (orderId, orderData) => {
   return updatedOrder;
 };
 
-export const assignDriver = async (session, { driverId, orderId, orderData }) => {
+export const assignDriver = async (session, orderId, driverId, orderData) => {
   const order = await getOrCreateOrder(orderId, orderData, driverId, session);
 
   if (order.status !== ORDER_STATUS.CREATED) {
