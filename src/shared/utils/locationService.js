@@ -7,12 +7,12 @@ import { startLocationSync, stopLocationSync } from '../../jobs/locationSync.js'
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { DtoService } from './dtoService.js';
-import { ORDER_STATUS, REDIS_KEYS, SERVICE, SOCKET_EVENTS } from './enums.js';
+import { ORDER_STATUS, REDIS_CHANNEL, REDIS_KEYS, SERVICE, SOCKET_EVENTS } from './enums.js';
 import { RedisService } from './redisLocationService.js';
 import { handleLocationError } from './handleLocationError.js';
 import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
 
-const locationEventPublisher = new RedisEventPublisher(REDIS_KEYS.DRIVER_LOCATION_UPDATED);
+const locationEventPublisher = new RedisEventPublisher(REDIS_CHANNEL.LIVE_LOCATION_CHANNEL);
 
 export class LocationService {
   /**
@@ -62,7 +62,7 @@ export class LocationService {
         /** Publish an event to send details to mizban service*/
         try {
           await locationEventPublisher.publish({
-            type: REDIS_KEYS.DRIVER_LOCATION_UPDATED,
+            type: REDIS_CHANNEL.LIVE_LOCATION_CHANNEL,
             data: {
               driverId: driverDetails._id,
               orderId: orderDetails.sourceOrderId,
