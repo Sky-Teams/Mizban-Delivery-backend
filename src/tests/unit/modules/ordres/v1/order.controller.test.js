@@ -287,11 +287,11 @@ describe('Controller Order - assignDriver', () => {
 
     await assignDriver(req, res);
 
-    expect(assignDriverToOrderWithTransaction).toHaveBeenCalledWith({
-      orderId: req.params.id,
-      driverId: req.body.driverId,
-      orderData: req.body.orderData,
-    });
+    expect(assignDriverToOrderWithTransaction).toHaveBeenCalledWith(
+      req.params.id,
+      req.body.driverId,
+      req.body.orderData
+    );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -317,11 +317,11 @@ describe('Controller Order - assignDriver', () => {
 
     await assignDriver(req, res);
 
-    expect(assignDriverToOrderWithTransaction).toHaveBeenCalledWith({
-      orderId: req.params.id,
-      driverId: 'driver789',
-      orderData: req.body.orderData,
-    });
+    expect(assignDriverToOrderWithTransaction).toHaveBeenCalledWith(
+      req.params.id,
+      'driver789',
+      req.body.orderData
+    );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -340,11 +340,11 @@ describe('Controller Order - assignDriver', () => {
 
     await assignDriver(req, res);
 
-    expect(assignDriverToOrderWithTransaction).toHaveBeenCalledWith({
-      orderId: req.params.id,
-      driverId: req.body.driverId,
-      orderData: req.body.orderData,
-    });
+    expect(assignDriverToOrderWithTransaction).toHaveBeenCalledWith(
+      req.params.id,
+      req.body.driverId,
+      req.body.orderData
+    );
   });
 });
 

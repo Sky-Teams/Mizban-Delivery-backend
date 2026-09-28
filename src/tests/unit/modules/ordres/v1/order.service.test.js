@@ -275,10 +275,7 @@ describe('assignDriverToOrderWithTransaction', () => {
     OrderModel.findById.mockResolvedValue(order);
     fetchDriverByDriverId.mockResolvedValue(driver);
 
-    const result = await assignDriverToOrderWithTransaction({
-      orderId: 'delivery1',
-      driverId: 'driver1',
-    });
+    const result = await assignDriverToOrderWithTransaction('delivery1', 'driver1');
 
     expect(mongoose.startSession).toHaveBeenCalled();
     expect(fakeSession.startTransaction).toHaveBeenCalled();
@@ -297,9 +294,9 @@ describe('assignDriverToOrderWithTransaction', () => {
   it('should abort transaction if order not found', async () => {
     OrderModel.findById.mockResolvedValue(null);
 
-    await expect(
-      assignDriverToOrderWithTransaction({ orderId: 'order1', driverId: 'driver1' })
-    ).rejects.toThrow(notFound('order'));
+    await expect(assignDriverToOrderWithTransaction('order1', 'driver1')).rejects.toThrow(
+      notFound('order')
+    );
 
     expect(fakeSession.abortTransaction).toHaveBeenCalled();
     expect(fakeSession.endSession).toHaveBeenCalled();
@@ -312,9 +309,7 @@ describe('assignDriverToOrderWithTransaction', () => {
     OrderModel.findById.mockResolvedValue(order);
     fetchDriverByDriverId.mockResolvedValue(driver);
 
-    await expect(
-      assignDriverToOrderWithTransaction({ orderId: 'delivery1', driverId: 'driver1' })
-    ).rejects.toMatchObject({
+    await expect(assignDriverToOrderWithTransaction('delivery1', 'driver1')).rejects.toMatchObject({
       message: 'Cannot assign driver. Driver status is Offline.',
       status: 409,
       code: ERROR_CODES.DRIVER_ASSIGNMENT_NOT_ALLOWED,
@@ -331,9 +326,7 @@ describe('assignDriverToOrderWithTransaction', () => {
     OrderModel.findById.mockResolvedValue(order);
     getDriverStatusByDriverId.mockResolvedValue(driver);
 
-    await expect(
-      assignDriverToOrderWithTransaction({ orderId: 'delivery1', driverId: 'driver1' })
-    ).rejects.toThrow(
+    await expect(assignDriverToOrderWithTransaction('delivery1', 'driver1')).rejects.toThrow(
       new AppError(
         `Cannot assign driver. Order status is ${order.status}.`,
         409,
@@ -372,9 +365,9 @@ describe('assignDriver', () => {
     OrderModel.findById.mockResolvedValue(order);
     fetchDriverByDriverId.mockResolvedValue(null);
 
-    await expect(
-      assignDriver(fakeSession, { orderId: 'delivery1', driverId: 'driver1' })
-    ).rejects.toThrow(notFound('driver'));
+    await expect(assignDriver(fakeSession, 'delivery1', 'driver1')).rejects.toThrow(
+      notFound('driver')
+    );
   });
 
   it('should throw 409 if driver is offline', async () => {
@@ -383,9 +376,7 @@ describe('assignDriver', () => {
     OrderModel.findById.mockResolvedValue(order);
     fetchDriverByDriverId.mockResolvedValue(driver);
 
-    await expect(
-      assignDriver(fakeSession, { orderId: 'delivery1', driverId: 'driver1' })
-    ).rejects.toMatchObject({
+    await expect(assignDriver(fakeSession, 'delivery1', 'driver1')).rejects.toMatchObject({
       status: 409,
       code: ERROR_CODES.DRIVER_ASSIGNMENT_NOT_ALLOWED,
     });
@@ -395,9 +386,7 @@ describe('assignDriver', () => {
     const order = createOrder(ORDER_STATUS.ASSIGNED);
     OrderModel.findById.mockResolvedValue(order);
 
-    await expect(
-      assignDriver(fakeSession, { orderId: 'delivery1', driverId: 'driver1' })
-    ).rejects.toMatchObject({
+    await expect(assignDriver(fakeSession, 'delivery1', 'driver1')).rejects.toMatchObject({
       status: 409,
       code: ERROR_CODES.DRIVER_ASSIGNMENT_NOT_ALLOWED,
     });
@@ -409,7 +398,7 @@ describe('assignDriver', () => {
     OrderModel.findById.mockResolvedValue(order);
     fetchDriverByDriverId.mockResolvedValue(driver);
 
-    const result = await assignDriver(fakeSession, { orderId: 'delivery1', driverId: 'driver1' });
+    const result = await assignDriver(fakeSession, 'delivery1', 'driver1');
 
     expect(result).toBe(order);
     expect(order.status).toBe(ORDER_STATUS.ASSIGNED);
@@ -431,10 +420,7 @@ describe('assignDriver', () => {
     OrderModel.findOne.mockResolvedValue(order);
     fetchDriverByDriverId.mockResolvedValue(driver);
 
-    await assignDriver(fakeSession, {
-      driverId: 'driver1',
-      orderData: { sourceOrderId: 'source1' },
-    });
+    await assignDriver(fakeSession, undefined, 'driver1', { sourceOrderId: 'source1' });
 
     expect(OrderModel.findOne).toHaveBeenCalledWith({ sourceOrderId: 'source1' });
   });
@@ -457,14 +443,14 @@ describe('assignDriver', () => {
       paymentType: 'COD',
       amountToCollect: 100,
     };
-    await assignDriver(fakeSession, { driverId: 'driver1', orderData });
+    await assignDriver(fakeSession, undefined, 'driver1', orderData);
 
     expect(OrderModel.create).toHaveBeenCalled();
     expect(order.status).toBe(ORDER_STATUS.ASSIGNED);
   });
 
   it('should reject when no orderId or orderData is provided', async () => {
-    await expect(assignDriver(fakeSession, { driverId: 'driver1' })).rejects.toThrow();
+    await expect(assignDriver(fakeSession, undefined, 'driver1')).rejects.toThrow();
   });
 });
 
