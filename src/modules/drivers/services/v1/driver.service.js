@@ -278,6 +278,26 @@ export const findNearestAndScore = async (pickupCoordinates) => {
   return scoredDrivers;
 };
 
+export const getDriverStatisticsService = async () => {
+  const [stats] = await DriverModel.aggregate([
+    {
+      $group: {
+        _id: null,
+        total: { $sum: 1 },
+        idle: { $sum: { $cond: [{ $eq: ['$status', DRIVER_STATUS.IDLE] }, 1, 0] } },
+        delivering: { $sum: { $cond: [{ $eq: ['$status', DRIVER_STATUS.DELIVERING] }, 1, 0] } },
+        assigned: { $sum: { $cond: [{ $eq: ['$status', DRIVER_STATUS.ASSIGNED] }, 1, 0] } },
+        offline: { $sum: { $cond: [{ $eq: ['$status', DRIVER_STATUS.OFFLINE] }, 1, 0] } },
+      },
+    },
+    {
+      $project: { _id: 0 },
+    },
+  ]);
+
+  return stats;
+};
+
 //#endregion
 
 //#region User Services => For now we dont need these services, in future we can use them
