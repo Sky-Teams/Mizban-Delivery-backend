@@ -284,10 +284,10 @@ export const getDriverStatisticsService = async () => {
       $group: {
         _id: null,
         total: { $sum: 1 },
-        idle: { $sum: { $cond: [{ $eq: ['$status', 'idle'] }, 1, 0] } },
-        delivering: { $sum: { $cond: [{ $eq: ['$status', 'delivering'] }, 1, 0] } },
-        assigned: { $sum: { $cond: [{ $eq: ['$status', 'assigned'] }, 1, 0] } },
-        offline: { $sum: { $cond: [{ $eq: ['$status', 'offline'] }, 1, 0] } },
+        idle: { $sum: { $cond: [{ $eq: ['$status', DRIVER_STATUS.IDLE] }, 1, 0] } },
+        delivering: { $sum: { $cond: [{ $eq: ['$status', DRIVER_STATUS.DELIVERING] }, 1, 0] } },
+        assigned: { $sum: { $cond: [{ $eq: ['$status', DRIVER_STATUS.ASSIGNED] }, 1, 0] } },
+        offline: { $sum: { $cond: [{ $eq: ['$status', DRIVER_STATUS.OFFLINE] }, 1, 0] } },
       },
     },
     {
