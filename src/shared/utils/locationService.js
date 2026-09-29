@@ -127,6 +127,7 @@ export class LocationService {
       /** Start Location Sync With Database */
       await startLocationSync(driver._id);
 
+      /** Notify the driver frontend to start sending live location updates.*/
       CustomSocket.emitToOnlineUser(userId, SOCKET_EVENTS.DRIVER.START_TRACKING);
 
       return driver;
