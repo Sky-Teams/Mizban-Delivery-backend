@@ -1,8 +1,4 @@
-import {
-  fetchDriverByDriverId,
-  fetchDriverByUserId,
-  getDriverStatusByDriverId,
-} from '#modules/drivers/index.js';
+import { fetchDriverByDriverId, fetchDriverByUserId } from '#modules/drivers/index.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, noFieldsProvidedForUpdate, notFound } from '#shared/errors/error.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
@@ -29,29 +25,46 @@ import mongoose from 'mongoose';
 import { OfferModel } from '#modules/offers/index.js';
 import { deduplicateById, getObjectValues } from '#shared/utils/object.helper.js';
 import { buildPaginatedResponse } from '#shared/utils/pagination.js';
-import { calculateDeliveryPrice, compareDeliveryPrice } from './pricing.service.js';
+import { calculateDeliveryPrice } from './pricing.service.js';
 
 //#region Admin Services
 
-export const addOrder = async (orderData) => {
-  // orderData is validated by Zod, so no extra fields can exist
+const getOrCreateOrder = async (orderId, orderData, driverId, session) => {
+  let order = orderId ? await findOrderById(orderId) : null;
 
-  let status = ORDER_STATUS.CREATED;
-  const timeline = {};
+  if (!order && orderData?.sourceOrderId) {
+    order = await getOrderBySourceId(orderData.sourceOrderId);
+  }
 
-  // Driver validation
-  if (orderData.driverId) {
-    const driver = await getDriverStatusByDriverId(orderData.driverId);
+  if (!order) {
+    if (!orderData) throw notFound('order');
+    order = await addOrder({ ...orderData, driverId }, session);
+  }
 
-    if (driver.status !== DRIVER_STATUS.IDLE)
-      throw new AppError(
-        `Driver is not available. Driver status is ${driver.status}`,
-        409,
-        ERROR_CODES.DRIVER_NOT_IDLE
-      );
+  return order;
+};
 
-    status = ORDER_STATUS.ASSIGNED;
-    timeline.assignedAt = new Date();
+export const addOrder = async (orderData, session) => {
+  const isExternalOrder = orderData.source;
+  let deliveryPrice = null;
+  let finalPrice = null;
+
+  // if order is external we don't calculate it just take it
+  if (isExternalOrder) {
+    deliveryPrice = {
+      distanceKm: Number(orderData.deliveryPrice?.distanceKm || 0),
+      total: Number(orderData.deliveryPrice?.total || 0),
+    };
+    finalPrice = Number(orderData.finalPrice || 0);
+  } else {
+    deliveryPrice = calculateDeliveryPrice(orderData); // calculated
+
+    // Calculate final price. We can extend it in future
+    const amountToCollect = Number(orderData.amountToCollect || 0);
+    const deliveryTotal = deliveryPrice.total;
+
+    // We can add discount in future, because discount is not sent from frontend
+    finalPrice = (amountToCollect || 0) + deliveryTotal;
   }
 
   // Calculate items total if items exist
@@ -59,29 +72,24 @@ export const addOrder = async (orderData) => {
     orderData.items = calculateItemsTotal(orderData.items);
   }
 
-  const deliveryPriceCalculated = calculateDeliveryPrice(orderData);
-  const deliveryPrice = compareDeliveryPrice(orderData, deliveryPriceCalculated);
+  const [newOrder] = await OrderModel.create(
+    [
+      {
+        ...orderData,
+        deliveryPrice,
+        finalPrice,
+      },
+    ],
+    { session }
+  );
 
-  // Calculate final price. We can extend it in future
-  const amountToCollect = Number(orderData.amountToCollect || 0);
-  const deliveryTotal = deliveryPrice.total;
+  if (!orderData.driverId) {
+    eventBus.emit(EVENT_BUS_EVENTS.ORDER_CREATED, {
+      orderId: newOrder._id,
+      pickupLocation: newOrder.pickupLocation,
+    });
+  }
 
-  // We can add discount in future, because discount is not sent from frontend
-  const finalPrice = (amountToCollect || 0) + deliveryTotal;
-
-  const newOrder = await OrderModel.create({
-    ...orderData,
-    deliveryPrice,
-    finalPrice,
-    status,
-    timeline,
-  });
-
-  // emit events
-  eventBus.emit(EVENT_BUS_EVENTS.ORDER_CREATED, {
-    orderId: newOrder._id,
-    pickupLocation: newOrder.pickupLocation,
-  });
   return newOrder;
 };
 
@@ -90,6 +98,18 @@ export const getOrderById = async (orderId) => {
   if (!order) throw notFound('Order');
 
   return order;
+};
+
+export const getOrderBySourceId = async (sourceOrderId) => {
+  const order = await OrderModel.findOne({
+    sourceOrderId,
+  });
+
+  return order;
+};
+
+export const findOrderById = async (orderId) => {
+  return await OrderModel.findById(orderId);
 };
 
 /**
@@ -228,8 +248,8 @@ export const updateOrderInfo = async (orderId, orderData) => {
   return updatedOrder;
 };
 
-export const assignDriver = async (session, orderId, driverId) => {
-  const order = await getOrderById(orderId);
+export const assignDriver = async (session, orderId, driverId, orderData) => {
+  const order = await getOrCreateOrder(orderId, orderData, driverId, session);
 
   if (order.status !== ORDER_STATUS.CREATED) {
     throw new AppError(
@@ -241,26 +261,25 @@ export const assignDriver = async (session, orderId, driverId) => {
 
   // Use fetchDriverByDriverId, because we need the userId of the driver to send him a notification,
   const driver = await fetchDriverByDriverId(driverId);
-
   if (!driver) throw notFound('driver');
 
-  if (driver.status !== DRIVER_STATUS.IDLE)
+  if (driver.status === DRIVER_STATUS.OFFLINE) {
     throw new AppError(
-      `Driver is not available. Driver status is ${driver.status}`,
+      `Cannot assign driver. Driver status is Offline.`,
       409,
-      ERROR_CODES.DRIVER_NOT_IDLE
+      ERROR_CODES.DRIVER_ASSIGNMENT_NOT_ALLOWED
     );
+  }
 
   order.driverId = driver._id;
   order.status = ORDER_STATUS.ASSIGNED;
   order.timeline.assignedAt = new Date();
-
   driver.status = DRIVER_STATUS.ASSIGNED;
 
   await order.save({ session });
   await driver.save({ session });
 
-  eventBus.emit(EVENT_BUS_EVENTS.ORDER_ASSIGNED, { orderId, userId: driver.user._id });
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_ASSIGNED, { orderId: order._id, userId: driver.user._id });
   return order;
 };
 

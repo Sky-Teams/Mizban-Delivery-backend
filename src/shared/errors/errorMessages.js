@@ -377,6 +377,18 @@ export const ERROR_MESSAGES = {
     ps: 'د تحویلي قیمت ناسم دی',
   },
 
+  [ERROR_CODES.INVALID_DISTANCE_KM]: {
+    en: 'Invalid distance in kilometers',
+    fa: 'مسافت به کیلومتر نامعتبر است',
+    ps: 'په کیلومترو کې واټن ناسم دی',
+  },
+
+  [ERROR_CODES.INVALID_FINAL_PRICE]: {
+    en: 'Invalid final price',
+    fa: 'قیمت نهایی نامعتبر است',
+    ps: 'وروستی قیمت ناسم دی',
+  },
+
   [ERROR_CODES.INVALID_SENDER_NAME]: {
     en: 'Invalid sender name',
     fa: 'نام فرستنده نامعتبر است',
@@ -710,6 +722,11 @@ export const ERROR_MESSAGES = {
     en: 'Invalid location data',
     fa: 'اطلاعات موقعیت مکانی نامعتبر است',
     ps: 'د موقعیت معلومات ناسم دي',
+  },
+  [ERROR_CODES.INVALID_SOURCE_ORDER_ID]: {
+    en: 'Invalid source order ID',
+    fa: 'آیدی سفارش منبع نامعتبر است',
+    ps: 'د سرچینې امر پېژند ناسم دی',
   },
   [ERROR_CODES.TRACKING_NOT_AVAILABLE]: {
     en: 'Tracking is not available. The driver must have a picked-up order.',

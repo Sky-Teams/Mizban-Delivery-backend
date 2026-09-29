@@ -289,7 +289,8 @@ describe('Controller Order - assignDriver', () => {
 
     expect(assignDriverToOrderWithTransaction).toHaveBeenCalledWith(
       req.params.id,
-      req.body.driverId
+      req.body.driverId,
+      req.body.orderData
     );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
@@ -316,12 +317,34 @@ describe('Controller Order - assignDriver', () => {
 
     await assignDriver(req, res);
 
-    expect(assignDriverToOrderWithTransaction).toHaveBeenCalledWith(req.params.id, 'driver789');
+    expect(assignDriverToOrderWithTransaction).toHaveBeenCalledWith(
+      req.params.id,
+      'driver789',
+      req.body.orderData
+    );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       data: mockDelivery,
     });
+  });
+
+  it('should pass orderData to the assignment service', async () => {
+    req.body.orderData = { sourceOrderId: 'source-order-1', type: 'parcel' };
+    const mockDelivery = {
+      _id: 'delivery123',
+      driverId: 'driver456',
+      status: ORDER_STATUS.ASSIGNED,
+    };
+    assignDriverToOrderWithTransaction.mockResolvedValue(mockDelivery);
+
+    await assignDriver(req, res);
+
+    expect(assignDriverToOrderWithTransaction).toHaveBeenCalledWith(
+      req.params.id,
+      req.body.driverId,
+      req.body.orderData
+    );
   });
 });
 
