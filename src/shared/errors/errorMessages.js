@@ -712,8 +712,8 @@ export const ERROR_MESSAGES = {
     ps: 'د موقعیت معلومات ناسم دي',
   },
   [ERROR_CODES.TRACKING_NOT_AVAILABLE]: {
-    en: 'Tracking is not available. The driver must have a picked-up order.',
-    fa: 'امکان ردیابی وجود ندارد. راننده باید یک سفارش دریافت‌شده داشته باشد.',
-    ps: 'د تعقیب امکان نشته. ډرایور باید یو اخیستل شوی فرمایش ولري.',
+    en: 'Tracking is not available. The driver must have at least one assigned order.',
+    fa: 'امکان ردیابی وجود ندارد. راننده باید حداقل یک سفارش تخصیص‌یافته داشته باشد.',
+    ps: 'د تعقیب امکان نشته. ډرایور باید لږ تر لږه یو ټاکل شوی فرمایش ولري.',
   },
 };
