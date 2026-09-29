@@ -4,6 +4,7 @@ import { addDriversDataInOrder } from '#modules/orders/index.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
 import { DbJobService } from '#shared/utils/dbJob.service.js';
 import { EVENT_BUS_EVENTS, SOCKET_EVENTS } from '#shared/utils/enums.js';
+import { LocationService } from '#shared/utils/locationService.js';
 import { NotificationPayloads } from '#shared/utils/notificationPayloadBuilder.js';
 import { NotificationService } from '#shared/utils/notificationService.js';
 import { OfferService } from '#shared/utils/offerService.js';
@@ -22,6 +23,9 @@ export const registerOrderListeners = () => {
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_ASSIGNED, async (data) => {
+    // Start driver location tracking
+    await LocationService.startDriverTracking(data.userId);
+
     // Send notification to driver
     const payload = NotificationPayloads.orderAssigned(data.orderId);
     await NotificationService.send('driver', SOCKET_EVENTS.DRIVER.ORDER, payload, data.userId);
