@@ -100,7 +100,7 @@ const OrderSchema = new mongoose.Schema(
 
     dropoffLocation: {
       type: { type: String, enum: ['Point'], default: 'Point' },
-      coordinates: { type: [Number], required: true },
+      coordinates: { type: [Number] },
     },
 
     packageDetails: {
@@ -186,5 +186,9 @@ OrderSchema.index({ pickupLocation: '2dsphere' });
 OrderSchema.index({ dropoffLocation: '2dsphere' });
 OrderSchema.index({ driverId: 1 });
 OrderSchema.index({ status: 1 });
+OrderSchema.index(
+  { source: 1, sourceOrderId: 1 },
+  { unique: true, partialFilterExpression: { sourceOrderId: { $type: 'objectId' } } }
+);
 
 export const OrderModel = mongoose.model('Order', OrderSchema);
