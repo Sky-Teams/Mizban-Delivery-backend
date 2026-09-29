@@ -57,11 +57,6 @@ export const addOrder = async (orderData, session) => {
     };
     finalPrice = Number(orderData.finalPrice || 0);
   } else {
-    // Calculate items total if items exist
-    if (orderData.items?.length) {
-      orderData.items = calculateItemsTotal(orderData.items);
-    }
-
     deliveryPrice = calculateDeliveryPrice(orderData); // calculated
 
     // Calculate final price. We can extend it in future
@@ -70,6 +65,11 @@ export const addOrder = async (orderData, session) => {
 
     // We can add discount in future, because discount is not sent from frontend
     finalPrice = (amountToCollect || 0) + deliveryTotal;
+  }
+
+  // Calculate items total if items exist
+  if (orderData.items?.length) {
+    orderData.items = calculateItemsTotal(orderData.items);
   }
 
   const [newOrder] = await OrderModel.create(
