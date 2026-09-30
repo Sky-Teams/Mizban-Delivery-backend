@@ -59,6 +59,10 @@ vi.mock('#shared/events/RedisEventPublisher.js', () => ({
   }),
 }));
 
+vi.mock('#modules/locations/services/v1/distance.service.js', () => ({
+  updateDriverDistance: vi.fn(),
+}));
+
 vi.mock('#shared/utils/handleLocationError.js', () => ({
   handleLocationError: vi.fn(),
 }));
