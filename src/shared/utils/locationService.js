@@ -11,6 +11,7 @@ import { ORDER_STATUS, REDIS_CHANNEL, REDIS_KEYS, SERVICE, SOCKET_EVENTS } from 
 import { RedisService } from './redisLocationService.js';
 import { handleLocationError } from './handleLocationError.js';
 import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
+import { updateDriverDistance } from '#modules/locations/services/v1/distance.service.js';
 
 const locationEventPublisher = new RedisEventPublisher(REDIS_CHANNEL.LIVE_LOCATION_CHANNEL);
 
@@ -34,6 +35,7 @@ export class LocationService {
       )
         throw new AppError('Invalid data location', 400, ERROR_CODES.INVALID_LOCATION_DATA);
 
+      // Frontend coordinates
       const [lat, lng] = data.currentLocation.coordinates;
       /** Validation location data (type, latitude, longitude) */
       updateLocationSchema.parse({
@@ -44,6 +46,16 @@ export class LocationService {
       });
 
       const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driver._id}`;
+
+      /** Calculate driver distance */
+      const prevLocation = await RedisService.getRedisData(driverLocationKey);
+      if (prevLocation && prevLocation.lng && prevLocation.lat) {
+        await updateDriverDistance(
+          driver._id,
+          [Number(prevLocation.lng), Number(prevLocation.lat)],
+          [lng, lat]
+        );
+      }
 
       const updatedAt = new Date().toISOString();
       /** Save locations in Redis caching  */
