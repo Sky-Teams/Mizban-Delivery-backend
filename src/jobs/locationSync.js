@@ -25,8 +25,8 @@ export const startLocationSync = (driverId) => {
 
       const [currentLat, currentLng] = [Number(location.lat), Number(location.lng)];
       const [prevLat, prevLng] = [
-        driverLocationDetails.currentLocation.coordinates[1],
-        driverLocationDetails.currentLocation.coordinates[0],
+        driverLocationDetails?.currentLocation?.coordinates[1],
+        driverLocationDetails?.currentLocation?.coordinates[0],
       ];
       const redisUpdateAt = new Date(location.updatedAt);
       const lastLocationAt = new Date(driverLocationDetails.lastLocationAt);
