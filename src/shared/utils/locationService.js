@@ -135,16 +135,11 @@ export class LocationService {
       const driver = await fetchDriverByUserId(userId);
       if (!driver) throw notFound('driver');
 
-      const order = await getDriverOrdersByStatus(driver._id, {
+      const orders = await getDriverOrdersByStatus(driver._id, {
         $in: [ORDER_STATUS.ASSIGNED, ORDER_STATUS.PICKEDUP],
       });
 
-      if (!order.length)
-        throw new AppError(
-          `Driver must have a ${ORDER_STATUS.ASSIGNED} order to start tracking`,
-          400,
-          ERROR_CODES.TRACKING_NOT_AVAILABLE
-        );
+      if (!orders.length) return;
 
       /** Start Location Sync With Database */
       await startLocationSync(driver._id);
