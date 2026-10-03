@@ -117,12 +117,7 @@ export class LocationService {
         $in: [ORDER_STATUS.ASSIGNED, ORDER_STATUS.PICKEDUP],
       });
 
-      if (!orders.length)
-        throw new AppError(
-          `Driver must have at least one ${ORDER_STATUS.ASSIGNED} order to start tracking`,
-          400,
-          ERROR_CODES.TRACKING_NOT_AVAILABLE
-        );
+      if (!orders.length) return;
 
       /** Start Location Sync With Database */
       await startLocationSync(driver._id);
