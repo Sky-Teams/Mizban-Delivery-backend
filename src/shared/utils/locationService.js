@@ -2,7 +2,7 @@ import { CustomSocket } from '#config/socket.js';
 import { fetchDriverByUserId } from '#modules/drivers/index.js';
 import { updateLocationSchema } from '#modules/locations/dto/update-location.schema.js';
 import { updateDriverLocation } from '#modules/locations/index.js';
-import { getDriverOrderByStatus } from '#modules/orders/index.js';
+import { getDriverOrdersByStatus } from '#modules/orders/index.js';
 import { startLocationSync, stopLocationSync } from '../../jobs/locationSync.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
@@ -26,7 +26,10 @@ export class LocationService {
       let driver = await fetchDriverByUserId(userId);
       if (!driver) throw notFound('driver');
 
-      let order = await getDriverOrderByStatus(driver._id, ORDER_STATUS.PICKEDUP);
+      let orders = await getDriverOrdersByStatus(driver._id, {
+        $in: [ORDER_STATUS.ASSIGNED, ORDER_STATUS.PICKEDUP],
+      });
+
       // Validate data
       if (
         !data ||
@@ -68,31 +71,35 @@ export class LocationService {
       // Get drivers location from redis
       const location = await RedisService.getRedisData(driverLocationKey);
       const driverDetails = await DtoService.formatDriver(driver);
-      const orderDetails = await DtoService.order(order);
+      const orderDetails = await Promise.all(orders.map((order) => DtoService.order(order)));
 
-      if (order.source === SERVICE.MIZBAN) {
-        /** Publish an event to send details to mizban service*/
-        try {
-          await locationEventPublisher.publish({
-            type: REDIS_CHANNEL.LIVE_LOCATION_CHANNEL,
-            data: {
-              driverId: driverDetails._id,
-              orderId: orderDetails.sourceOrderId,
-              location: {
-                lat,
-                lng,
+      for (const [index, order] of orders.entries()) {
+        const orderDetail = orderDetails[index];
+
+        if (order.source === SERVICE.MIZBAN) {
+          /** Publish an event to send details to mizban service*/
+          try {
+            await locationEventPublisher.publish({
+              type: REDIS_CHANNEL.LIVE_LOCATION_CHANNEL,
+              data: {
+                driverId: driverDetails._id,
+                orderId: orderDetail.sourceOrderId,
+                location: {
+                  lat,
+                  lng,
+                },
+                updatedAt,
               },
-              updatedAt,
-            },
-          });
-        } catch (error) {
-          console.error('Failed to publish location event:', error);
+            });
+          } catch (error) {
+            console.error('Failed to publish location event:', error);
+          }
         }
       }
 
       /** Emit LOCATION_UPDATED to admin */
       CustomSocket.sendLiveLocationToAdmins(SOCKET_EVENTS.DRIVER.LOCATION_UPDATED, {
-        orderDetails,
+        orders: orderDetails,
         driverDetails: {
           ...driverDetails,
           currentLocation: {
@@ -118,17 +125,22 @@ export class LocationService {
       const driver = await fetchDriverByUserId(userId);
       if (!driver) throw notFound('driver');
 
-      const order = await getDriverOrderByStatus(driver._id, ORDER_STATUS.PICKEDUP);
+      const order = await getDriverOrdersByStatus(driver._id, {
+        $in: [ORDER_STATUS.ASSIGNED, ORDER_STATUS.PICKEDUP],
+      });
 
-      if (!order)
+      if (!order.length)
         throw new AppError(
-          'Driver must have a picked-up order to start tracking',
+          `Driver must have a ${ORDER_STATUS.ASSIGNED} order to start tracking`,
           400,
           ERROR_CODES.TRACKING_NOT_AVAILABLE
         );
 
       /** Start Location Sync With Database */
       await startLocationSync(driver._id);
+
+      /** Notify the driver frontend to start sending live location updates.*/
+      CustomSocket.emitToOnlineUser(userId, SOCKET_EVENTS.DRIVER.START_TRACKING);
 
       return driver;
     } catch (error) {
