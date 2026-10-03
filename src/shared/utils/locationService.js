@@ -11,6 +11,8 @@ import { ORDER_STATUS, REDIS_CHANNEL, REDIS_KEYS, SERVICE, SOCKET_EVENTS } from 
 import { RedisService } from './redisLocationService.js';
 import { handleLocationError } from './handleLocationError.js';
 import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
+import { calculateDistanceMeters } from './distance.helper.js';
+import { addToDeliveryDistance, addToPickupDistance } from '#modules/orderDelivery/index.js';
 
 const locationEventPublisher = new RedisEventPublisher(REDIS_CHANNEL.LIVE_LOCATION_CHANNEL);
 
@@ -49,6 +51,16 @@ export class LocationService {
 
       const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driver._id}`;
 
+      /** Calculate driver distance */
+      const prevLocation = await RedisService.getRedisData(driverLocationKey);
+      let distanceMeters = 0;
+      if (prevLocation && prevLocation.lng && prevLocation.lat) {
+        distanceMeters = calculateDistanceMeters(
+          [Number(prevLocation.lng), Number(prevLocation.lat)],
+          [lng, lat]
+        );
+      }
+
       const updatedAt = new Date().toISOString();
       /** Save locations in Redis caching  */
       await RedisService.saveDataToRedis(driverLocationKey, {
@@ -64,6 +76,15 @@ export class LocationService {
 
       for (const [index, order] of orders.entries()) {
         const orderDetail = orderDetails[index];
+        if (distanceMeters <= 0) continue;
+
+        if (order.status === ORDER_STATUS.ASSIGNED) {
+          await addToPickupDistance(order._id, distanceMeters);
+        }
+
+        if (order.status === ORDER_STATUS.PICKEDUP) {
+          await addToDeliveryDistance(order._id, distanceMeters);
+        }
 
         if (order.source === SERVICE.MIZBAN) {
           /** Publish an event to send details to mizban service*/
