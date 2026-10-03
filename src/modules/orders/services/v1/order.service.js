@@ -279,7 +279,11 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
   await order.save({ session });
   await driver.save({ session });
 
-  eventBus.emit(EVENT_BUS_EVENTS.ORDER_ASSIGNED, { orderId: order._id, userId: driver.user._id });
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_ASSIGNED, {
+    orderId: order._id,
+    userId: driver.user._id,
+    driverId: driver._id,
+  });
   return order;
 };
 

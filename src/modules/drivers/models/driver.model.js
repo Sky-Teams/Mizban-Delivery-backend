@@ -134,11 +134,6 @@ const DriverSchema = new mongoose.Schema(
       type: reasonSchema,
       default: {},
     },
-    distance: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
   },
   {
     timestamps: true,

@@ -1,5 +1,12 @@
 import { findNearestAndScore } from '#modules/drivers/index.js';
 import { getOfferByOrderId } from '#modules/offers/index.js';
+import {
+  completeToDelivery,
+  completeToPickup,
+  createOrderDelivery,
+  startToDelivery,
+  startToPickup,
+} from '#modules/orderDelivery/index.js';
 import { addDriversDataInOrder } from '#modules/orders/index.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
 import { DbJobService } from '#shared/utils/dbJob.service.js';
@@ -26,6 +33,10 @@ export const registerOrderListeners = () => {
     // Start driver location tracking
     await LocationService.startDriverTracking(data.userId);
 
+    // Initialize delivery tracking and record the start of the pickup phase.
+    await createOrderDelivery(data.driverId, data.orderId);
+    await startToPickup(data.orderId);
+
     // Send notification to driver
     const payload = NotificationPayloads.orderAssigned(data.orderId);
     await NotificationService.send('driver', SOCKET_EVENTS.DRIVER.ORDER, payload, data.userId);
@@ -36,6 +47,10 @@ export const registerOrderListeners = () => {
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_PICKEDUP, async (data) => {
+    // Complete the pickup phase and start tracking the delivery phase.
+    await completeToPickup(data.orderId);
+    await startToDelivery(data.orderId);
+
     const payload = NotificationPayloads.orderPickedUp(
       data.orderId,
       data.driverId,
@@ -46,6 +61,9 @@ export const registerOrderListeners = () => {
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_DELIVERED, async (data) => {
+    // Complete the delivery phase and record its duration.
+    await completeToDelivery(data.orderId);
+
     const payload = NotificationPayloads.orderDelivered(
       data.orderId,
       data.driverId,
