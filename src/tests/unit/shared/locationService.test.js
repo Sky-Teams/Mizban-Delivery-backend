@@ -3,7 +3,7 @@ import { LocationService } from '#shared/utils/locationService.js';
 import { CustomSocket } from '#config/socket.js';
 import { fetchDriverByUserId } from '#modules/drivers/index.js';
 import { updateDriverLocation } from '#modules/locations/index.js';
-import { getDriverOrderByStatus } from '#modules/orders/index.js';
+import { getDriverOrdersByStatus } from '#modules/orders/index.js';
 import { startLocationSync, stopLocationSync } from '../../../jobs/locationSync.js';
 import { DtoService } from '#shared/utils/dtoService.js';
 import { handleLocationError } from '#shared/utils/handleLocationError.js';
@@ -18,7 +18,7 @@ vi.mock('#modules/locations/services/v1/location.service.js', () => ({
 }));
 
 vi.mock('#modules/orders/services/v1/order.service.js', () => ({
-  getDriverOrderByStatus: vi.fn(),
+  getDriverOrdersByStatus: vi.fn(),
 }));
 
 vi.mock('#shared/utils/redisLocationService.js', () => ({
@@ -39,6 +39,7 @@ vi.mock('#shared/utils/dtoService.js', () => ({
 vi.mock('#config/socket.js', () => ({
   CustomSocket: {
     sendLiveLocationToAdmins: vi.fn(),
+    emitToOnlineUser: vi.fn(),
   },
 }));
 
@@ -100,7 +101,7 @@ describe('LocationService', () => {
     it('should update driver location successfully', async () => {
       fetchDriverByUserId.mockResolvedValue(driver);
 
-      getDriverOrderByStatus.mockResolvedValue(order);
+      getDriverOrdersByStatus.mockResolvedValue([order]);
 
       RedisService.saveDataToRedis.mockResolvedValue(undefined);
 
@@ -121,7 +122,7 @@ describe('LocationService', () => {
 
       expect(fetchDriverByUserId).toHaveBeenCalledWith('user-123');
 
-      expect(getDriverOrderByStatus).toHaveBeenCalledWith('driver-123', expect.anything());
+      expect(getDriverOrdersByStatus).toHaveBeenCalledWith('driver-123', expect.anything());
 
       expect(RedisService.saveDataToRedis).toHaveBeenCalledWith(
         expect.stringContaining('driver-123'),
@@ -138,7 +139,7 @@ describe('LocationService', () => {
         expect.anything(),
 
         expect.objectContaining({
-          orderDetails,
+          orders: [orderDetails],
 
           driverDetails: expect.objectContaining({
             _id: 'driver-123',
@@ -170,7 +171,7 @@ describe('LocationService', () => {
     it('should handle invalid location data', async () => {
       fetchDriverByUserId.mockResolvedValue(driver);
 
-      getDriverOrderByStatus.mockResolvedValue(order);
+      getDriverOrdersByStatus.mockResolvedValue([order]);
 
       await LocationService.updateLocation('user-123', {
         currentLocation: {
@@ -187,10 +188,12 @@ describe('LocationService', () => {
     it('should not publish location event for non mizban orders', async () => {
       fetchDriverByUserId.mockResolvedValue(driver);
 
-      getDriverOrderByStatus.mockResolvedValue({
-        ...order,
-        source: 'other-service',
-      });
+      getDriverOrdersByStatus.mockResolvedValue([
+        {
+          ...order,
+          source: 'other-service',
+        },
+      ]);
 
       RedisService.saveDataToRedis.mockResolvedValue(undefined);
 
@@ -214,7 +217,7 @@ describe('LocationService', () => {
     it('should continue successfully when publishing event fails', async () => {
       fetchDriverByUserId.mockResolvedValue(driver);
 
-      getDriverOrderByStatus.mockResolvedValue(order);
+      getDriverOrdersByStatus.mockResolvedValue([order]);
 
       RedisService.saveDataToRedis.mockResolvedValue(undefined);
 
@@ -243,7 +246,7 @@ describe('LocationService', () => {
     it('should start driver tracking successfully', async () => {
       fetchDriverByUserId.mockResolvedValue(driver);
 
-      getDriverOrderByStatus.mockResolvedValue(order);
+      getDriverOrdersByStatus.mockResolvedValue([order]);
 
       startLocationSync.mockResolvedValue(undefined);
 
@@ -251,7 +254,7 @@ describe('LocationService', () => {
 
       expect(fetchDriverByUserId).toHaveBeenCalledWith('user-123');
 
-      expect(getDriverOrderByStatus).toHaveBeenCalledWith('driver-123', expect.anything());
+      expect(getDriverOrdersByStatus).toHaveBeenCalledWith('driver-123', expect.anything());
 
       expect(startLocationSync).toHaveBeenCalledWith('driver-123');
 
@@ -271,7 +274,7 @@ describe('LocationService', () => {
     it('should not start tracking when driver has no pickedUp order', async () => {
       fetchDriverByUserId.mockResolvedValue(driver);
 
-      getDriverOrderByStatus.mockResolvedValue(null);
+      getDriverOrdersByStatus.mockResolvedValue(null);
 
       await LocationService.startDriverTracking('user-123');
 
