@@ -733,4 +733,9 @@ export const ERROR_MESSAGES = {
     fa: 'امکان ردیابی وجود ندارد. راننده باید یک سفارش دریافت‌شده داشته باشد.',
     ps: 'د تعقیب امکان نشته. ډرایور باید یو اخیستل شوی فرمایش ولري.',
   },
+  [ERROR_CODES.ORDER_NOT_ELIGIBLE_FOR_BATCHING]: {
+    en: 'Order is not eligible for batching',
+    fa: 'سفارش شرایط لازم برای بچ شدن را ندارد',
+    ps: 'دا امر د بچ کېدو لپاره لازم شرایط نه لري',
+  },
 };
