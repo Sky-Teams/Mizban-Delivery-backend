@@ -748,8 +748,8 @@ export const calculateOrderDeliveryPrice = async (orderData) => {
   return calculateDeliveryPrice(orderData);
 };
 
-export const getDriverOrderByStatus = async (driverId, status) => {
-  const result = await OrderModel.findOne({ driverId, status });
+export const getDriverOrdersByStatus = async (driverId, status) => {
+  const result = await OrderModel.find({ driverId, status });
   return result;
 };
 
