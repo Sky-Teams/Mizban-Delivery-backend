@@ -13,8 +13,10 @@ export const registerOrderListeners = () => {
   eventBus.on(EVENT_BUS_EVENTS.ORDER_CREATED, async (data) => {
     const orderId = data.orderId.toString();
 
-    const payload = NotificationPayloads.orderCreated(orderId);
-    await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
+    if (data.notifyAdmin !== false) {
+      const payload = NotificationPayloads.orderCreated(orderId);
+      await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
+    }
 
     const drivers = await findNearestAndScore(data.pickupLocation.coordinates);
 
