@@ -29,6 +29,18 @@ import { calculateDeliveryPrice } from './pricing.service.js';
 
 //#region Admin Services
 
+export const retryDriverSearch = async (order) => {
+  order.recommendedDrivers = [];
+  order.currentDriverIndex = 0;
+  await order.save();
+
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_CREATED, {
+    orderId: order._id,
+    pickupLocation: order.pickupLocation,
+    notifyAdmin: false,
+  });
+};
+
 const getOrCreateOrder = async (orderId, orderData, driverId, session) => {
   let order = orderId ? await findOrderById(orderId) : null;
 
