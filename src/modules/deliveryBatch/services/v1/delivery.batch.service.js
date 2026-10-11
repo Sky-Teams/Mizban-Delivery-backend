@@ -48,6 +48,11 @@ export const canAddOrderToBatch = async (deliveryBatch, newOrder) => {
   const orders = await getOrdersByIds(deliveryBatch.orderIds);
 
   for (const order of orders) {
+    // Check source of new order
+    if (order.source !== newOrder.source) {
+      return false;
+    }
+
     // Check pickUp location
     if (!isPickupCompatible(order, newOrder)) {
       return false;
@@ -68,7 +73,7 @@ export const canAddOrderToBatch = async (deliveryBatch, newOrder) => {
 };
 
 export const validateOrderForBatching = async (order) => {
-  if (order.status !== ORDER_STATUS.ASSIGNED || order.batchId || order.source !== SERVICE.MIZBAN) {
+  if (order.status !== ORDER_STATUS.ASSIGNED || order.batchId) {
     throw new AppError(
       'Order is not eligible for batching.',
       409,
