@@ -46,6 +46,7 @@ export const EVENT_BUS_EVENTS = {
   ORDER_RETURNED: 'order:returned',
   OFFER_ACCEPTED: 'offer:accepted',
   OFFER_REJECTED: 'offer:rejected',
+  DRIVER_LOCATION_AVAILABLE: 'driver:location:available',
 };
 
 export const VEHICLE_TYPE = {
@@ -109,6 +110,7 @@ export const settingKeys = {
 // Redis keys
 export const REDIS_KEYS = {
   DRIVER_LOCATION: 'driver:location:',
+  DRIVER_ROUTE_OPTIMIZATION_STARTED: 'driver:route:optimization:started:',
 };
 
 // Redis channel
@@ -127,4 +129,9 @@ export const BATCH_CONFIG = {
   MAX_DELIVERY_DISTANCE_METERS: 4000, // meter
   MAX_PREPARATION_MINUTE: 15, // minute
   MAX_BATCH_SIZE: 5,
+};
+
+export const STOP_TYPE = {
+  PICKUP: 'PICKUP',
+  DELIVERY: 'DELIVERY',
 };
