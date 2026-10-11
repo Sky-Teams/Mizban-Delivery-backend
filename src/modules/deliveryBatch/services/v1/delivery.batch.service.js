@@ -152,3 +152,38 @@ export const orderAssignedForBatching = async (session, driverId, orderId) => {
 
   return addOrderToActiveBatch(session, activeBatch._id, driverId, orderId);
 };
+
+/** Check batch status for completed orders */
+export const checkBatchForComplete = async (driverId) => {
+  const activeBatch = await driverActiveBatch(driverId);
+
+  if (!activeBatch) return false;
+
+  const orders = await getOrdersByIds(activeBatch.orderIds);
+
+  if (!orders.length || orders.length !== activeBatch.orderIds.length) return false;
+
+  const isBatchCompleted = await orders.every((order) => order.status === ORDER_STATUS.DELIVERED);
+  if (!isBatchCompleted) return false;
+
+  const completedBatch = await DeliveryBatchModel.findOneAndUpdate(
+    {
+      _id: activeBatch._id,
+      status: BATCH_STATUS.ACTIVE,
+    },
+    {
+      $set: {
+        completedAt: new Date(),
+        status: BATCH_STATUS.COMPLETED,
+      },
+    },
+    {
+      returnDocument: 'after',
+      runValidators: true,
+    }
+  );
+
+  if (!completedBatch) return false;
+
+  return Boolean(completedBatch);
+};
