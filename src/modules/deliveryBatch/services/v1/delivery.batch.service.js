@@ -1,6 +1,7 @@
 import { DeliveryBatchModel } from '#modules/deliveryBatch/model/delivery.batch.model.js';
 import { OrderModel } from '#modules/orders/index.js';
 import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import {
   isBatchSizeAvailable,
@@ -48,6 +49,11 @@ export const canAddOrderToBatch = async (deliveryBatch, newOrder) => {
   const orders = await getOrdersByIds(deliveryBatch.orderIds);
 
   for (const order of orders) {
+    // Check source of new order
+    if (order.source !== newOrder.source) {
+      return false;
+    }
+
     // Check pickUp location
     if (!isPickupCompatible(order, newOrder)) {
       return false;
@@ -68,7 +74,7 @@ export const canAddOrderToBatch = async (deliveryBatch, newOrder) => {
 };
 
 export const validateOrderForBatching = async (order) => {
-  if (order.status !== ORDER_STATUS.ASSIGNED || order.batchId || order.source !== SERVICE.MIZBAN) {
+  if (order.status !== ORDER_STATUS.ASSIGNED || order.batchId) {
     throw new AppError(
       'Order is not eligible for batching.',
       409,
@@ -153,4 +159,47 @@ export const orderAssignedForBatching = async (session, driverId, order) => {
   // create new batch
 
   return createBatchDelivery(session, driverId, order._id);
+};
+
+// Return the active batch if one exists; otherwise, activate the oldest pending batch.
+export const activateNextPendingBatch = async (driverId) => {
+  // Check active batch
+  let activeBatch;
+  activeBatch = await DeliveryBatchModel.findOne({
+    driver: driverId,
+    status: BATCH_STATUS.ACTIVE,
+  });
+
+  if (activeBatch) return activeBatch;
+
+  // Active oldest batches
+  const oldestPendingBatch = await DeliveryBatchModel.findOne({
+    driver: driverId,
+    status: BATCH_STATUS.PENDING,
+  }).sort({
+    createdAt: 1,
+  });
+
+  if (!oldestPendingBatch) return null;
+
+  // Update last batch to active batch
+  activeBatch = await DeliveryBatchModel.findOneAndUpdate(
+    {
+      _id: oldestPendingBatch._id,
+      driver: driverId,
+      status: BATCH_STATUS.PENDING,
+    },
+    {
+      $set: {
+        status: BATCH_STATUS.ACTIVE,
+        startedAt: new Date(),
+      },
+    },
+    {
+      returnDocument: 'after',
+      runValidators: true,
+    }
+  );
+
+  return activeBatch;
 };
