@@ -114,4 +114,10 @@ export const REDIS_KEYS = {
 // Redis channel
 export const REDIS_CHANNEL = {
   LIVE_LOCATION_CHANNEL: process.env.LIVE_LOCATION_CHANNEL || 'driver.location.updated',
+  ORDER_OFFER_CHANNEL: process.env.ORDER_OFFER_CHANNEL || 'order.offer.channel',
+};
+
+export const REDIS_EVENT_TYPE = {
+  NO_DRIVER_ACCEPTED: 'no.driver.accepted',
+  OFFER_ACCEPTED: 'offer.accepted',
 };
