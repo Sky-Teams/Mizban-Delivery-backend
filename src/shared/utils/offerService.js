@@ -1,11 +1,21 @@
 import { fetchDriverByDriverId } from '#modules/drivers/index.js';
-import { createOffer, getOffer } from '#modules/offers/index.js';
+import { createOffer, findOfferById } from '#modules/offers/index.js';
 import { getOrderById, increaseDriverIndex } from '#modules/orders/index.js';
+import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
 import { DbJobService } from './dbJob.service.js';
 import { DtoService } from './dtoService.js';
-import { DRIVER_STATUS, OFFER_STATUS, ORDER_STATUS, SOCKET_EVENTS } from './enums.js';
+import {
+  DRIVER_STATUS,
+  OFFER_STATUS,
+  ORDER_STATUS,
+  REDIS_CHANNEL,
+  REDIS_EVENT_TYPE,
+  SOCKET_EVENTS,
+} from './enums.js';
 import { NotificationPayloads } from './notificationPayloadBuilder.js';
 import { NotificationService } from './notificationService.js';
+
+const offerPublisher = new RedisEventPublisher(REDIS_CHANNEL.ORDER_OFFER_CHANNEL);
 
 export class OfferService {
   /**
@@ -31,6 +41,13 @@ export class OfferService {
           SOCKET_EVENTS.ADMIN.NO_DRIVER,
           noDriverFoundPayload
         );
+
+        await offerPublisher.publish({
+          type: REDIS_EVENT_TYPE.NO_DRIVER_ACCEPTED,
+          data: {
+            orderId: order.sourceOrderId,
+          },
+        });
         return;
       }
 
@@ -96,13 +113,13 @@ export class OfferService {
    * Handle offer timeout logic
    * @param {Object} param0
    * @param {string} param0.orderId
-   * @param {number} param0.driverIndex
-   * @param {Array} param0.drivers
+   * @param {string} param0.driverId
+   * @param {string} param0.offerId
    */
-  static async handleOfferTimeout({ orderId, driverId }) {
+  static async handleOfferTimeout({ orderId, driverId, offerId }) {
     console.log('Timeout. No Response From Driver'); // We need this log for testing purpose
 
-    const offer = await getOffer(orderId, driverId);
+    const offer = await findOfferById(offerId);
     if (!offer) {
       await increaseDriverIndex(orderId);
       return await OfferService.sendOfferToDriver(orderId);
@@ -120,7 +137,7 @@ export class OfferService {
         await DbJobService.scheduleCalculateAcceptanceRate(driver.user._id);
         break;
 
-      // In here, if the order is rejected, so it means, the rejectOffer function in offer service layer already sent the offer to next driver
+      // In here, if the offer is rejected, so it means, the rejectOffer function in offer service layer already sent the offer to next driver
       case OFFER_STATUS.REJECTED:
       case OFFER_STATUS.ACCEPTED:
         console.log(`Offer already accepted/rejected by driver ${driverId}`);
