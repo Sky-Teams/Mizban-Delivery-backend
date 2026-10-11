@@ -32,7 +32,7 @@ const router = express.Router();
 
 router.post(
   '/',
-  authorizeRole(ROLES.ADMIN),
+  authorize({ roles: [ROLES.ADMIN], services: [SERVICE.MIZBAN] }),
   validate(createOrderValidator),
   asyncHandler(createOrder)
 );
