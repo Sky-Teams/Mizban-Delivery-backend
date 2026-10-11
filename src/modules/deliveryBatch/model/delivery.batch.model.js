@@ -1,4 +1,4 @@
-import { BATCH_STATUS } from '#shared/utils/enums.js';
+import { BATCH_STATUS, STOP_TYPE } from '#shared/utils/enums.js';
 import { getObjectValues } from '#shared/utils/object.helper.js';
 import mongoose from 'mongoose';
 
@@ -17,9 +17,21 @@ const deliveryBatchSchema = new mongoose.Schema(
     ],
     routeOrder: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Order',
-        // TODO: we will add more field here in future
+        _id: false,
+        orderId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Order',
+          required: true,
+        },
+        type: {
+          type: String,
+          enum: getObjectValues(STOP_TYPE),
+          required: true,
+        },
+        location: {
+          type: [Number],
+          required: true,
+        },
       },
     ],
     status: {
