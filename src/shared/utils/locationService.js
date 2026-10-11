@@ -7,10 +7,18 @@ import { startLocationSync, stopLocationSync } from '../../jobs/locationSync.js'
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { DtoService } from './dtoService.js';
-import { ORDER_STATUS, REDIS_CHANNEL, REDIS_KEYS, SERVICE, SOCKET_EVENTS } from './enums.js';
+import {
+  EVENT_BUS_EVENTS,
+  ORDER_STATUS,
+  REDIS_CHANNEL,
+  REDIS_KEYS,
+  SERVICE,
+  SOCKET_EVENTS,
+} from './enums.js';
 import { RedisService } from './redisLocationService.js';
 import { handleLocationError } from './handleLocationError.js';
 import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
+import { eventBus } from '#shared/event-bus/eventBus.js';
 
 const locationEventPublisher = new RedisEventPublisher(REDIS_CHANNEL.LIVE_LOCATION_CHANNEL);
 
@@ -55,6 +63,14 @@ export class LocationService {
         lng: String(lng),
         updatedAt,
       });
+
+      const optimizationKey = `${REDIS_KEYS.DRIVER_ROUTE_OPTIMIZATION_STARTED}${driver._id}`;
+
+      const isFirstLocation = await RedisService.setIfNotExists(optimizationKey);
+
+      if (isFirstLocation) {
+        eventBus.emit(EVENT_BUS_EVENTS.DRIVER_LOCATION_UPDATED, { driverId: driver._id });
+      }
 
       // Get drivers location from redis
       const location = await RedisService.getRedisData(driverLocationKey);
@@ -156,8 +172,11 @@ export class LocationService {
       };
       await updateDriverLocation(driver._id, data);
 
+      const optimizationKey = `${REDIS_KEYS.DRIVER_ROUTE_OPTIMIZATION_STARTED}${driver._id}`;
+
       /** Remove Driver Location From Redis */
       await RedisService.removeRedisData(driverLocationKey);
+      await RedisService.removeRedisData(optimizationKey);
 
       /** Stop Location Saving In Database */
       await stopLocationSync(driver._id);
