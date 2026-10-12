@@ -3,13 +3,14 @@ import { OrderModel } from '#modules/orders/index.js';
 import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
+import { eventBus } from '#shared/event-bus/eventBus.js';
 import {
   isBatchSizeAvailable,
   isDeliveryCompatible,
   isPickupCompatible,
   isPreparationCompatible,
 } from '#shared/utils/batch.helper.js';
-import { BATCH_STATUS, ORDER_STATUS, SERVICE } from '#shared/utils/enums.js';
+import { BATCH_STATUS, EVENT_BUS_EVENTS, ORDER_STATUS, SERVICE } from '#shared/utils/enums.js';
 
 export const getDriverPendingBatches = async (driverId) => {
   return DeliveryBatchModel.find({
@@ -202,4 +203,52 @@ export const activateNextPendingBatch = async (driverId) => {
   );
 
   return activeBatch;
+};
+
+export const getActiveBatch = async (driverId) => {
+  const activeBatch = await DeliveryBatchModel.findOne({
+    driver: driverId,
+    status: BATCH_STATUS.ACTIVE,
+  });
+
+  if (!activeBatch) throw new AppError('Active batch does not exist', 404, ERROR_CODES.NOT_FOUND);
+
+  return activeBatch;
+};
+
+/** Check batch status for completed orders */
+export const checkBatchForComplete = async (driverId) => {
+  const activeBatch = await getActiveBatch(driverId);
+
+  if (!activeBatch) return false;
+
+  const orders = await getOrdersByIds(activeBatch.orderIds);
+
+  if (!orders.length || orders.length !== activeBatch.orderIds.length) return false;
+
+  const isBatchCompleted = await orders.every((order) => order.status === ORDER_STATUS.DELIVERED);
+  if (!isBatchCompleted) return false;
+
+  const completedBatch = await DeliveryBatchModel.findOneAndUpdate(
+    {
+      _id: activeBatch._id,
+      status: BATCH_STATUS.ACTIVE,
+    },
+    {
+      $set: {
+        completedAt: new Date(),
+        status: BATCH_STATUS.COMPLETED,
+      },
+    },
+    {
+      returnDocument: 'after',
+      runValidators: true,
+    }
+  );
+
+  eventBus.emit(EVENT_BUS_EVENTS.ACTIVE_BATCH_COMPLETED, {
+    driverId: driverId,
+  });
+
+  return Boolean(completedBatch);
 };
