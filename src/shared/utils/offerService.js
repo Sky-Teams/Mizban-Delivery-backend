@@ -1,5 +1,5 @@
 import { fetchDriverByDriverId } from '#modules/drivers/index.js';
-import { createOffer, findOfferById, getOffer } from '#modules/offers/index.js';
+import { createOffer, getOffer } from '#modules/offers/index.js';
 import { getOrderById, increaseDriverIndex } from '#modules/orders/index.js';
 import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
 import { DbJobService } from './dbJob.service.js';
@@ -34,6 +34,7 @@ export class OfferService {
       const currentIndex = order.currentDriverIndex;
 
       if (currentIndex >= driversInfo.length) {
+        console.log('No driver found for order: ', orderId); // I will remove this log
         // TODO we must search what should we do if no driver found. for now we just send an notification for all admins
         const noDriverFoundPayload = NotificationPayloads.noDriverFound(orderId);
         await NotificationService.send(
@@ -41,13 +42,14 @@ export class OfferService {
           SOCKET_EVENTS.ADMIN.NO_DRIVER,
           noDriverFoundPayload
         );
-
+        // publish event (no driver found)
         await offerPublisher.publish({
           type: REDIS_EVENT_TYPE.NO_DRIVER_ACCEPTED,
           data: {
             orderId: order.sourceOrderId,
           },
         });
+        console.log('Published NO_DRIVER_ACCEPTED for order: ', order.sourceOrderId); // I will remove this log
         return;
       }
 
