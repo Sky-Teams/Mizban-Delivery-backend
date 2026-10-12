@@ -69,7 +69,7 @@ export class LocationService {
       const isFirstLocation = await RedisService.setIfNotExists(optimizationKey);
 
       if (isFirstLocation) {
-        eventBus.emit(EVENT_BUS_EVENTS.DRIVER_LOCATION_UPDATED, { driverId: driver._id });
+        eventBus.emit(EVENT_BUS_EVENTS.DRIVER_LOCATION_AVAILABLE, { driverId: driver._id });
       }
 
       // Get drivers location from redis
