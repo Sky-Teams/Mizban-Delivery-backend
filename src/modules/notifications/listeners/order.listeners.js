@@ -1,3 +1,7 @@
+import {
+  activateNextPendingBatch,
+  checkBatchForComplete,
+} from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 import { findNearestAndScore } from '#modules/drivers/index.js';
 import { getOfferByOrderId } from '#modules/offers/index.js';
 import { addDriversDataInOrder } from '#modules/orders/index.js';
@@ -74,6 +78,8 @@ export const registerOrderListeners = () => {
       data.deliveredAt
     );
     await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
+
+    await checkBatchForComplete(data.driverId);
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_CANCELLED, async (data) => {
@@ -84,5 +90,10 @@ export const registerOrderListeners = () => {
   eventBus.on(EVENT_BUS_EVENTS.ORDER_RETURNED, async (data) => {
     const payload = NotificationPayloads.orderReturned(data.orderId, data.reason);
     await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
+  });
+
+  eventBus.on(EVENT_BUS_EVENTS.ACTIVE_BATCH_COMPLETED, async (data) => {
+    // Active next pending batch
+    await activateNextPendingBatch(data.driverId);
   });
 };
