@@ -47,6 +47,7 @@ export const EVENT_BUS_EVENTS = {
   OFFER_ACCEPTED: 'offer:accepted',
   OFFER_REJECTED: 'offer:rejected',
   DRIVER_LOCATION_AVAILABLE: 'driver:location:available',
+  ACTIVE_BATCH_COMPLETED: 'active:batch:completed',
 };
 
 export const VEHICLE_TYPE = {
