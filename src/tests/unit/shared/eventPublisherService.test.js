@@ -1,13 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { eventBus } from '#shared/event-bus/eventBus.js';
-import { registerMizbanListeners } from '#modules/notifications/listeners/mizban.listeners.js';
-import {
-  EVENT_BUS_EVENTS,
-  ORDER_STATUS,
-  REDIS_CHANNEL,
-  REDIS_EVENT_TYPES,
-  SERVICE,
-} from '#shared/utils/enums.js';
+import { EventPublisherService } from '#shared/events/eventPublisherService.js';
+import { ORDER_STATUS, REDIS_CHANNEL, REDIS_EVENT_TYPES, SERVICE } from '#shared/utils/enums.js';
 
 const { publishMock, publisherChannels } = vi.hoisted(() => ({
   publishMock: vi.fn(),
@@ -24,13 +17,7 @@ vi.mock('#shared/events/RedisEventPublisher.js', () => ({
   }),
 }));
 
-// eventBus.emit does not wait for async handlers, so we call the registered handler directly and await it
-const runHandler = async (event, data) => {
-  const [handler] = eventBus.listeners(event);
-  await handler(data);
-};
-
-describe('Mizban listeners', () => {
+describe('EventPublisherService.publishOrderEvent', () => {
   const pickedUpAt = new Date('2026-10-01T10:00:00.000Z');
   const deliveredAt = new Date('2026-10-01T10:30:00.000Z');
 
@@ -43,21 +30,19 @@ describe('Mizban listeners', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    eventBus.removeAllListeners();
-    registerMizbanListeners();
   });
 
   it('should create the publisher with the order events channel', () => {
     expect(publisherChannels).toEqual([REDIS_CHANNEL.ORDER_EVENTS_CHANNEL]);
   });
 
-  it('should register handlers for ORDER_PICKEDUP and ORDER_DELIVERED', () => {
-    expect(eventBus.listenerCount(EVENT_BUS_EVENTS.ORDER_PICKEDUP)).toBe(1);
-    expect(eventBus.listenerCount(EVENT_BUS_EVENTS.ORDER_DELIVERED)).toBe(1);
-  });
-
   it('should publish pickedUp event for mizban order', async () => {
-    await runHandler(EVENT_BUS_EVENTS.ORDER_PICKEDUP, { ...basePayload, pickedUpAt });
+    await EventPublisherService.publishOrderEvent({
+      type: REDIS_EVENT_TYPES.ORDER_PICKEDUP,
+      data: { ...basePayload, pickedUpAt },
+      status: ORDER_STATUS.PICKEDUP,
+      timestamp: pickedUpAt,
+    });
 
     expect(publishMock).toHaveBeenCalledTimes(1);
     expect(publishMock).toHaveBeenCalledWith({
@@ -72,7 +57,12 @@ describe('Mizban listeners', () => {
   });
 
   it('should publish delivered event for mizban order', async () => {
-    await runHandler(EVENT_BUS_EVENTS.ORDER_DELIVERED, { ...basePayload, deliveredAt });
+    await EventPublisherService.publishOrderEvent({
+      type: REDIS_EVENT_TYPES.ORDER_DELIVERED,
+      data: { ...basePayload, deliveredAt },
+      status: ORDER_STATUS.DELIVERED,
+      timestamp: deliveredAt,
+    });
 
     expect(publishMock).toHaveBeenCalledTimes(1);
     expect(publishMock).toHaveBeenCalledWith({
@@ -86,23 +76,12 @@ describe('Mizban listeners', () => {
     });
   });
 
-  it('should not publish pickedUp event for non-mizban order', async () => {
-    await runHandler(EVENT_BUS_EVENTS.ORDER_PICKEDUP, {
-      ...basePayload,
-      source: undefined,
-      sourceOrderId: undefined,
-      pickedUpAt,
-    });
-
-    expect(publishMock).not.toHaveBeenCalled();
-  });
-
-  it('should not publish delivered event for non-mizban order', async () => {
-    await runHandler(EVENT_BUS_EVENTS.ORDER_DELIVERED, {
-      ...basePayload,
-      source: undefined,
-      sourceOrderId: undefined,
-      deliveredAt,
+  it('should not publish for non-mizban order', async () => {
+    await EventPublisherService.publishOrderEvent({
+      type: REDIS_EVENT_TYPES.ORDER_DELIVERED,
+      data: { ...basePayload, source: undefined, sourceOrderId: undefined, deliveredAt },
+      status: ORDER_STATUS.DELIVERED,
+      timestamp: deliveredAt,
     });
 
     expect(publishMock).not.toHaveBeenCalled();
@@ -114,7 +93,12 @@ describe('Mizban listeners', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     await expect(
-      runHandler(EVENT_BUS_EVENTS.ORDER_DELIVERED, { ...basePayload, deliveredAt })
+      EventPublisherService.publishOrderEvent({
+        type: REDIS_EVENT_TYPES.ORDER_DELIVERED,
+        data: { ...basePayload, deliveredAt },
+        status: ORDER_STATUS.DELIVERED,
+        timestamp: deliveredAt,
+      })
     ).resolves.toBeUndefined();
 
     expect(consoleSpy).toHaveBeenCalledWith('Failed to publish order event to Mizban:', error);
