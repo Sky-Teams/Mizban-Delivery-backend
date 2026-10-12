@@ -33,6 +33,7 @@ import {
   REASON_TYPES,
   ROLES,
   OFFER_STATUS,
+  SERVICE,
 } from '#shared/utils/enums.js';
 import { DtoService } from '#shared/utils/dtoService.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
@@ -647,6 +648,8 @@ describe('pickupOrderWithTransaction', () => {
       timeline: {},
       save: vi.fn(),
       driverId: 'driver1',
+      source: SERVICE.MIZBAN,
+      sourceOrderId: 'mizban-order-1',
     };
 
     const driver = {
@@ -669,6 +672,9 @@ describe('pickupOrderWithTransaction', () => {
       expect.objectContaining({
         orderId: 'delivery1',
         driverId: 'driver1',
+        pickedUpAt: order.timeline.pickedUpAt,
+        source: SERVICE.MIZBAN,
+        sourceOrderId: 'mizban-order-1',
       })
     );
   });
@@ -862,6 +868,8 @@ describe('deliverOrderWithTransaction', () => {
       save: vi.fn(),
       driverId: 'driver1',
       paymentStatus: PAYMENT_STATUS.PENDING,
+      source: SERVICE.MIZBAN,
+      sourceOrderId: 'mizban-order-1',
     };
 
     const driver = {
@@ -892,6 +900,9 @@ describe('deliverOrderWithTransaction', () => {
       expect.objectContaining({
         orderId: 'delivery1',
         driverId: 'driver1',
+        deliveredAt: order.timeline.deliveredAt,
+        source: SERVICE.MIZBAN,
+        sourceOrderId: 'mizban-order-1',
       })
     );
   });
