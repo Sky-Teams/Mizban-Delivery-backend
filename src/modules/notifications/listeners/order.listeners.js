@@ -3,7 +3,13 @@ import { getOfferByOrderId } from '#modules/offers/index.js';
 import { addDriversDataInOrder } from '#modules/orders/index.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
 import { DbJobService } from '#shared/utils/dbJob.service.js';
-import { EVENT_BUS_EVENTS, SOCKET_EVENTS } from '#shared/utils/enums.js';
+import {
+  EVENT_BUS_EVENTS,
+  ORDER_STATUS,
+  REDIS_EVENT_TYPES,
+  SOCKET_EVENTS,
+} from '#shared/utils/enums.js';
+import { EventPublisherService } from '#shared/events/eventPublisherService.js';
 import { NotificationPayloads } from '#shared/utils/notificationPayloadBuilder.js';
 import { NotificationService } from '#shared/utils/notificationService.js';
 import { OfferService } from '#shared/utils/offerService.js';
@@ -32,6 +38,14 @@ export const registerOrderListeners = () => {
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_PICKEDUP, async (data) => {
+    // Notify Mizban: order pickedUp
+    await EventPublisherService.publishOrderEvent({
+      type: REDIS_EVENT_TYPES.ORDER_PICKEDUP,
+      data,
+      status: ORDER_STATUS.PICKEDUP,
+      timestamp: data.pickedUpAt,
+    });
+
     const payload = NotificationPayloads.orderPickedUp(
       data.orderId,
       data.driverId,
@@ -42,6 +56,14 @@ export const registerOrderListeners = () => {
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_DELIVERED, async (data) => {
+    // Notify Mizban: order delivered
+    await EventPublisherService.publishOrderEvent({
+      type: REDIS_EVENT_TYPES.ORDER_DELIVERED,
+      data,
+      status: ORDER_STATUS.DELIVERED,
+      timestamp: data.deliveredAt,
+    });
+
     const payload = NotificationPayloads.orderDelivered(
       data.orderId,
       data.driverId,
