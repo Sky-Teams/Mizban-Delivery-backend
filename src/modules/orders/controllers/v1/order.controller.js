@@ -13,8 +13,8 @@ import {
   getOrderBySourceId,
   retryDriverSearch,
 } from '../../services/v1/order.service.js';
-import { notFound, unauthorized } from '#shared/errors/error.js';
-import { ROLES } from '#shared/utils/enums.js';
+import { AppError, notFound, unauthorized } from '#shared/errors/error.js';
+import { ORDER_STATUS, ROLES } from '#shared/utils/enums.js';
 import { fetchDriverByUserId } from '#modules/drivers/index.js';
 import { DtoService } from '#shared/utils/dtoService.js';
 import { cleanObject } from '#shared/utils/object.helper.js';

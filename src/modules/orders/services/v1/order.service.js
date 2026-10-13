@@ -30,6 +30,12 @@ import { calculateDeliveryPrice } from './pricing.service.js';
 //#region Admin Services
 
 export const retryDriverSearch = async (order) => {
+  if (order.status !== ORDER_STATUS.CREATED)
+    throw new AppError(
+      'Cannot retry driver search: order is no longer in the created state.',
+      409,
+      ERROR_CODES.ORDER_DRIVER_SEARCH_RETRY_NOT_ALLOWED
+    );
   order.recommendedDrivers = [];
   order.currentDriverIndex = 0;
   await order.save();
