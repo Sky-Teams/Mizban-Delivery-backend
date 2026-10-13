@@ -37,8 +37,7 @@ export const isBatchSizeAvailable = (batchOrders) => {
 
 export const getEstimatedReadyAt = (order) => {
   // TODO: Replace the estimated ready time with the actual ready time
-  // from the restaurant/order preparation event when real-time preparation tracking is available.
-  const createdAt = order.createdAt;
+  const createdAt = order.createdAt.getTime();
   const estimatedPrep = order.estimatedPrepTimeMinutes * 60 * 1000;
 
   return new Date(createdAt + estimatedPrep);

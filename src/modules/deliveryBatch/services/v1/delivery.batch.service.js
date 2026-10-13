@@ -1,6 +1,7 @@
 import { DeliveryBatchModel } from '#modules/deliveryBatch/model/delivery.batch.model.js';
 import { OrderModel } from '#modules/orders/index.js';
 import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import {
   isBatchSizeAvailable,
@@ -8,7 +9,7 @@ import {
   isPickupCompatible,
   isPreparationCompatible,
 } from '#shared/utils/batch.helper.js';
-import { BATCH_STATUS, ORDER_STATUS, SERVICE } from '#shared/utils/enums.js';
+import { BATCH_STATUS, ORDER_STATUS } from '#shared/utils/enums.js';
 
 export const getDriverPendingBatches = async (driverId) => {
   return DeliveryBatchModel.find({
