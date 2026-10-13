@@ -25,7 +25,7 @@ const deliveryBatchSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: getObjectValues(BATCH_STATUS),
-      default: BATCH_STATUS.PENDING,
+      default: BATCH_STATUS.ACTIVE,
     },
     startedAt: {
       type: Date,

@@ -1,9 +1,10 @@
+import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 import { fetchDriverByDriverId } from '#modules/drivers/index.js';
 import { createOffer, getOffer } from '#modules/offers/index.js';
 import { getOrderById, increaseDriverIndex } from '#modules/orders/index.js';
 import { DbJobService } from './dbJob.service.js';
 import { DtoService } from './dtoService.js';
-import { DRIVER_STATUS, OFFER_STATUS, ORDER_STATUS, SOCKET_EVENTS } from './enums.js';
+import { BATCH_CONFIG, DRIVER_STATUS, OFFER_STATUS, ORDER_STATUS, SOCKET_EVENTS } from './enums.js';
 import { NotificationPayloads } from './notificationPayloadBuilder.js';
 import { NotificationService } from './notificationService.js';
 
@@ -35,10 +36,11 @@ export class OfferService {
       }
 
       const driver = await fetchDriverByDriverId(driversInfo[currentIndex].id);
+      const activeBatch = await driverActiveBatch(driver._id);
       if (
         !driver ||
-        driver.status !== DRIVER_STATUS.IDLE ||
-        driver.activeOrders >= driver.maxOrders
+        driver.status === DRIVER_STATUS.OFFLINE ||
+        activeBatch?.orderIds?.length === BATCH_CONFIG.MAX_BATCH_SIZE
       ) {
         await increaseDriverIndex(orderId);
         return await OfferService.sendOfferToDriver(orderId);
