@@ -4,6 +4,8 @@ import { verifyJWT } from '#shared/utils/jwt.js';
 import { getAllAdmins, getUserDevicesByUserId } from '#modules/users/index.js';
 import { pushNotification } from '#shared/utils/pushNotification.js';
 import { registerSocketEvents } from '#shared/socket/registerSocketEvents.js';
+import { ROLES } from '#shared/utils/enums.js';
+import { LocationService } from '#shared/utils/locationService.js';
 
 export class CustomSocket {
   static #io = null;
@@ -52,6 +54,10 @@ export class CustomSocket {
 
       // Register socket events
       registerSocketEvents(socket);
+
+      if (socket.role === ROLES.DRIVER) {
+        LocationService.startDriverTracking(socket.userId);
+      }
 
       socket.on('disconnect', () => {
         console.log(`Socket disconnected: ${socket.id}`);
@@ -166,5 +172,20 @@ export class CustomSocket {
   // Send live location to admin
   static async sendLiveLocationToAdmins(event, payload) {
     this.getIO().to('admins').emit(event, payload);
+  }
+
+  // Emit to user online
+  static emitToOnlineUser(userId, event) {
+    if (!this.#io) throw new Error('Socket is not initialized');
+
+    userId = userId.toString();
+
+    if (!this.isUserOnline(userId)) {
+      return false;
+    }
+
+    this.getIO().to(userId).emit(event);
+
+    return true;
   }
 }

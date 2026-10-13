@@ -336,6 +336,8 @@ export const pickupAnOrder = async (session, orderId, user) => {
     orderId,
     driverId: driver._id,
     pickedUpAt: order.timeline.pickedUpAt,
+    source: order.source,
+    sourceOrderId: order.sourceOrderId,
   });
 
   // Return filtered fields to driver
@@ -382,6 +384,8 @@ export const deliverAnOrder = async (session, orderId, user) => {
     orderId,
     driverId: driver._id,
     deliveredAt: order.timeline.deliveredAt,
+    source: order.source,
+    sourceOrderId: order.sourceOrderId,
   });
 
   // Return filtered fields to driver
@@ -748,8 +752,8 @@ export const calculateOrderDeliveryPrice = async (orderData) => {
   return calculateDeliveryPrice(orderData);
 };
 
-export const getDriverOrderByStatus = async (driverId, status) => {
-  const result = await OrderModel.findOne({ driverId, status });
+export const getDriverOrdersByStatus = async (driverId, status) => {
+  const result = await OrderModel.find({ driverId, status });
   return result;
 };
 
