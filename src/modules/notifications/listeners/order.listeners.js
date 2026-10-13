@@ -7,7 +7,7 @@ import { LocationService } from '#shared/utils/locationService.js';
 import {
   EVENT_BUS_EVENTS,
   ORDER_STATUS,
-  REDIS_EVENT_TYPES,
+  REDIS_EVENT_TYPE,
   SOCKET_EVENTS,
 } from '#shared/utils/enums.js';
 import { EventPublisherService } from '#shared/events/eventPublisherService.js';
@@ -46,7 +46,7 @@ export const registerOrderListeners = () => {
   eventBus.on(EVENT_BUS_EVENTS.ORDER_PICKEDUP, async (data) => {
     // Notify Mizban: order pickedUp
     await EventPublisherService.publishOrderEvent({
-      type: REDIS_EVENT_TYPES.ORDER_PICKEDUP,
+      type: REDIS_EVENT_TYPE.ORDER_PICKEDUP,
       data,
       status: ORDER_STATUS.PICKEDUP,
       timestamp: data.pickedUpAt,
@@ -64,7 +64,7 @@ export const registerOrderListeners = () => {
   eventBus.on(EVENT_BUS_EVENTS.ORDER_DELIVERED, async (data) => {
     // Notify Mizban: order delivered
     await EventPublisherService.publishOrderEvent({
-      type: REDIS_EVENT_TYPES.ORDER_DELIVERED,
+      type: REDIS_EVENT_TYPE.ORDER_DELIVERED,
       data,
       status: ORDER_STATUS.DELIVERED,
       timestamp: data.deliveredAt,
