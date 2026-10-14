@@ -116,6 +116,12 @@ export const REDIS_KEYS = {
 // Redis channel
 export const REDIS_CHANNEL = {
   LIVE_LOCATION_CHANNEL: process.env.LIVE_LOCATION_CHANNEL || 'driver.location.updated',
+  ORDER_EVENTS_CHANNEL: process.env.ORDER_EVENTS_CHANNEL || 'delivery.order.events',
+};
+
+export const REDIS_EVENT_TYPES = {
+  ORDER_PICKEDUP: 'order.pickedUp',
+  ORDER_DELIVERED: 'order.delivered',
 };
 
 export const BATCH_STATUS = {
