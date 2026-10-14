@@ -37,7 +37,7 @@ const deliveryBatchSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: getObjectValues(BATCH_STATUS),
-      default: BATCH_STATUS.PENDING,
+      default: BATCH_STATUS.ACTIVE,
     },
     startedAt: {
       type: Date,
@@ -54,7 +54,7 @@ const deliveryBatchSchema = new mongoose.Schema(
 deliveryBatchSchema.index({ driver: 1, status: 1 });
 /** One driver can have many pending batches, but only one active batch. */
 deliveryBatchSchema.index(
-  { driverId: 1 },
+  { driver: 1 },
   {
     unique: true,
     partialFilterExpression: {
