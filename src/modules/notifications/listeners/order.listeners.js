@@ -1,11 +1,12 @@
 import { findNearestAndScore } from '#modules/drivers/index.js';
-import { getOfferByOrderId } from '#modules/offers/index.js';
+import { getOfferByOrderId, OfferModel } from '#modules/offers/index.js';
 import { addDriversDataInOrder } from '#modules/orders/index.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
 import { DbJobService } from '#shared/utils/dbJob.service.js';
 import { LocationService } from '#shared/utils/locationService.js';
 import {
   EVENT_BUS_EVENTS,
+  OFFER_STATUS,
   ORDER_STATUS,
   REDIS_EVENT_TYPE,
   SOCKET_EVENTS,
@@ -26,7 +27,17 @@ export const registerOrderListeners = () => {
 
     const drivers = await findNearestAndScore(data.pickupLocation.coordinates);
 
-    await addDriversDataInOrder(orderId, drivers);
+    // It returns only the values (driver ids), not the full offer documents.
+    const rejected = await OfferModel.distinct('driver', {
+      order: orderId,
+      status: OFFER_STATUS.REJECTED,
+    });
+
+    const rejectedIds = new Set(rejected.map(String));
+
+    const eligibleDrivers = drivers.filter((d) => !rejectedIds.has(String(d._id)));
+
+    await addDriversDataInOrder(orderId, eligibleDrivers);
     await OfferService.sendOfferToDriver(orderId);
   });
 
