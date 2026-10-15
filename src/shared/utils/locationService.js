@@ -8,6 +8,7 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { DtoService } from './dtoService.js';
 import {
+  BATCH_CONFIG,
   EVENT_BUS_EVENTS,
   ORDER_STATUS,
   REDIS_CHANNEL,
@@ -19,6 +20,8 @@ import { RedisService } from './redisLocationService.js';
 import { handleLocationError } from './handleLocationError.js';
 import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
+import { getDriverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
+import { calculateDistanceMeters } from './distance.helper.js';
 
 const locationEventPublisher = new RedisEventPublisher(REDIS_CHANNEL.LIVE_LOCATION_CHANNEL);
 
@@ -64,12 +67,30 @@ export class LocationService {
         updatedAt,
       });
 
-      const optimizationKey = `${REDIS_KEYS.DRIVER_ROUTE_OPTIMIZATION_STARTED}${driver._id}`;
+      const activeBatch = await getDriverActiveBatch(driver._id);
 
-      const isFirstLocation = await RedisService.setIfNotExists(optimizationKey);
+      // Route optimization for active batch
+      if (activeBatch) {
+        const optimizationBatchKey = `${REDIS_KEYS.DRIVER_ROUTE_OPTIMIZATION_STARTED}${driver._id}:${activeBatch._id}`;
 
-      if (isFirstLocation) {
-        eventBus.emit(EVENT_BUS_EVENTS.DRIVER_LOCATION_AVAILABLE, { driverId: driver._id });
+        const isFirstLocation = await RedisService.setIfNotExists(optimizationBatchKey);
+        const deviationMeters = activeBatch.stops
+          ? calculateDistanceMeters(
+              [lng, lat],
+              [activeBatch.stops[0].location[0], activeBatch.stops[0].location[1]]
+            )
+          : 0;
+
+        if (
+          isFirstLocation ||
+          !activeBatch?.stops?.length ||
+          activeBatch?.stops?.length !== activeBatch.orderIds?.length * 2 ||
+          deviationMeters > BATCH_CONFIG.MAX_ROUTE_DEVIATION_METERS
+        ) {
+          eventBus.emit(EVENT_BUS_EVENTS.DRIVER_LOCATION_AVAILABLE, {
+            driverId: driver._id,
+          });
+        }
       }
 
       // Get drivers location from redis

@@ -18,6 +18,7 @@ import { EventPublisherService } from '#shared/events/eventPublisherService.js';
 import { NotificationPayloads } from '#shared/utils/notificationPayloadBuilder.js';
 import { NotificationService } from '#shared/utils/notificationService.js';
 import { OfferService } from '#shared/utils/offerService.js';
+import { RouteOptimizationService } from '#shared/utils/routeOptimizationService.js';
 
 export const registerOrderListeners = () => {
   eventBus.on(EVENT_BUS_EVENTS.ORDER_CREATED, async (data) => {
@@ -43,9 +44,15 @@ export const registerOrderListeners = () => {
     // Cancel the process of sending offer to drivers
     const offer = await getOfferByOrderId(data.orderId);
     if (offer) await DbJobService.cancelOfferTimeout(offer._id);
+
+    // Route optimization
+    await RouteOptimizationService.optimizeRoute(data.driverId);
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_PICKEDUP, async (data) => {
+    // Mark pickup stop as completed
+    await RouteOptimizationService.completePickUpStop(data.driverId, data.orderId);
+
     // Notify Mizban: order pickedUp
     await EventPublisherService.publishOrderEvent({
       type: REDIS_EVENT_TYPES.ORDER_PICKEDUP,
@@ -64,6 +71,9 @@ export const registerOrderListeners = () => {
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_DELIVERED, async (data) => {
+    // Mark deliver stop as completed
+    await RouteOptimizationService.completeDeliveryStop(data.driverId, data.orderId);
+
     // Notify Mizban: order delivered
     await EventPublisherService.publishOrderEvent({
       type: REDIS_EVENT_TYPES.ORDER_DELIVERED,

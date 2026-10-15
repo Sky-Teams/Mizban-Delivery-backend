@@ -2,7 +2,7 @@ import { DeliveryBatchModel } from '#modules/deliveryBatch/model/delivery.batch.
 import { OrderModel } from '#modules/orders/index.js';
 import { getOrderById, getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
-import { AppError, notFound } from '#shared/errors/error.js';
+import { AppError } from '#shared/errors/error.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
 import {
   isBatchSizeAvailable,
