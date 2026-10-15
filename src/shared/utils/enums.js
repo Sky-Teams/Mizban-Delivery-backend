@@ -133,10 +133,16 @@ export const BATCH_CONFIG = {
   // MAX_PICKUP_DISTANCE_METERS: 4000, // meter
   // MAX_DELIVERY_DISTANCE_METERS: 4000, // meter
   // MAX_PREPARATION_MINUTE: 15, // minute
-  MAX_BATCH_SIZE: process.env.MAX_DELIVERY_BATCH_SIZE || 5,
+  MAX_ROUTE_DEVIATION_METERS: 300,
+  MAX_BATCH_SIZE: process.env.MAX_DELIVERY_BATCH_SIZE || 10,
 };
 
 export const STOP_TYPE = {
-  PICKUP: 'PICKUP',
-  DELIVERY: 'DELIVERY',
+  PICKUP: 'pickUp',
+  DELIVERY: 'delivery',
+};
+
+export const STOP_STATUS = {
+  PENDING: 'pending',
+  COMPLETED: 'completed',
 };

@@ -1,4 +1,4 @@
-import { BATCH_STATUS, STOP_TYPE } from '#shared/utils/enums.js';
+import { BATCH_STATUS, STOP_STATUS, STOP_TYPE } from '#shared/utils/enums.js';
 import { getObjectValues } from '#shared/utils/object.helper.js';
 import mongoose from 'mongoose';
 
@@ -15,7 +15,7 @@ const deliveryBatchSchema = new mongoose.Schema(
         ref: 'Order',
       },
     ],
-    routeOrder: [
+    stops: [
       {
         _id: false,
         orderId: {
@@ -23,7 +23,7 @@ const deliveryBatchSchema = new mongoose.Schema(
           ref: 'Order',
           required: true,
         },
-        type: {
+        stopType: {
           type: String,
           enum: getObjectValues(STOP_TYPE),
           required: true,
@@ -31,6 +31,11 @@ const deliveryBatchSchema = new mongoose.Schema(
         location: {
           type: [Number],
           required: true,
+        },
+        stopStatus: {
+          type: String,
+          enum: getObjectValues(STOP_STATUS),
+          default: STOP_STATUS.PENDING,
         },
       },
     ],

@@ -1,4 +1,4 @@
-import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
+import { getDriverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 import { fetchDriverByDriverId } from '#modules/drivers/index.js';
 import { createOffer, getOffer } from '#modules/offers/index.js';
 import { getOrderById, increaseDriverIndex } from '#modules/orders/index.js';
@@ -36,7 +36,7 @@ export class OfferService {
       }
 
       const driver = await fetchDriverByDriverId(driversInfo[currentIndex].id);
-      const activeBatch = await driverActiveBatch(driver._id);
+      const activeBatch = await getDriverActiveBatch(driver._id);
       if (
         !driver ||
         driver.status === DRIVER_STATUS.OFFLINE ||

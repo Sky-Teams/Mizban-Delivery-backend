@@ -7,11 +7,7 @@ export const registerLocationListeners = () => {
     console.log('Driver location available', data.driverId);
 
     try {
-      // Return the active batch if one exists; otherwise, activate the oldest pending batch.
-      const activeBatch = await RouteOptimizationService.activateNextBatch(data.driverId);
-      if (!activeBatch?.routeOrder?.length) {
-        await RouteOptimizationService.optimizeActiveBatchIfNeeded(activeBatch);
-      }
+      await RouteOptimizationService.optimizeRoute(data.driverId);
     } catch (error) {
       console.error('Failed to optimize active batch:', error);
     }

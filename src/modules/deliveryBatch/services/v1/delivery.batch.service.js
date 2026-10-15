@@ -151,7 +151,7 @@ const createActiveBatch = async (session, driverId, orderId) => {
 };
 
 export const orderAssignedForBatching = async (session, driverId, orderId) => {
-  const activeBatch = await driverActiveBatch(driverId);
+  const activeBatch = await getDriverActiveBatch(driverId);
 
   if (!activeBatch) {
     return createActiveBatch(session, driverId, orderId);
@@ -164,7 +164,7 @@ export const orderAssignedForBatching = async (session, driverId, orderId) => {
   return addOrderToActiveBatch(session, activeBatch._id, driverId, orderId);
 };
 
-export const driverActiveBatch = async (driverId) => {
+export const getDriverActiveBatch = async (driverId) => {
   return await DeliveryBatchModel.findOne({
     driver: driverId,
     status: BATCH_STATUS.ACTIVE,
@@ -172,44 +172,44 @@ export const driverActiveBatch = async (driverId) => {
 };
 
 // Return the active batch if one exists; otherwise, activate the oldest pending batch.
-export const activateNextPendingBatch = async (driverId) => {
-  // Check active batch
-  let activeBatch;
-  activeBatch = await DeliveryBatchModel.findOne({
-    driver: driverId,
-    status: BATCH_STATUS.ACTIVE,
-  });
+// export const activateNextPendingBatch = async (driverId) => {
+//   // Check active batch
+//   let activeBatch;
+//   activeBatch = await DeliveryBatchModel.findOne({
+//     driver: driverId,
+//     status: BATCH_STATUS.ACTIVE,
+//   });
 
-  if (activeBatch) return activeBatch;
+//   if (activeBatch) return activeBatch;
 
-  // Active oldest batches
-  const oldestPendingBatch = await DeliveryBatchModel.findOne({
-    driver: driverId,
-    status: BATCH_STATUS.PENDING,
-  }).sort({
-    createdAt: 1,
-  });
+//   // Active oldest batches
+//   const oldestPendingBatch = await DeliveryBatchModel.findOne({
+//     driver: driverId,
+//     status: BATCH_STATUS.PENDING,
+//   }).sort({
+//     createdAt: 1,
+//   });
 
-  if (!oldestPendingBatch) return null;
+//   if (!oldestPendingBatch) return null;
 
-  // Update last batch to active batch
-  activeBatch = await DeliveryBatchModel.findOneAndUpdate(
-    {
-      _id: oldestPendingBatch._id,
-      driver: driverId,
-      status: BATCH_STATUS.PENDING,
-    },
-    {
-      $set: {
-        status: BATCH_STATUS.ACTIVE,
-        startedAt: new Date(),
-      },
-    },
-    {
-      returnDocument: 'after',
-      runValidators: true,
-    }
-  );
+//   // Update last batch to active batch
+//   activeBatch = await DeliveryBatchModel.findOneAndUpdate(
+//     {
+//       _id: oldestPendingBatch._id,
+//       driver: driverId,
+//       status: BATCH_STATUS.PENDING,
+//     },
+//     {
+//       $set: {
+//         status: BATCH_STATUS.ACTIVE,
+//         startedAt: new Date(),
+//       },
+//     },
+//     {
+//       returnDocument: 'after',
+//       runValidators: true,
+//     }
+//   );
 
-  return activeBatch;
-};
+//   return activeBatch;
+// };
