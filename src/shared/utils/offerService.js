@@ -36,11 +36,15 @@ export class OfferService {
       }
 
       const driver = await fetchDriverByDriverId(driversInfo[currentIndex].id);
-      const activeBatch = await driverActiveBatch(driver._id);
+      let activeBatch;
+      if (driver) {
+        activeBatch = await driverActiveBatch(driver._id);
+      }
+
       if (
         !driver ||
         driver.status === DRIVER_STATUS.OFFLINE ||
-        activeBatch?.orderIds?.length === BATCH_CONFIG.MAX_BATCH_SIZE
+        (activeBatch && activeBatch?.orderIds?.length >= BATCH_CONFIG.MAX_BATCH_SIZE)
       ) {
         await increaseDriverIndex(orderId);
         return await OfferService.sendOfferToDriver(orderId);

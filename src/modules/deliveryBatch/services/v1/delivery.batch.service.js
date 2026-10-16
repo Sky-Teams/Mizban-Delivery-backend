@@ -145,9 +145,21 @@ const createActiveBatch = async (session, driverId, orderId) => {
     }
   );
 
-  if (!updateOrder) throw notFound('order');
+  if (!updateOrder)
+    throw new AppError(
+      'Order is not eligible for batching',
+      409,
+      ERROR_CODES.ORDER_NOT_ELIGIBLE_FOR_BATCHING
+    );
 
   return deliveryBatch;
+};
+
+export const driverActiveBatch = async (driverId) => {
+  return await DeliveryBatchModel.findOne({
+    driver: driverId,
+    status: BATCH_STATUS.ACTIVE,
+  });
 };
 
 export const orderAssignedForBatching = async (session, driverId, orderId) => {
@@ -162,11 +174,4 @@ export const orderAssignedForBatching = async (session, driverId, orderId) => {
   }
 
   return addOrderToActiveBatch(session, activeBatch._id, driverId, orderId);
-};
-
-export const driverActiveBatch = async (driverId) => {
-  return await DeliveryBatchModel.findOne({
-    driver: driverId,
-    status: BATCH_STATUS.ACTIVE,
-  });
 };

@@ -131,5 +131,5 @@ export const BATCH_CONFIG = {
   // MAX_PICKUP_DISTANCE_METERS: 4000, // meter
   // MAX_DELIVERY_DISTANCE_METERS: 4000, // meter
   // MAX_PREPARATION_MINUTE: 15, // minute
-  MAX_BATCH_SIZE: process.env.MAX_DELIVERY_BATCH_SIZE || 5,
+  MAX_BATCH_SIZE: Number(process.env.MAX_DELIVERY_BATCH_SIZE) || 5,
 };
