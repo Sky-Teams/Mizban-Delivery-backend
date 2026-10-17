@@ -48,3 +48,15 @@ export const getTimeDifferenceInMinutes = (dateA, dateB) => {
 
   return differenceMs / (60 * 1000);
 };
+
+// Check driver Location fresh
+export const isLocationFresh = async (location) => {
+  const MAX_LOCATION_AGE = 5 * 60 * 1000; // 5 min
+  const locationAge = location?.updatedAt
+    ? new Date() - new Date(location.updatedAt).getTime()
+    : Infinity;
+  const isLocationNew =
+    Number.isFinite(locationAge) && locationAge >= 0 && locationAge <= MAX_LOCATION_AGE;
+
+  return isLocationNew;
+};
