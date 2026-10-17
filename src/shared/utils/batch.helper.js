@@ -30,7 +30,7 @@ export const isPreparationCompatible = (currentOrder, newOrder) => {
 
 /** Check maximum orders in batch model */
 export const isBatchSizeAvailable = (batchOrders) => {
-  const orderJobs = batchOrders.orderIds.length;
+  const orderJobs = batchOrders?.orderIds?.length;
 
   return orderJobs < BATCH_CONFIG.MAX_BATCH_SIZE;
 };

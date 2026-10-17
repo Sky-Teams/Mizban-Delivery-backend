@@ -1,80 +1,9 @@
 import { DeliveryBatchModel } from '#modules/deliveryBatch/model/delivery.batch.model.js';
 import { OrderModel } from '#modules/orders/index.js';
-// import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
-import { AppError, notFound } from '#shared/errors/error.js';
-// import {
-//   isBatchSizeAvailable,
-//   isDeliveryCompatible,
-//   isPickupCompatible,
-//   isPreparationCompatible,
-// } from '#shared/utils/batch.helper.js';
-import { BATCH_CONFIG, BATCH_STATUS } from '#shared/utils/enums.js';
-
-/** Find the best pending batch for a new order. */
-// const findCompatibleBatch = async (driverId, newOrder) => {
-//   const pendingBatches = await getDriverPendingBatches(driverId);
-
-//   let compatibleBatches = [];
-
-//   for (const batch of pendingBatches) {
-//     const canAdd = await canAddOrderToBatch(batch, newOrder);
-
-//     if (canAdd) {
-//       compatibleBatches.push(batch);
-//     }
-//   }
-
-//   if (!compatibleBatches.length) return null;
-
-//   return compatibleBatches.sort(
-//     (batchA, batchB) => batchB.orderIds.length - batchA.orderIds.length
-//   )[0];
-// };
-
-/** Check whether a new order can be added to the batch. */
-// export const canAddOrderToBatch = async (deliveryBatch, newOrder) => {
-//   // Check maximum batch orders
-//   if (!isBatchSizeAvailable(deliveryBatch)) {
-//     return false;
-//   }
-
-//   const orders = await getOrdersByIds(deliveryBatch.orderIds);
-
-//   for (const order of orders) {
-//     // Check source of new order
-//     if (order.source !== newOrder.source) {
-//       return false;
-//     }
-
-// // Check pickUp location
-// if (!isPickupCompatible(order, newOrder)) {
-//   return false;
-// }
-
-// // Check dropOff location
-// if (!isDeliveryCompatible(order, newOrder)) {
-//   return false;
-// }
-
-// // Check preparation time
-// if (!isPreparationCompatible(order, newOrder)) {
-//   return false;
-// }
-//   }
-
-//   return true;
-// };
-
-// export const validateOrderForBatching = async (order) => {
-// if (order.status !== ORDER_STATUS.ASSIGNED || order.batchId) {
-//   throw new AppError(
-//     'Order is not eligible for batching.',
-//     409,
-//     ERROR_CODES.ORDER_NOT_ELIGIBLE_FOR_BATCHING
-//   );
-// }
-// };
+import { AppError } from '#shared/errors/error.js';
+import { isBatchSizeAvailable } from '#shared/utils/batch.helper.js';
+import { BATCH_STATUS } from '#shared/utils/enums.js';
 
 const addOrderToActiveBatch = async (session, deliveryBatchId, driverId, orderId) => {
   const updateDeliveryBatch = await DeliveryBatchModel.findOneAndUpdate(
@@ -88,7 +17,7 @@ const addOrderToActiveBatch = async (session, deliveryBatchId, driverId, orderId
   );
 
   if (!updateDeliveryBatch)
-    throw new AppError('Batch not available', 409, ERROR_CODES.ORDER_NOT_ELIGIBLE_FOR_BATCHING);
+    throw new AppError('Batch not available', 409, ERROR_CODES.DELIVERY_BATCH_NOT_AVAILABLE);
 
   const updateOrder = await OrderModel.findOneAndUpdate(
     {
@@ -169,8 +98,8 @@ export const orderAssignedForBatching = async (session, driverId, orderId) => {
     return createActiveBatch(session, driverId, orderId);
   }
 
-  if (activeBatch.orderIds.length >= BATCH_CONFIG.MAX_BATCH_SIZE) {
-    throw new AppError('Delivery batch is full', 409, ERROR_CODES.ORDER_NOT_ELIGIBLE_FOR_BATCHING);
+  if (!isBatchSizeAvailable(activeBatch)) {
+    throw new AppError('Delivery batch is full', 409, ERROR_CODES.DELIVERY_BATCH_IS_FULL);
   }
 
   return addOrderToActiveBatch(session, activeBatch._id, driverId, orderId);
