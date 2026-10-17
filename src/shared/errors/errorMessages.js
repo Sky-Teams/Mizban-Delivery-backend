@@ -738,4 +738,14 @@ export const ERROR_MESSAGES = {
     fa: 'سفارش شرایط لازم برای بچ شدن را ندارد',
     ps: 'دا امر د بچ کېدو لپاره لازم شرایط نه لري',
   },
+  [ERROR_CODES.DELIVERY_BATCH_IS_FULL]: {
+    en: 'Delivery batch is full',
+    fa: 'ظرفیت مجموعه سفارش‌ها تکمیل شده است',
+    ps: 'د فرمایشونو د مجموعې ظرفیت بشپړ شوی دی',
+  },
+  [ERROR_CODES.DELIVERY_BATCH_NOT_AVAILABLE]: {
+    en: 'Delivery batch is not available',
+    fa: 'مجموعه سفارش‌ها در دسترس نیست',
+    ps: 'د فرمایشونو مجموعه شتون نه لري',
+  },
 };

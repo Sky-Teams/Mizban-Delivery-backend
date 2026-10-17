@@ -30,13 +30,12 @@ export const isPreparationCompatible = (currentOrder, newOrder) => {
 
 /** Check maximum orders in batch model */
 export const isBatchSizeAvailable = (batchOrders) => {
-  const orderJobs = batchOrders.orderIds.length;
+  const orderJobs = batchOrders?.orderIds?.length;
 
   return orderJobs < BATCH_CONFIG.MAX_BATCH_SIZE;
 };
 
 export const getEstimatedReadyAt = (order) => {
-  // TODO: Replace the estimated ready time with the actual ready time
   const createdAt = order.createdAt.getTime();
   const estimatedPrep = order.estimatedPrepTimeMinutes * 60 * 1000;
 
