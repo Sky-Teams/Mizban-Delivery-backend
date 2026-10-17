@@ -9,7 +9,7 @@ import {
   isPickupCompatible,
   isPreparationCompatible,
 } from '#shared/utils/batch.helper.js';
-import { BATCH_STATUS } from '#shared/utils/enums.js';
+import { BATCH_STATUS, ORDER_STATUS } from '#shared/utils/enums.js';
 
 const addOrderToActiveBatch = async (session, deliveryBatchId, driverId, orderId) => {
   const updateDeliveryBatch = await DeliveryBatchModel.findOneAndUpdate(
@@ -103,6 +103,9 @@ export const canAddNewOrder = async (batch, orderId) => {
   const newOrderDetails = await getOrderById(orderId);
 
   for (const order of orders) {
+    if (order.status === ORDER_STATUS.DELIVERED || order.status === ORDER_STATUS.CANCELLED)
+      continue;
+
     if (!isPickupCompatible(order, newOrderDetails)) return false;
 
     if (!isDeliveryCompatible(order, newOrderDetails)) return false;
