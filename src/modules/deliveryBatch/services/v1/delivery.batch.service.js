@@ -1,8 +1,14 @@
 import { DeliveryBatchModel } from '#modules/deliveryBatch/model/delivery.batch.model.js';
 import { OrderModel } from '#modules/orders/index.js';
+import { getOrderById, getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError } from '#shared/errors/error.js';
-import { isBatchSizeAvailable } from '#shared/utils/batch.helper.js';
+import {
+  isBatchSizeAvailable,
+  isDeliveryCompatible,
+  isPickupCompatible,
+  isPreparationCompatible,
+} from '#shared/utils/batch.helper.js';
 import { BATCH_STATUS } from '#shared/utils/enums.js';
 
 const addOrderToActiveBatch = async (session, deliveryBatchId, driverId, orderId) => {
@@ -91,6 +97,22 @@ export const driverActiveBatch = async (driverId) => {
   });
 };
 
+export const canAddNewOrder = async (batch, orderId) => {
+  const orders = await getOrdersByIds(batch.orderIds);
+
+  const newOrderDetails = await getOrderById(orderId);
+
+  for (const order of orders) {
+    if (!isPickupCompatible(order, newOrderDetails)) return false;
+
+    if (!isDeliveryCompatible(order, newOrderDetails)) return false;
+
+    if (!isPreparationCompatible(order, newOrderDetails)) return false;
+  }
+
+  return true;
+};
+
 export const orderAssignedForBatching = async (session, driverId, orderId) => {
   const activeBatch = await driverActiveBatch(driverId);
 
@@ -100,6 +122,15 @@ export const orderAssignedForBatching = async (session, driverId, orderId) => {
 
   if (!isBatchSizeAvailable(activeBatch)) {
     throw new AppError('Delivery batch is full', 409, ERROR_CODES.DELIVERY_BATCH_IS_FULL);
+  }
+
+  const canAddOrder = await canAddNewOrder(activeBatch, orderId);
+  if (!canAddOrder) {
+    throw new AppError(
+      'Order is not compatible with the delivery batch',
+      409,
+      ERROR_CODES.ORDER_NOT_ELIGIBLE_FOR_BATCHING
+    );
   }
 
   return addOrderToActiveBatch(session, activeBatch._id, driverId, orderId);

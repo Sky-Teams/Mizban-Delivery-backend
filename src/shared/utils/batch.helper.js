@@ -36,7 +36,6 @@ export const isBatchSizeAvailable = (batchOrders) => {
 };
 
 export const getEstimatedReadyAt = (order) => {
-  // TODO: Replace the estimated ready time with the actual ready time
   const createdAt = order.createdAt.getTime();
   const estimatedPrep = order.estimatedPrepTimeMinutes * 60 * 1000;
 

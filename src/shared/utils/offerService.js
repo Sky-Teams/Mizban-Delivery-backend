@@ -1,4 +1,7 @@
-import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
+import {
+  canAddNewOrder,
+  driverActiveBatch,
+} from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 import { fetchDriverByDriverId } from '#modules/drivers/index.js';
 import { createOffer, getOffer } from '#modules/offers/index.js';
 import { getOrderById, increaseDriverIndex } from '#modules/orders/index.js';
@@ -42,10 +45,16 @@ export class OfferService {
         activeBatch = await driverActiveBatch(driver._id);
       }
 
+      let canAddOrderToBatch;
+      if (activeBatch) {
+        canAddOrderToBatch = await canAddNewOrder(activeBatch, orderId);
+      }
+
       if (
         !driver ||
         driver.status === DRIVER_STATUS.OFFLINE ||
-        (activeBatch && !isBatchSizeAvailable(activeBatch))
+        (activeBatch && !isBatchSizeAvailable(activeBatch)) ||
+        (activeBatch && !canAddOrderToBatch)
       ) {
         await increaseDriverIndex(orderId);
         return await OfferService.sendOfferToDriver(orderId);
