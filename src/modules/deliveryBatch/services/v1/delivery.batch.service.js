@@ -138,20 +138,9 @@ export const orderAssignedForBatching = async (session, driverId, orderId) => {
   return addOrderToActiveBatch(session, activeBatch._id, driverId, orderId);
 };
 
-export const getActiveBatch = async (driverId) => {
-  const activeBatch = await DeliveryBatchModel.findOne({
-    driver: driverId,
-    status: BATCH_STATUS.ACTIVE,
-  });
-
-  if (!activeBatch) throw new AppError('Active batch does not exist', 404, ERROR_CODES.NOT_FOUND);
-
-  return activeBatch;
-};
-
 /** Check batch status for completed orders */
 export const checkBatchForComplete = async (driverId) => {
-  const activeBatch = await getActiveBatch(driverId);
+  const activeBatch = await driverActiveBatch(driverId);
 
   if (!activeBatch) return false;
 
@@ -179,9 +168,7 @@ export const checkBatchForComplete = async (driverId) => {
     }
   );
 
-  eventBus.emit(EVENT_BUS_EVENTS.ACTIVE_BATCH_COMPLETED, {
-    driverId: driverId,
-  });
+  if (!completedBatch) return false;
 
   return Boolean(completedBatch);
 };
