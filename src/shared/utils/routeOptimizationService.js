@@ -81,14 +81,6 @@ export class RouteOptimizationService {
     const activeBatch = await driverActiveBatch(driverId);
     if (!activeBatch) return;
 
-    // // Create missing stops and save them before checking driver location
-    // const newStops = await this.createStop(activeBatch);
-
-    // if (newStops.length > 0) {
-    //   activeBatch.stops.push(...newStops);
-    //   await activeBatch.save();
-    // }
-
     // Get driver's current location
     const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driverId}`;
     const location = await RedisService.getRedisData(driverLocationKey);
