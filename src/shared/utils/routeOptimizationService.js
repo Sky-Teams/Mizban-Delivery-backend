@@ -1,58 +1,154 @@
 import { DeliveryBatchModel } from '#modules/deliveryBatch/model/delivery.batch.model.js';
-import { activateNextPendingBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
+import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
+import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import { AppError } from '#shared/errors/error.js';
+import { isLocationFresh } from './batch.helper.js';
 import { calculateDistanceMeters } from './distance.helper.js';
-import { REDIS_KEYS, STOP_TYPE } from './enums.js';
+import { BATCH_STATUS, REDIS_KEYS, STOP_STATUS, STOP_TYPE } from './enums.js';
 import { RedisService } from './redisLocationService.js';
 
 export class RouteOptimizationService {
-  static async activateNextBatch(driverId) {
-    const batch = await activateNextPendingBatch(driverId);
-    return batch;
+  // Mark pickup stop as completed
+  static async completePickUpStop(driverId, orderId) {
+    const updateBatch = await DeliveryBatchModel.findOneAndUpdate(
+      {
+        driver: driverId,
+        status: BATCH_STATUS.ACTIVE,
+      },
+      {
+        $set: {
+          'stops.$[stop].stopStatus': STOP_STATUS.COMPLETED,
+        },
+      },
+      {
+        arrayFilters: [
+          {
+            'stop.orderId': orderId,
+            'stop.stopType': STOP_TYPE.PICKUP,
+            'stop.stopStatus': STOP_STATUS.PENDING,
+          },
+        ],
+        returnDocument: 'after',
+      }
+    );
+
+    if (!updateBatch)
+      throw new AppError(
+        'Active batch or pending pickup stop not found',
+        404,
+        ERROR_CODES.PICKUP_NOT_ALLOWED
+      );
+
+    return updateBatch;
   }
 
-  static async optimizeActiveBatchIfNeeded(batch) {
-    if (!batch) return null;
-    // A route already exists, so no optimization is needed.
-    if (batch.routeOrder?.length) return batch;
+  // Mark deliver stop as completed
+  static async completeDeliveryStop(driverId, orderId) {
+    const updateBatch = await DeliveryBatchModel.findOneAndUpdate(
+      {
+        driver: driverId,
+        status: BATCH_STATUS.ACTIVE,
+      },
+      {
+        $set: {
+          'stops.$[stop].stopStatus': STOP_STATUS.COMPLETED,
+        },
+      },
+      {
+        arrayFilters: [
+          {
+            'stop.orderId': orderId,
+            'stop.stopType': STOP_TYPE.DELIVERY,
+            'stop.stopStatus': STOP_STATUS.PENDING,
+          },
+        ],
+        returnDocument: 'after',
+      }
+    );
 
-    const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${batch.driver}`;
-    const driverLocation = await RedisService.getRedisData(driverLocationKey);
+    if (!updateBatch)
+      throw new AppError(
+        'Active batch or pending delivery stop not found',
+        404,
+        ERROR_CODES.DELIVERY_NOT_DELIVERABLE
+      );
 
-    if (!driverLocation) return batch;
-
-    return this.optimizeRoute(batch, [Number(driverLocation.lng), Number(driverLocation.lat)]);
+    return updateBatch;
   }
 
-  static async optimizeRoute(batch, driverLocation) {
-    const orderStops = await this.createStop(batch);
+  static async optimizeRoute(driverId) {
+    const activeBatch = await driverActiveBatch(driverId);
+    if (!activeBatch) return;
 
-    const isValid = this.validateStops(orderStops);
+    // Get driver's current location
+    const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driverId}`;
+    const location = await RedisService.getRedisData(driverLocationKey);
+    // Check location is old or new
+    const isLocationNew = await isLocationFresh(location);
 
-    if (!isValid) return false;
-
-    const route = this.buildRoute(orderStops, driverLocation);
-
-    if (!route) return null;
-
-    if (route.length !== orderStops.length) {
-      return false;
+    if (
+      !location ||
+      location.lng == null ||
+      location.lat == null ||
+      !Number.isFinite(Number(location.lng)) ||
+      !Number.isFinite(Number(location.lat)) ||
+      !isLocationNew
+    ) {
+      return;
     }
 
-    if (!this.validateRouteOrder(route)) {
-      return false;
+    const newStops = await this.createStop(activeBatch);
+    // Separate completed and pending stops
+    const allStops = [...(activeBatch.stops ?? []), ...newStops];
+    if (!allStops.length) return;
+
+    const completedStops = allStops?.filter((stop) => stop.stopStatus === STOP_STATUS.COMPLETED);
+
+    const pendingStops = allStops?.filter((stop) => stop.stopStatus === STOP_STATUS.PENDING);
+
+    // Validate pending stops
+    const isValid = this.validateStops(allStops);
+
+    if (!isValid) {
+      throw new AppError('Invalid batch stops', 400, ERROR_CODES.INVALID_BATCH_STOPS);
     }
 
+    const completedPickupOrderIds = allStops
+      .filter(
+        (stop) => stop.stopType === STOP_TYPE.PICKUP && stop.stopStatus === STOP_STATUS.COMPLETED
+      )
+      .map((stop) => stop.orderId.toString());
+
+    const route = this.buildRoute(
+      pendingStops,
+      [Number(location.lng), Number(location.lat)],
+      completedPickupOrderIds
+    );
+
+    if (!route || route.length !== pendingStops.length) {
+      return;
+    }
+
+    // Validate the optimized route
+    if (!this.validateRouteOrder(route, completedPickupOrderIds)) {
+      return;
+    }
+
+    // Preserve completed stops
+    const optimizedRoute = [...completedStops, ...route];
+
+    // Save the optimized route
     const updatedBatch = await DeliveryBatchModel.findByIdAndUpdate(
-      batch._id,
-      { $set: { routeOrder: route } },
+      activeBatch._id,
+      { $set: { stops: optimizedRoute } },
       { new: true, runValidators: true }
     );
 
     return updatedBatch;
   }
 
-  static buildRoute(stops, currentLocation) {
+  static buildRoute(stops, currentLocation, completedPickupOrderIds = []) {
     if (
       !Array.isArray(stops) ||
       !stops.length ||
@@ -64,13 +160,13 @@ export class RouteOptimizationService {
     }
 
     const remainingStops = [...stops];
-    const pickedUpOrderIds = new Set();
+    const pickedUpOrderIds = new Set(completedPickupOrderIds);
     const route = [];
 
     while (remainingStops.length > 0) {
       const eligibleStops = this.getEligibleStops(remainingStops, pickedUpOrderIds);
 
-      if (eligibleStops.length === 0) break;
+      if (!eligibleStops.length) break;
 
       const stopsWithDistance = this.calculateStopDistance(eligibleStops, currentLocation);
 
@@ -83,19 +179,19 @@ export class RouteOptimizationService {
       for (const stop of sameLocationStops) {
         route.push(stop);
 
-        if (stop.type === STOP_TYPE.PICKUP) {
+        if (stop.stopType === STOP_TYPE.PICKUP) {
           pickedUpOrderIds.add(stop.orderId.toString());
         }
 
         const index = remainingStops.findIndex(
           (remainingStop) =>
             remainingStop.orderId.toString() === stop.orderId.toString() &&
-            remainingStop.type === stop.type
+            remainingStop.stopType === stop.stopType
         );
 
-        if (index !== -1) {
-          remainingStops.splice(index, 1);
-        }
+        if (index === -1) return null;
+
+        remainingStops.splice(index, 1);
       }
 
       currentLocation = nearStop.location;
@@ -106,87 +202,103 @@ export class RouteOptimizationService {
 
   static getEligibleStops(remainingStops, pickedUpOrderIds) {
     return remainingStops.filter((stop) => {
-      if (stop.type === STOP_TYPE.PICKUP) {
+      if (stop.stopType === STOP_TYPE.PICKUP) {
         return true;
       }
-
-      if (stop.type === STOP_TYPE.DELIVERY) {
+      if (stop.stopType === STOP_TYPE.DELIVERY) {
         return pickedUpOrderIds.has(stop.orderId.toString());
       }
-
       return false;
     });
   }
 
   static calculateStopDistance(stops, currentLocation) {
     return stops.map((stop) => {
+      const plainStop = typeof stop.toObject === 'function' ? stop.toObject() : stop;
+
       return {
-        ...stop,
-        distance: calculateDistanceMeters(stop.location, currentLocation),
+        ...plainStop,
+        distance: calculateDistanceMeters(plainStop.location, currentLocation),
       };
     });
   }
 
   static getNearestStop(stops) {
-    if (!stops.length) return null;
+    if (!stops.length) return;
 
     let nearestStop = stops[0];
-
     for (const stop of stops) {
       if (stop.distance < nearestStop.distance) {
         nearestStop = stop;
       }
     }
-
     return nearestStop;
   }
-
   static getSameLocationStops(stops, selectedStop) {
     return stops.filter(
       (stop) =>
-        stop.type === selectedStop.type &&
+        stop.stopType === selectedStop.stopType &&
         stop.location[0] === selectedStop.location[0] &&
         stop.location[1] === selectedStop.location[1]
     );
   }
 
   static async createStop(batch) {
-    const orders = await getOrdersByIds(batch.orderIds);
-
-    const stops = [];
-
-    for (const order of orders) {
-      stops.push(
-        {
-          orderId: order._id,
-          type: STOP_TYPE.PICKUP,
-          location: order.pickupLocation.coordinates,
-        },
-        {
-          orderId: order._id,
-          type: STOP_TYPE.DELIVERY,
-          location: order.dropoffLocation.coordinates,
-        }
-      );
+    if (!batch?.orderIds?.length) {
+      return [];
     }
 
-    return stops;
+    const orders = await getOrdersByIds(batch.orderIds);
+
+    if (!Array.isArray(orders) || orders.length !== batch.orderIds.length) {
+      return [];
+    }
+
+    const existingStops = batch.stops ?? [];
+
+    const existingStopKeys = new Set(
+      existingStops.map((stop) => `${stop.orderId.toString()}-${stop.stopType}`)
+    );
+
+    const newStops = [];
+
+    for (const order of orders) {
+      const orderId = order._id.toString();
+
+      if (!existingStopKeys.has(`${orderId}-${STOP_TYPE.PICKUP}`)) {
+        newStops.push({
+          orderId: order._id,
+          stopType: STOP_TYPE.PICKUP,
+          location: order.pickupLocation.coordinates,
+          stopStatus: STOP_STATUS.PENDING,
+        });
+      }
+
+      if (!existingStopKeys.has(`${orderId}-${STOP_TYPE.DELIVERY}`)) {
+        newStops.push({
+          orderId: order._id,
+          stopType: STOP_TYPE.DELIVERY,
+          location: order.dropoffLocation.coordinates,
+          stopStatus: STOP_STATUS.PENDING,
+        });
+      }
+    }
+
+    return newStops;
   }
 
   static validateStops(orderStops) {
     if (!Array.isArray(orderStops) || orderStops.length === 0) {
       return false;
     }
-
     const allowedTypes = [STOP_TYPE.PICKUP, STOP_TYPE.DELIVERY];
     const orderMap = new Map();
 
     for (let index = 0; index < orderStops.length; index++) {
       const stop = orderStops[index];
-
       if (
         !stop.orderId ||
-        !allowedTypes.includes(stop.type) ||
+        !allowedTypes.includes(stop.stopType) ||
         !Array.isArray(stop.location) ||
         stop.location.length !== 2 ||
         !stop.location.every(
@@ -197,7 +309,6 @@ export class RouteOptimizationService {
       }
 
       const orderId = stop.orderId.toString();
-
       if (!orderMap.has(orderId)) {
         orderMap.set(orderId, {
           pickupIndex: -1,
@@ -206,18 +317,14 @@ export class RouteOptimizationService {
       }
 
       const order = orderMap.get(orderId);
-
-      if (stop.type === STOP_TYPE.PICKUP) {
+      if (stop.stopType === STOP_TYPE.PICKUP) {
         if (order.pickupIndex !== -1) return false;
-
         order.pickupIndex = index;
       } else {
         if (order.deliveryIndex !== -1) return false;
-
         order.deliveryIndex = index;
       }
     }
-
     for (const order of orderMap.values()) {
       if (order.pickupIndex === -1 || order.deliveryIndex === -1) {
         return false;
@@ -227,17 +334,18 @@ export class RouteOptimizationService {
     return true;
   }
 
-  static validateRouteOrder(route) {
+  static validateRouteOrder(route, completedPickupOrderIds = []) {
     if (!Array.isArray(route) || route.length === 0) {
       return false;
     }
+
+    const pickedUpOrderIds = new Set(completedPickupOrderIds.map((id) => id.toString()));
 
     const orderMap = new Map();
 
     for (let index = 0; index < route.length; index++) {
       const stop = route[index];
-
-      if (!stop?.orderId || ![STOP_TYPE.PICKUP, STOP_TYPE.DELIVERY].includes(stop.type)) {
+      if (!stop?.orderId || ![STOP_TYPE.PICKUP, STOP_TYPE.DELIVERY].includes(stop.stopType)) {
         return false;
       }
 
@@ -252,7 +360,7 @@ export class RouteOptimizationService {
 
       const order = orderMap.get(orderId);
 
-      if (stop.type === STOP_TYPE.PICKUP) {
+      if (stop.stopType === STOP_TYPE.PICKUP) {
         if (order.pickupIndex !== null) return false;
         order.pickupIndex = index;
       } else {
@@ -261,12 +369,17 @@ export class RouteOptimizationService {
       }
     }
 
-    for (const order of orderMap.values()) {
-      if (
-        order.pickupIndex === null ||
-        order.deliveryIndex === null ||
-        order.pickupIndex >= order.deliveryIndex
-      ) {
+    for (const [orderId, order] of orderMap) {
+      if (order.deliveryIndex === null) return false;
+
+      // Pickup may already be completed.
+      if (pickedUpOrderIds.has(orderId)) {
+        if (order.pickupIndex !== null) return false;
+        continue;
+      }
+
+      // Otherwise, both stops must exist in the route.
+      if (order.pickupIndex === null || order.pickupIndex >= order.deliveryIndex) {
         return false;
       }
     }

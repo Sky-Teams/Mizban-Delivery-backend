@@ -117,10 +117,15 @@ export const REDIS_KEYS = {
 // Redis channel
 export const REDIS_CHANNEL = {
   LIVE_LOCATION_CHANNEL: process.env.LIVE_LOCATION_CHANNEL || 'driver.location.updated',
+  ORDER_EVENTS_CHANNEL: process.env.ORDER_EVENTS_CHANNEL || 'delivery.order.events',
+};
+
+export const REDIS_EVENT_TYPES = {
+  ORDER_PICKEDUP: 'order.pickedUp',
+  ORDER_DELIVERED: 'order.delivered',
 };
 
 export const BATCH_STATUS = {
-  PENDING: 'pending',
   ACTIVE: 'active',
   COMPLETED: 'completed',
 };
@@ -129,10 +134,15 @@ export const BATCH_CONFIG = {
   MAX_PICKUP_DISTANCE_METERS: 4000, // meter
   MAX_DELIVERY_DISTANCE_METERS: 4000, // meter
   MAX_PREPARATION_MINUTE: 15, // minute
-  MAX_BATCH_SIZE: 5,
+  MAX_BATCH_SIZE: Number(process.env.MAX_DELIVERY_BATCH_SIZE) || 10,
 };
 
 export const STOP_TYPE = {
-  PICKUP: 'PICKUP',
-  DELIVERY: 'DELIVERY',
+  PICKUP: 'pickUp',
+  DELIVERY: 'delivery',
+};
+
+export const STOP_STATUS = {
+  PENDING: 'pending',
+  COMPLETED: 'completed',
 };

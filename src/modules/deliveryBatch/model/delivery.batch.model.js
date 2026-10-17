@@ -1,4 +1,4 @@
-import { BATCH_STATUS, STOP_TYPE } from '#shared/utils/enums.js';
+import { BATCH_STATUS, STOP_STATUS, STOP_TYPE } from '#shared/utils/enums.js';
 import { getObjectValues } from '#shared/utils/object.helper.js';
 import mongoose from 'mongoose';
 
@@ -15,7 +15,7 @@ const deliveryBatchSchema = new mongoose.Schema(
         ref: 'Order',
       },
     ],
-    routeOrder: [
+    stops: [
       {
         _id: false,
         orderId: {
@@ -23,7 +23,7 @@ const deliveryBatchSchema = new mongoose.Schema(
           ref: 'Order',
           required: true,
         },
-        type: {
+        stopType: {
           type: String,
           enum: getObjectValues(STOP_TYPE),
           required: true,
@@ -32,12 +32,17 @@ const deliveryBatchSchema = new mongoose.Schema(
           type: [Number],
           required: true,
         },
+        stopStatus: {
+          type: String,
+          enum: getObjectValues(STOP_STATUS),
+          default: STOP_STATUS.PENDING,
+        },
       },
     ],
     status: {
       type: String,
       enum: getObjectValues(BATCH_STATUS),
-      default: BATCH_STATUS.PENDING,
+      default: BATCH_STATUS.ACTIVE,
     },
     startedAt: {
       type: Date,
@@ -54,7 +59,7 @@ const deliveryBatchSchema = new mongoose.Schema(
 deliveryBatchSchema.index({ driver: 1, status: 1 });
 /** One driver can have many pending batches, but only one active batch. */
 deliveryBatchSchema.index(
-  { driverId: 1 },
+  { driver: 1 },
   {
     unique: true,
     partialFilterExpression: {

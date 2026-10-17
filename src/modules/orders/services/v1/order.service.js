@@ -284,12 +284,13 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
   await order.save({ session });
   await driver.save({ session });
 
-  // Add order to a pending batch or create a new batch
-  await orderAssignedForBatching(session, driver._id, order);
+  // Add order to a active batch or create a new active batch
+  await orderAssignedForBatching(session, driver._id, order._id);
 
   eventBus.emit(EVENT_BUS_EVENTS.ORDER_ASSIGNED, {
     orderId: order._id,
     userId: driver.user._id,
+    driverId: driver._id,
   });
   return order;
 };
@@ -336,6 +337,8 @@ export const pickupAnOrder = async (session, orderId, user) => {
     orderId,
     driverId: driver._id,
     pickedUpAt: order.timeline.pickedUpAt,
+    source: order.source,
+    sourceOrderId: order.sourceOrderId,
   });
 
   // Return filtered fields to driver
@@ -382,6 +385,8 @@ export const deliverAnOrder = async (session, orderId, user) => {
     orderId,
     driverId: driver._id,
     deliveredAt: order.timeline.deliveredAt,
+    source: order.source,
+    sourceOrderId: order.sourceOrderId,
   });
 
   // Return filtered fields to driver

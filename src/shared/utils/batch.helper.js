@@ -30,15 +30,13 @@ export const isPreparationCompatible = (currentOrder, newOrder) => {
 
 /** Check maximum orders in batch model */
 export const isBatchSizeAvailable = (batchOrders) => {
-  const orderJobs = batchOrders.orderIds.length;
+  const orderJobs = batchOrders?.orderIds?.length;
 
   return orderJobs < BATCH_CONFIG.MAX_BATCH_SIZE;
 };
 
 export const getEstimatedReadyAt = (order) => {
-  // TODO: Replace the estimated ready time with the actual ready time
-  // from the restaurant/order preparation event when real-time preparation tracking is available.
-  const createdAt = order.createdAt;
+  const createdAt = order.createdAt.getTime();
   const estimatedPrep = order.estimatedPrepTimeMinutes * 60 * 1000;
 
   return new Date(createdAt + estimatedPrep);
@@ -49,4 +47,16 @@ export const getTimeDifferenceInMinutes = (dateA, dateB) => {
   const differenceMs = Math.abs(dateA.getTime() - dateB.getTime());
 
   return differenceMs / (60 * 1000);
+};
+
+// Check driver Location fresh
+export const isLocationFresh = async (location) => {
+  const MAX_LOCATION_AGE = 5 * 60 * 1000; // 5 min
+  const locationAge = location?.updatedAt
+    ? new Date() - new Date(location.updatedAt).getTime()
+    : Infinity;
+  const isLocationNew =
+    Number.isFinite(locationAge) && locationAge >= 0 && locationAge <= MAX_LOCATION_AGE;
+
+  return isLocationNew;
 };
