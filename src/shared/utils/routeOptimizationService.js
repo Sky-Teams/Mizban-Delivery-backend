@@ -1,8 +1,9 @@
 import { DeliveryBatchModel } from '#modules/deliveryBatch/model/delivery.batch.model.js';
-import { getDriverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
+import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError } from '#shared/errors/error.js';
+import { isLocationFresh } from './batch.helper.js';
 import { calculateDistanceMeters } from './distance.helper.js';
 import { BATCH_STATUS, REDIS_KEYS, STOP_STATUS, STOP_TYPE } from './enums.js';
 import { RedisService } from './redisLocationService.js';
@@ -77,55 +78,68 @@ export class RouteOptimizationService {
   }
 
   static async optimizeRoute(driverId) {
-    const activeBatch = await getDriverActiveBatch(driverId);
+    const activeBatch = await driverActiveBatch(driverId);
     if (!activeBatch) return;
 
-    // Create missing stops and save them before checking driver location
-    const newStops = await this.createStop(activeBatch);
+    // // Create missing stops and save them before checking driver location
+    // const newStops = await this.createStop(activeBatch);
 
-    if (newStops.length > 0) {
-      activeBatch.stops.push(...newStops);
-      await activeBatch.save();
-    }
+    // if (newStops.length > 0) {
+    //   activeBatch.stops.push(...newStops);
+    //   await activeBatch.save();
+    // }
 
     // Get driver's current location
     const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driverId}`;
     const location = await RedisService.getRedisData(driverLocationKey);
+    // Check location is old or new
+    const isLocationNew = await isLocationFresh(location);
+
     if (
       !location ||
       location.lng == null ||
       location.lat == null ||
       !Number.isFinite(Number(location.lng)) ||
-      !Number.isFinite(Number(location.lat))
+      !Number.isFinite(Number(location.lat)) ||
+      !isLocationNew
     ) {
       return;
     }
 
+    const newStops = await this.createStop(activeBatch);
     // Separate completed and pending stops
-    const allStops = activeBatch.stops ?? [];
+    const allStops = [...(activeBatch.stops ?? []), ...newStops];
+    if (!allStops.length) return;
 
-    const completedStops = allStops.filter((stop) => stop.stopStatus === STOP_STATUS.COMPLETED);
+    const completedStops = allStops?.filter((stop) => stop.stopStatus === STOP_STATUS.COMPLETED);
 
-    const pendingStops = allStops.filter((stop) => stop.stopStatus === STOP_STATUS.PENDING);
-
-    if (!pendingStops.length) return activeBatch;
+    const pendingStops = allStops?.filter((stop) => stop.stopStatus === STOP_STATUS.PENDING);
 
     // Validate pending stops
-    const isValid = this.validateStops(pendingStops);
+    const isValid = this.validateStops(allStops);
 
     if (!isValid) {
       throw new AppError('Invalid batch stops', 400, ERROR_CODES.INVALID_BATCH_STOPS);
     }
 
-    // Optimize only pending stops
-    const route = this.buildRoute(pendingStops, [Number(location.lng), Number(location.lat)]);
+    const completedPickupOrderIds = allStops
+      .filter(
+        (stop) => stop.stopType === STOP_TYPE.PICKUP && stop.stopStatus === STOP_STATUS.COMPLETED
+      )
+      .map((stop) => stop.orderId.toString());
+
+    const route = this.buildRoute(
+      pendingStops,
+      [Number(location.lng), Number(location.lat)],
+      completedPickupOrderIds
+    );
 
     if (!route || route.length !== pendingStops.length) {
       return;
     }
 
     // Validate the optimized route
-    if (!this.validateRouteOrder(route)) {
+    if (!this.validateRouteOrder(route, completedPickupOrderIds)) {
       return;
     }
 
@@ -142,7 +156,7 @@ export class RouteOptimizationService {
     return updatedBatch;
   }
 
-  static buildRoute(stops, currentLocation) {
+  static buildRoute(stops, currentLocation, completedPickupOrderIds = []) {
     if (
       !Array.isArray(stops) ||
       !stops.length ||
@@ -154,7 +168,7 @@ export class RouteOptimizationService {
     }
 
     const remainingStops = [...stops];
-    const pickedUpOrderIds = new Set();
+    const pickedUpOrderIds = new Set(completedPickupOrderIds);
     const route = [];
 
     while (remainingStops.length > 0) {
@@ -327,24 +341,33 @@ export class RouteOptimizationService {
 
     return true;
   }
-  static validateRouteOrder(route) {
+
+  static validateRouteOrder(route, completedPickupOrderIds = []) {
     if (!Array.isArray(route) || route.length === 0) {
       return false;
     }
+
+    const pickedUpOrderIds = new Set(completedPickupOrderIds.map((id) => id.toString()));
+
     const orderMap = new Map();
+
     for (let index = 0; index < route.length; index++) {
       const stop = route[index];
       if (!stop?.orderId || ![STOP_TYPE.PICKUP, STOP_TYPE.DELIVERY].includes(stop.stopType)) {
         return false;
       }
+
       const orderId = stop.orderId.toString();
+
       if (!orderMap.has(orderId)) {
         orderMap.set(orderId, {
           pickupIndex: null,
           deliveryIndex: null,
         });
       }
+
       const order = orderMap.get(orderId);
+
       if (stop.stopType === STOP_TYPE.PICKUP) {
         if (order.pickupIndex !== null) return false;
         order.pickupIndex = index;
@@ -353,15 +376,22 @@ export class RouteOptimizationService {
         order.deliveryIndex = index;
       }
     }
-    for (const order of orderMap.values()) {
-      if (
-        order.pickupIndex === null ||
-        order.deliveryIndex === null ||
-        order.pickupIndex >= order.deliveryIndex
-      ) {
+
+    for (const [orderId, order] of orderMap) {
+      if (order.deliveryIndex === null) return false;
+
+      // Pickup may already be completed.
+      if (pickedUpOrderIds.has(orderId)) {
+        if (order.pickupIndex !== null) return false;
+        continue;
+      }
+
+      // Otherwise, both stops must exist in the route.
+      if (order.pickupIndex === null || order.pickupIndex >= order.deliveryIndex) {
         return false;
       }
     }
+
     return true;
   }
 }
