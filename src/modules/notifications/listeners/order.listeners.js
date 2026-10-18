@@ -91,7 +91,7 @@ export const registerOrderListeners = () => {
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_CANCELLED, async (data) => {
-    // If an order cancelled the batch orders updated
+    // If an order cancelled updated the batch orders and stop
     await RouteOptimizationService.cancelledDeliveryBatchOrder(data.driverId, data.orderId);
 
     const payload = NotificationPayloads.orderCancelled(data.orderId, data.reason);
