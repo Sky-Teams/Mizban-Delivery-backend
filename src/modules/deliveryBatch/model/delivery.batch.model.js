@@ -57,15 +57,13 @@ const deliveryBatchSchema = new mongoose.Schema(
 );
 
 deliveryBatchSchema.index({ driver: 1, status: 1 });
-/** One driver can have many pending batches, but only one active batch. */
+/** One driver can have one active batch. */
 deliveryBatchSchema.index(
   { driver: 1 },
   {
     unique: true,
     partialFilterExpression: {
-      status: {
-        $in: [BATCH_STATUS.ACTIVE],
-      },
+      status: BATCH_STATUS.ACTIVE,
     },
   }
 );
