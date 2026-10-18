@@ -87,9 +87,8 @@ export class RouteOptimizationService {
     const newStops = activeBatch?.stops?.filter(
       (stop) => stop.orderId.toString() !== orderId.toString()
     );
-    console.log('newOrderIds', newOrderIds);
-    console.log('newstops', newStops);
-    const i = await DeliveryBatchModel.findByIdAndUpdate(
+
+    await DeliveryBatchModel.findByIdAndUpdate(
       activeBatch._id,
       {
         $set: {
@@ -102,16 +101,10 @@ export class RouteOptimizationService {
         runValidators: true,
       }
     );
-    console.log('after update', i);
-    if (!newOrderIds?.length) {
-      console.log("finish", newOrderIds)
-      return
-    };
 
-    const route = await this.optimizeRoute(driverId);
-    console.log('route', route);
+    if (!newOrderIds?.length) return;
 
-    return route;
+    return await this.optimizeRoute(driverId);
   }
 
   static async optimizeRoute(driverId) {
@@ -181,7 +174,7 @@ export class RouteOptimizationService {
       { $set: { stops: optimizedRoute } },
       { new: true, runValidators: true }
     );
-console.log("route optimize", optimizedRoute)
+
     return updatedBatch;
   }
 
