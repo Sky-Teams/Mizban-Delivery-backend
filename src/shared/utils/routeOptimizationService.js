@@ -43,7 +43,7 @@ export class RouteOptimizationService {
 
       return updateBatch;
     } catch (error) {
-      console.log('Error in complete pickup stop:', error);
+      console.error('Error in complete pickup stop:', error);
     }
   }
 
@@ -81,7 +81,7 @@ export class RouteOptimizationService {
 
       return updateBatch;
     } catch (error) {
-      console.log('Error in complete delivery stop:', error);
+      console.error('Error in complete delivery stop:', error);
     }
   }
 
