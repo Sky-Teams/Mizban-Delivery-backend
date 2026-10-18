@@ -748,4 +748,9 @@ export const ERROR_MESSAGES = {
     fa: 'مجموعه سفارش‌ها در دسترس نیست',
     ps: 'د فرمایشونو مجموعه شتون نه لري',
   },
+  [ERROR_CODES.INVALID_BATCH_STOPS]: {
+    en: 'Delivery batch contains invalid stops',
+    fa: 'توقف‌های مجموعه سفارش‌ها نامعتبر است',
+    ps: 'د فرمایشونو په مجموعه کې تمځایونه ناسم دي',
+  },
 };
