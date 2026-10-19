@@ -3,14 +3,13 @@ import { OrderModel } from '#modules/orders/index.js';
 import { getOrderById, getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError } from '#shared/errors/error.js';
-import { eventBus } from '#shared/event-bus/eventBus.js';
 import {
   isBatchSizeAvailable,
   isDeliveryCompatible,
   isPickupCompatible,
   isPreparationCompatible,
 } from '#shared/utils/batch.helper.js';
-import { BATCH_STATUS, EVENT_BUS_EVENTS, ORDER_STATUS, SERVICE } from '#shared/utils/enums.js';
+import { BATCH_STATUS, ORDER_STATUS } from '#shared/utils/enums.js';
 
 const addOrderToActiveBatch = async (session, deliveryBatchId, driverId, orderId) => {
   const updateDeliveryBatch = await DeliveryBatchModel.findOneAndUpdate(
@@ -165,7 +164,7 @@ export const checkBatchForComplete = async (driverId) => {
 
   if (!orders.length || orders.length !== activeBatch.orderIds.length) return false;
 
-  const isBatchCompleted = await orders.every((order) => order.status === ORDER_STATUS.DELIVERED);
+  const isBatchCompleted = orders.every((order) => order.status === ORDER_STATUS.DELIVERED);
   if (!isBatchCompleted) return false;
 
   const completedBatch = await DeliveryBatchModel.findOneAndUpdate(
