@@ -97,7 +97,7 @@ export const driverActiveBatch = async (driverId) => {
   });
 };
 
-export const canAddNewOrder = async (batch, orderId) => {
+export const canAddNewOrder = async (batch, orderId, { throwOnError = true } = {}) => {
   const orders = await getOrdersByIds(batch.orderIds);
 
   const newOrderDetails = await getOrderById(orderId);
@@ -107,6 +107,7 @@ export const canAddNewOrder = async (batch, orderId) => {
       continue;
 
     if (!isPickupCompatible(order, newOrderDetails)) {
+      if (!throwOnError) return false;
       throw new AppError(
         'Order pickup is not compatible with the active batch',
         409,
@@ -115,6 +116,7 @@ export const canAddNewOrder = async (batch, orderId) => {
     }
 
     if (!isDeliveryCompatible(order, newOrderDetails)) {
+      if (!throwOnError) return false;
       throw new AppError(
         'Order delivery is not compatible with the active batch',
         409,
@@ -123,6 +125,7 @@ export const canAddNewOrder = async (batch, orderId) => {
     }
 
     if (!isPreparationCompatible(order, newOrderDetails)) {
+      if (!throwOnError) return false;
       throw new AppError(
         'Order preparation is not compatible with the active batch',
         409,
