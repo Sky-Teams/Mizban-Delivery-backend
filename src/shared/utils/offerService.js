@@ -47,7 +47,7 @@ export class OfferService {
 
       let canAddOrderToBatch;
       if (activeBatch) {
-        canAddOrderToBatch = await canAddNewOrder(activeBatch, orderId);
+        canAddOrderToBatch = await canAddNewOrder(activeBatch, orderId, { throwOnError: false });
       }
 
       if (

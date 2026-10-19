@@ -99,7 +99,7 @@ export const driverActiveBatch = async (driverId) => {
   });
 };
 
-export const canAddNewOrder = async (batch, orderId) => {
+export const canAddNewOrder = async (batch, orderId, { throwOnError = true } = {}) => {
   const orders = await getOrdersByIds(batch.orderIds);
 
   const newOrderDetails = await getOrderById(orderId);
@@ -108,11 +108,32 @@ export const canAddNewOrder = async (batch, orderId) => {
     if (order.status === ORDER_STATUS.DELIVERED || order.status === ORDER_STATUS.CANCELLED)
       continue;
 
-    if (!isPickupCompatible(order, newOrderDetails)) return false;
+    if (!isPickupCompatible(order, newOrderDetails)) {
+      if (!throwOnError) return false;
+      throw new AppError(
+        'Order pickup is not compatible with the active batch',
+        409,
+        ERROR_CODES.BATCH_PICKUP_NOT_COMPATIBLE
+      );
+    }
 
-    if (!isDeliveryCompatible(order, newOrderDetails)) return false;
+    if (!isDeliveryCompatible(order, newOrderDetails)) {
+      if (!throwOnError) return false;
+      throw new AppError(
+        'Order delivery is not compatible with the active batch',
+        409,
+        ERROR_CODES.BATCH_DELIVERY_NOT_COMPATIBLE
+      );
+    }
 
-    if (!isPreparationCompatible(order, newOrderDetails)) return false;
+    if (!isPreparationCompatible(order, newOrderDetails)) {
+      if (!throwOnError) return false;
+      throw new AppError(
+        'Order preparation is not compatible with the active batch',
+        409,
+        ERROR_CODES.BATCH_PREPARATION_NOT_COMPATIBLE
+      );
+    }
   }
 
   return true;
@@ -129,14 +150,7 @@ export const orderAssignedForBatching = async (session, driverId, orderId) => {
     throw new AppError('Delivery batch is full', 409, ERROR_CODES.DELIVERY_BATCH_IS_FULL);
   }
 
-  const canAddOrder = await canAddNewOrder(activeBatch, orderId);
-  if (!canAddOrder) {
-    throw new AppError(
-      'Order is not compatible with the delivery batch',
-      409,
-      ERROR_CODES.ORDER_NOT_ELIGIBLE_FOR_BATCHING
-    );
-  }
+  await canAddNewOrder(activeBatch, orderId);
 
   return addOrderToActiveBatch(session, activeBatch._id, driverId, orderId);
 };

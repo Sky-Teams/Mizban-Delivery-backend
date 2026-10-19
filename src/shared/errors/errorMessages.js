@@ -748,4 +748,26 @@ export const ERROR_MESSAGES = {
     fa: 'مجموعه سفارش‌ها در دسترس نیست',
     ps: 'د فرمایشونو مجموعه شتون نه لري',
   },
+  [ERROR_CODES.INVALID_BATCH_STOPS]: {
+    en: 'Delivery batch contains invalid stops',
+    fa: 'توقف‌های مجموعه سفارش‌ها نامعتبر است',
+    ps: 'د فرمایشونو په مجموعه کې تمځایونه ناسم دي',
+  },
+  [ERROR_CODES.BATCH_PICKUP_NOT_COMPATIBLE]: {
+    en: 'Order pickup is not compatible with the active batch',
+    fa: 'محل دریافت سفارش با مجموعه سفارش‌های فعال سازگار نیست',
+    ps: 'د فرمایش اخیستلو ځای د فعالې فرمایشونو مجموعې سره سمون نه لري',
+  },
+
+  [ERROR_CODES.BATCH_DELIVERY_NOT_COMPATIBLE]: {
+    en: 'Order delivery is not compatible with the active batch',
+    fa: 'محل تحویل سفارش با مجموعه سفارش‌های فعال سازگار نیست',
+    ps: 'د فرمایش سپارلو ځای د فعالې فرمایشونو مجموعې سره سمون نه لري',
+  },
+
+  [ERROR_CODES.BATCH_PREPARATION_NOT_COMPATIBLE]: {
+    en: 'Order preparation is not compatible with the active batch',
+    fa: 'زمان آماده‌سازی سفارش با مجموعه سفارش‌های فعال سازگار نیست',
+    ps: 'د فرمایش د چمتو کولو وخت د فعالې فرمایشونو مجموعې سره سمون نه لري',
+  },
 };
