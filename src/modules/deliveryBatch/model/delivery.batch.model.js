@@ -57,7 +57,6 @@ const deliveryBatchSchema = new mongoose.Schema(
 );
 
 deliveryBatchSchema.index({ driver: 1, status: 1 });
-/** One driver can have one active batch. */
 deliveryBatchSchema.index(
   { driver: 1 },
   {
