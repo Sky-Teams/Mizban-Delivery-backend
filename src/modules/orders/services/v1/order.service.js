@@ -329,6 +329,8 @@ export const pickupAnOrder = async (session, orderId, user) => {
     orderId,
     driverId: driver._id,
     pickedUpAt: order.timeline.pickedUpAt,
+    source: order.source,
+    sourceOrderId: order.sourceOrderId,
   });
 
   // Return filtered fields to driver
@@ -375,6 +377,8 @@ export const deliverAnOrder = async (session, orderId, user) => {
     orderId,
     driverId: driver._id,
     deliveredAt: order.timeline.deliveredAt,
+    source: order.source,
+    sourceOrderId: order.sourceOrderId,
   });
 
   // Return filtered fields to driver
