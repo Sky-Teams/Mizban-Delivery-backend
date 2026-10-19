@@ -27,17 +27,7 @@ export const registerOrderListeners = () => {
 
     const drivers = await findNearestAndScore(data.pickupLocation.coordinates);
 
-    // It returns only the values (driver ids), not the full offer documents.
-    const rejected = await OfferModel.distinct('driver', {
-      order: orderId,
-      status: OFFER_STATUS.REJECTED,
-    });
-
-    const rejectedIds = new Set(rejected.map(String));
-
-    const eligibleDrivers = drivers.filter((d) => !rejectedIds.has(String(d._id)));
-
-    await addDriversDataInOrder(orderId, eligibleDrivers);
+    await addDriversDataInOrder(orderId, drivers);
     await OfferService.sendOfferToDriver(orderId);
   });
 
