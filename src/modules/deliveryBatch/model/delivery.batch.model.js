@@ -62,9 +62,7 @@ deliveryBatchSchema.index(
   {
     unique: true,
     partialFilterExpression: {
-      status: {
-        $in: [BATCH_STATUS.ACTIVE],
-      },
+      status: BATCH_STATUS.ACTIVE,
     },
   }
 );

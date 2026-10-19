@@ -11,141 +11,150 @@ import { RedisService } from './redisLocationService.js';
 export class RouteOptimizationService {
   // Mark pickup stop as completed
   static async completePickUpStop(driverId, orderId) {
-    const updateBatch = await DeliveryBatchModel.findOneAndUpdate(
-      {
-        driver: driverId,
-        status: BATCH_STATUS.ACTIVE,
-      },
-      {
-        $set: {
-          'stops.$[stop].stopStatus': STOP_STATUS.COMPLETED,
+    try {
+      const updateBatch = await DeliveryBatchModel.findOneAndUpdate(
+        {
+          driver: driverId,
+          status: BATCH_STATUS.ACTIVE,
         },
-      },
-      {
-        arrayFilters: [
-          {
-            'stop.orderId': orderId,
-            'stop.stopType': STOP_TYPE.PICKUP,
-            'stop.stopStatus': STOP_STATUS.PENDING,
+        {
+          $set: {
+            'stops.$[stop].stopStatus': STOP_STATUS.COMPLETED,
           },
-        ],
-        returnDocument: 'after',
-      }
-    );
-
-    if (!updateBatch)
-      throw new AppError(
-        'Active batch or pending pickup stop not found',
-        404,
-        ERROR_CODES.PICKUP_NOT_ALLOWED
+        },
+        {
+          arrayFilters: [
+            {
+              'stop.orderId': orderId,
+              'stop.stopType': STOP_TYPE.PICKUP,
+              'stop.stopStatus': STOP_STATUS.PENDING,
+            },
+          ],
+          returnDocument: 'after',
+        }
       );
 
-    return updateBatch;
+      if (!updateBatch)
+        throw new AppError(
+          'Active batch or pending pickup stop not found',
+          404,
+          ERROR_CODES.PICKUP_NOT_ALLOWED
+        );
+
+      return updateBatch;
+    } catch (error) {
+      console.error('Error in complete pickup stop:', error);
+    }
   }
 
   // Mark deliver stop as completed
   static async completeDeliveryStop(driverId, orderId) {
-    const updateBatch = await DeliveryBatchModel.findOneAndUpdate(
-      {
-        driver: driverId,
-        status: BATCH_STATUS.ACTIVE,
-      },
-      {
-        $set: {
-          'stops.$[stop].stopStatus': STOP_STATUS.COMPLETED,
+    try {
+      const updateBatch = await DeliveryBatchModel.findOneAndUpdate(
+        {
+          driver: driverId,
+          status: BATCH_STATUS.ACTIVE,
         },
-      },
-      {
-        arrayFilters: [
-          {
-            'stop.orderId': orderId,
-            'stop.stopType': STOP_TYPE.DELIVERY,
-            'stop.stopStatus': STOP_STATUS.PENDING,
+        {
+          $set: {
+            'stops.$[stop].stopStatus': STOP_STATUS.COMPLETED,
           },
-        ],
-        returnDocument: 'after',
-      }
-    );
-
-    if (!updateBatch)
-      throw new AppError(
-        'Active batch or pending delivery stop not found',
-        404,
-        ERROR_CODES.DELIVERY_NOT_DELIVERABLE
+        },
+        {
+          arrayFilters: [
+            {
+              'stop.orderId': orderId,
+              'stop.stopType': STOP_TYPE.DELIVERY,
+              'stop.stopStatus': STOP_STATUS.PENDING,
+            },
+          ],
+          returnDocument: 'after',
+        }
       );
 
-    return updateBatch;
+      if (!updateBatch)
+        throw new AppError(
+          'Active batch or pending delivery stop not found',
+          404,
+          ERROR_CODES.DELIVERY_NOT_DELIVERABLE
+        );
+
+      return updateBatch;
+    } catch (error) {
+      console.error('Error in complete delivery stop:', error);
+    }
   }
 
   static async optimizeRoute(driverId) {
-    const activeBatch = await driverActiveBatch(driverId);
-    if (!activeBatch) return;
+    try {
+      const activeBatch = await driverActiveBatch(driverId);
+      if (!activeBatch)
+        throw new AppError('Active batch not found', 404, ERROR_CODES.DELIVERY_BATCH_NOT_AVAILABLE);
 
-    // Get driver's current location
-    const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driverId}`;
-    const location = await RedisService.getRedisData(driverLocationKey);
-    // Check location is old or new
-    const isLocationNew = await isLocationFresh(location);
+      // Get driver's current location
+      const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driverId}`;
+      const location = await RedisService.getRedisData(driverLocationKey);
+      // Check location is old or new
+      const isLocationNew = await isLocationFresh(location);
 
-    if (
-      !location ||
-      location.lng == null ||
-      location.lat == null ||
-      !Number.isFinite(Number(location.lng)) ||
-      !Number.isFinite(Number(location.lat)) ||
-      !isLocationNew
-    ) {
-      return;
+      if (
+        !location ||
+        location.lng == null ||
+        location.lat == null ||
+        !Number.isFinite(Number(location.lng)) ||
+        !Number.isFinite(Number(location.lat)) ||
+        !isLocationNew
+      ) {
+        return;
+      }
+
+      const newStops = await this.createStop(activeBatch);
+      const allStops = [...(activeBatch.stops ?? []), ...newStops];
+      if (!allStops.length) return;
+
+      // Separate completed and pending stops
+      const completedStops = allStops?.filter((stop) => stop.stopStatus === STOP_STATUS.COMPLETED);
+      const pendingStops = allStops?.filter((stop) => stop.stopStatus === STOP_STATUS.PENDING);
+
+      // Validate stops
+      if (!this.validateStops(allStops)) {
+        throw new AppError('Invalid batch stops', 400, ERROR_CODES.INVALID_BATCH_STOPS);
+      }
+
+      const completedPickupOrderIds = allStops
+        .filter(
+          (stop) => stop.stopType === STOP_TYPE.PICKUP && stop.stopStatus === STOP_STATUS.COMPLETED
+        )
+        .map((stop) => stop.orderId.toString());
+
+      const route = this.buildRoute(
+        pendingStops,
+        [Number(location.lng), Number(location.lat)],
+        completedPickupOrderIds
+      );
+
+      if (!route || route.length !== pendingStops.length) {
+        return;
+      }
+
+      // Validate the optimized route
+      if (!this.validateRouteOrder(route, completedPickupOrderIds)) {
+        throw new AppError('Invalid batch stops', 400, ERROR_CODES.INVALID_BATCH_STOPS);
+      }
+
+      const optimizedRoute = [...completedStops, ...route];
+
+      // Save the optimized route
+      const updatedBatch = await DeliveryBatchModel.findByIdAndUpdate(
+        activeBatch._id,
+        { $set: { stops: optimizedRoute } },
+        { new: true, runValidators: true }
+      );
+
+      return updatedBatch;
+    } catch (error) {
+      console.error('Error in route optimization:', error);
     }
-
-    const newStops = await this.createStop(activeBatch);
-    // Separate completed and pending stops
-    const allStops = [...(activeBatch.stops ?? []), ...newStops];
-    if (!allStops.length) return;
-
-    const completedStops = allStops?.filter((stop) => stop.stopStatus === STOP_STATUS.COMPLETED);
-
-    const pendingStops = allStops?.filter((stop) => stop.stopStatus === STOP_STATUS.PENDING);
-
-    // Validate pending stops
-    const isValid = this.validateStops(allStops);
-
-    if (!isValid) {
-      throw new AppError('Invalid batch stops', 400, ERROR_CODES.INVALID_BATCH_STOPS);
-    }
-
-    const completedPickupOrderIds = allStops
-      .filter(
-        (stop) => stop.stopType === STOP_TYPE.PICKUP && stop.stopStatus === STOP_STATUS.COMPLETED
-      )
-      .map((stop) => stop.orderId.toString());
-
-    const route = this.buildRoute(
-      pendingStops,
-      [Number(location.lng), Number(location.lat)],
-      completedPickupOrderIds
-    );
-
-    if (!route || route.length !== pendingStops.length) {
-      return;
-    }
-
-    // Validate the optimized route
-    if (!this.validateRouteOrder(route, completedPickupOrderIds)) {
-      return;
-    }
-
-    // Preserve completed stops
-    const optimizedRoute = [...completedStops, ...route];
-
-    // Save the optimized route
-    const updatedBatch = await DeliveryBatchModel.findByIdAndUpdate(
-      activeBatch._id,
-      { $set: { stops: optimizedRoute } },
-      { new: true, runValidators: true }
-    );
-
-    return updatedBatch;
   }
 
   static buildRoute(stops, currentLocation, completedPickupOrderIds = []) {
