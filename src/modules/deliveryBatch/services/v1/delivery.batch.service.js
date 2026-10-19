@@ -62,6 +62,7 @@ const createActiveBatch = async (session, driverId, orderId) => {
         driver: driverId,
         orderIds: [orderId],
         status: BATCH_STATUS.ACTIVE,
+        startedAt: new Date(),
       },
     ],
     { session }
