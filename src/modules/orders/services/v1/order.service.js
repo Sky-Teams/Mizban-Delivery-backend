@@ -481,7 +481,7 @@ export const returnAnOrder = async (session, orderId, reason, user) => {
   }
 
   await order.save({ session });
-  eventBus.emit(EVENT_BUS_EVENTS.ORDER_RETURNED, { orderId, reason });
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_RETURNED, { orderId, reason, driverId: order.driverId });
 
   // Return filtered fields to driver
   if (user.role === ROLES.DRIVER) return DtoService.order(order);

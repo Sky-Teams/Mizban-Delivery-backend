@@ -78,33 +78,39 @@ export class RouteOptimizationService {
   }
 
   // Update orderIds in batch when an order cancelled
-  static async cancelledDeliveryBatchOrder(driverId, orderId) {
-    const activeBatch = await driverActiveBatch(driverId);
-    if (!activeBatch)
-      throw new AppError('Active batch not found', 404, ERROR_CODES.DELIVERY_BATCH_NOT_AVAILABLE);
+  static async cancelledOrReturnedDeliveryBatchOrder(driverId, orderId) {
+    try {
+      const activeBatch = await driverActiveBatch(driverId);
+      if (!activeBatch)
+        throw new AppError('Active batch not found', 404, ERROR_CODES.DELIVERY_BATCH_NOT_AVAILABLE);
 
-    const newOrderIds = activeBatch.orderIds?.filter((id) => id.toString() !== orderId.toString());
-    const newStops = activeBatch?.stops?.filter(
-      (stop) => stop.orderId.toString() !== orderId.toString()
-    );
+      const newOrderIds = activeBatch.orderIds?.filter(
+        (id) => id.toString() !== orderId.toString()
+      );
+      const newStops = activeBatch?.stops?.filter(
+        (stop) => stop.orderId.toString() !== orderId.toString()
+      );
 
-    await DeliveryBatchModel.findByIdAndUpdate(
-      activeBatch._id,
-      {
-        $set: {
-          orderIds: newOrderIds,
-          stops: newStops,
+      await DeliveryBatchModel.findByIdAndUpdate(
+        activeBatch._id,
+        {
+          $set: {
+            orderIds: newOrderIds,
+            stops: newStops,
+          },
         },
-      },
-      {
-        returnDocument: 'after',
-        runValidators: true,
-      }
-    );
+        {
+          returnDocument: 'after',
+          runValidators: true,
+        }
+      );
 
-    if (!newOrderIds?.length) return;
+      if (!newOrderIds?.length) return;
 
-    return await this.optimizeRoute(driverId);
+      return await this.optimizeRoute(driverId);
+    } catch (error) {
+      console.log('Error in cancel and return order at delivery batch:', error);
+    }
   }
 
   static async optimizeRoute(driverId) {
