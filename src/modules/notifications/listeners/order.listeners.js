@@ -41,12 +41,12 @@ export const registerOrderListeners = () => {
     const offer = await getOfferByOrderId(data.orderId);
     if (offer) await DbJobService.cancelOfferTimeout(offer._id);
 
-    // Route optimization
+    // Route optimization for delivery batch stops
     await RouteOptimizationService.optimizeRoute(data.driverId);
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_PICKEDUP, async (data) => {
-    // Mark pickup stop as completed
+    // Mark the pickup stop as completed in the delivery batch
     await RouteOptimizationService.completePickUpStop(data.driverId, data.orderId);
 
     // Notify Mizban: order pickedUp
@@ -67,7 +67,7 @@ export const registerOrderListeners = () => {
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_DELIVERED, async (data) => {
-    // Mark deliver stop as completed
+    // Mark deliver stop as completed in delivery batch
     await RouteOptimizationService.completeDeliveryStop(data.driverId, data.orderId);
 
     // Notify Mizban: order delivered
