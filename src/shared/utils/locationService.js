@@ -12,6 +12,7 @@ import { RedisService } from './redisLocationService.js';
 import { handleLocationError } from './handleLocationError.js';
 import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
 import { calculateDistanceMeters } from './distance.helper.js';
+import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 
 const locationEventPublisher = new RedisEventPublisher(REDIS_CHANNEL.LIVE_LOCATION_CHANNEL);
 
@@ -53,11 +54,18 @@ export class LocationService {
       /** Calculate driver distance */
       const prevLocation = await RedisService.getRedisData(driverLocationKey);
       let distanceMeters = 0;
-      if (prevLocation && prevLocation.lng && prevLocation.lat) {
+      if (prevLocation && Number(prevLocation?.lng) && Number(prevLocation?.lat)) {
         distanceMeters = calculateDistanceMeters(
           [Number(prevLocation.lng), Number(prevLocation.lat)],
           [lng, lat]
         );
+      }
+
+      // Save driver distance on active batch
+      const activeBatch = await driverActiveBatch(driver._id);
+      if (distanceMeters > 0 && activeBatch) {
+        activeBatch.distanceMeters += distanceMeters;
+        await activeBatch.save();
       }
 
       const updatedAt = new Date().toISOString();
