@@ -34,7 +34,6 @@ export class OfferService {
       const currentIndex = order.currentDriverIndex;
 
       if (currentIndex >= driversInfo.length) {
-        console.log('No driver found for order: ', orderId); // I will remove this log
         // TODO we must search what should we do if no driver found. for now we just send an notification for all admins
         const noDriverFoundPayload = NotificationPayloads.noDriverFound(orderId);
         await NotificationService.send(
@@ -49,7 +48,6 @@ export class OfferService {
             orderId: order.sourceOrderId,
           },
         });
-        console.log('Published NO_DRIVER_ACCEPTED for order: ', order.sourceOrderId); // I will remove this log
         return;
       }
 
