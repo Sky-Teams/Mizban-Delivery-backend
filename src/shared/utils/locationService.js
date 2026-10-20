@@ -15,6 +15,7 @@ import {
   REDIS_KEYS,
   SERVICE,
   SOCKET_EVENTS,
+  STOP_STATUS,
 } from './enums.js';
 import { RedisService } from './redisLocationService.js';
 import { handleLocationError } from './handleLocationError.js';
@@ -72,7 +73,7 @@ export class LocationService {
       const location = await RedisService.getRedisData(driverLocationKey);
       const activeBatch = await driverActiveBatch(driver._id);
 
-      // Route optimization for active batch
+      // Route optimization for active batch stops
       if (activeBatch) {
         const optimizationBatchKey = `${REDIS_KEYS.DRIVER_ROUTE_OPTIMIZATION_STARTED}${driver._id}:${activeBatch._id}`;
 
@@ -81,13 +82,13 @@ export class LocationService {
         const isLocationNew = await isLocationFresh(location);
         if (!isLocationNew) return;
 
-        const deviationMeters =
-          activeBatch.stops.length > 0
-            ? calculateDistanceMeters(
-                [lng, lat],
-                [activeBatch.stops[0].location[0], activeBatch.stops[0].location[1]]
-              )
-            : 0;
+        const nextStop = activeBatch.stops.find((stop) => stop.stopStatus === STOP_STATUS.PENDING);
+        const deviationMeters = nextStop
+          ? calculateDistanceMeters(
+              [lng, lat],
+              [nextStop.location.coordinates[0], nextStop.location.coordinates[1]]
+            )
+          : 0;
 
         if (
           isFirstLocation ||
