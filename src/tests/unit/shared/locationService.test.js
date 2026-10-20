@@ -68,6 +68,10 @@ vi.mock('#shared/utils/handleLocationError.js', () => ({
   handleLocationError: vi.fn(),
 }));
 
+vi.mock('#modules/deliveryBatch/services/v1/delivery.batch.service.js', () => ({
+  driverActiveBatch: vi.fn(),
+}));
+
 describe('LocationService', () => {
   const driver = {
     _id: 'driver-123',
