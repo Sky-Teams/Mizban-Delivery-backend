@@ -35,6 +35,10 @@ const deliveryBatchSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    distanceMeters: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
