@@ -26,6 +26,7 @@ import { OfferModel } from '#modules/offers/index.js';
 import { deduplicateById, getObjectValues } from '#shared/utils/object.helper.js';
 import { buildPaginatedResponse } from '#shared/utils/pagination.js';
 import { calculateDeliveryPrice } from './pricing.service.js';
+import { orderAssignedForBatching } from '#modules/deliveryBatch/index.js';
 
 //#region Admin Services
 
@@ -110,6 +111,10 @@ export const getOrderBySourceId = async (sourceOrderId) => {
 
 export const findOrderById = async (orderId) => {
   return await OrderModel.findById(orderId);
+};
+
+export const getOrdersByIds = async (orderIds) => {
+  return OrderModel.find({ _id: { $in: orderIds } });
 };
 
 /**
@@ -279,10 +284,12 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
   await order.save({ session });
   await driver.save({ session });
 
+  // Add order to a active batch or create a new active batch
+  await orderAssignedForBatching(session, driver._id, order._id);
+
   eventBus.emit(EVENT_BUS_EVENTS.ORDER_ASSIGNED, {
     orderId: order._id,
     userId: driver.user._id,
-    driverId: driver._id,
   });
   return order;
 };

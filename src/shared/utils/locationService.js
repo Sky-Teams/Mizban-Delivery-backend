@@ -12,7 +12,6 @@ import { RedisService } from './redisLocationService.js';
 import { handleLocationError } from './handleLocationError.js';
 import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
 import { calculateDistanceMeters } from './distance.helper.js';
-import { addToDeliveryDistance, addToPickupDistance } from '#modules/orderDelivery/index.js';
 
 const locationEventPublisher = new RedisEventPublisher(REDIS_CHANNEL.LIVE_LOCATION_CHANNEL);
 
@@ -76,15 +75,6 @@ export class LocationService {
 
       for (const [index, order] of orders.entries()) {
         const orderDetail = orderDetails[index];
-        if (distanceMeters <= 0) continue;
-
-        if (order.status === ORDER_STATUS.ASSIGNED) {
-          await addToPickupDistance(order._id, distanceMeters);
-        }
-
-        if (order.status === ORDER_STATUS.PICKEDUP) {
-          await addToDeliveryDistance(order._id, distanceMeters);
-        }
 
         if (order.source === SERVICE.MIZBAN) {
           /** Publish an event to send details to mizban service*/

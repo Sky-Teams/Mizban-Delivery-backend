@@ -1,12 +1,5 @@
 import { findNearestAndScore } from '#modules/drivers/index.js';
 import { getOfferByOrderId } from '#modules/offers/index.js';
-import {
-  completeToDelivery,
-  completeToPickup,
-  createOrderDelivery,
-  startToDelivery,
-  startToPickup,
-} from '#modules/orderDelivery/index.js';
 import { addDriversDataInOrder } from '#modules/orders/index.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
 import { DbJobService } from '#shared/utils/dbJob.service.js';
@@ -38,10 +31,6 @@ export const registerOrderListeners = () => {
   eventBus.on(EVENT_BUS_EVENTS.ORDER_ASSIGNED, async (data) => {
     // Start driver location tracking
     await LocationService.startDriverTracking(data.userId);
-
-    // Initialize delivery tracking and record the start of the pickup phase.
-    await createOrderDelivery(data.driverId, data.orderId);
-    await startToPickup(data.orderId);
 
     // Send notification to driver
     const payload = NotificationPayloads.orderAssigned(data.orderId);

@@ -733,4 +733,36 @@ export const ERROR_MESSAGES = {
     fa: 'امکان ردیابی وجود ندارد. راننده باید حداقل یک سفارش تخصیص‌یافته داشته باشد.',
     ps: 'د تعقیب امکان نشته. ډرایور باید لږ تر لږه یو ټاکل شوی فرمایش ولري.',
   },
+  [ERROR_CODES.ORDER_NOT_ELIGIBLE_FOR_BATCHING]: {
+    en: 'Order is not eligible for batching',
+    fa: 'سفارش شرایط لازم برای بچ شدن را ندارد',
+    ps: 'دا امر د بچ کېدو لپاره لازم شرایط نه لري',
+  },
+  [ERROR_CODES.DELIVERY_BATCH_IS_FULL]: {
+    en: 'Delivery batch is full',
+    fa: 'ظرفیت مجموعه سفارش‌ها تکمیل شده است',
+    ps: 'د فرمایشونو د مجموعې ظرفیت بشپړ شوی دی',
+  },
+  [ERROR_CODES.DELIVERY_BATCH_NOT_AVAILABLE]: {
+    en: 'Delivery batch is not available',
+    fa: 'مجموعه سفارش‌ها در دسترس نیست',
+    ps: 'د فرمایشونو مجموعه شتون نه لري',
+  },
+  [ERROR_CODES.BATCH_PICKUP_NOT_COMPATIBLE]: {
+    en: 'Order pickup is not compatible with the active batch',
+    fa: 'محل دریافت سفارش با مجموعه سفارش‌های فعال سازگار نیست',
+    ps: 'د فرمایش اخیستلو ځای د فعالې فرمایشونو مجموعې سره سمون نه لري',
+  },
+
+  [ERROR_CODES.BATCH_DELIVERY_NOT_COMPATIBLE]: {
+    en: 'Order delivery is not compatible with the active batch',
+    fa: 'محل تحویل سفارش با مجموعه سفارش‌های فعال سازگار نیست',
+    ps: 'د فرمایش سپارلو ځای د فعالې فرمایشونو مجموعې سره سمون نه لري',
+  },
+
+  [ERROR_CODES.BATCH_PREPARATION_NOT_COMPATIBLE]: {
+    en: 'Order preparation is not compatible with the active batch',
+    fa: 'زمان آماده‌سازی سفارش با مجموعه سفارش‌های فعال سازگار نیست',
+    ps: 'د فرمایش د چمتو کولو وخت د فعالې فرمایشونو مجموعې سره سمون نه لري',
+  },
 };
