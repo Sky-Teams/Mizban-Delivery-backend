@@ -85,7 +85,7 @@ export class RouteOptimizationService {
     }
   }
 
-  // Update orderIds in batch when an order cancelled
+  // Update orderIds in batch when an order cancelled or returned
   static async cancelledOrReturnedDeliveryBatchOrder(driverId, orderId) {
     try {
       const activeBatch = await driverActiveBatch(driverId);
