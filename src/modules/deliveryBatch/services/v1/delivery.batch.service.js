@@ -154,7 +154,7 @@ export const orderAssignedForBatching = async (session, driverId, orderId) => {
 };
 
 /** Check batch status for completed orders */
-export const checkBatchForComplete = async (driverId) => {
+export const isBatchComplete = async (driverId) => {
   const activeBatch = await driverActiveBatch(driverId);
 
   if (!activeBatch) return false;
