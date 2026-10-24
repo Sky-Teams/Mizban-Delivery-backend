@@ -13,9 +13,11 @@ import { BATCH_STATUS, ORDER_STATUS } from '#shared/utils/enums.js';
 import {
   canAddNewOrder,
   driverActiveBatch,
+  isBatchComplete,
   orderAssignedForBatching,
 } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 import { getOrdersByIds, getOrderById } from '#modules/orders/services/v1/order.service.js';
+
 vi.mock('#modules/deliveryBatch/model/delivery.batch.model.js', () => ({
   DeliveryBatchModel: {
     findOne: vi.fn(),
@@ -167,7 +169,6 @@ describe('canAddNewOrder', () => {
       code: ERROR_CODES.BATCH_PREPARATION_NOT_COMPATIBLE,
     });
   });
-
 });
 
 describe('orderAssignedForBatching', () => {
@@ -302,5 +303,98 @@ describe('orderAssignedForBatching', () => {
       code: ERROR_CODES.ORDER_NOT_ELIGIBLE_FOR_BATCHING,
     });
   });
+});
 
+describe('isBatchComplete', () => {
+  const driverId = 'driver-1';
+
+  const activeBatch = {
+    _id: 'batch-1',
+    orderIds: ['order-1', 'order-2'],
+    status: BATCH_STATUS.ACTIVE,
+  };
+
+  const deliveredOrders = [
+    { _id: 'order-1', status: ORDER_STATUS.DELIVERED },
+    { _id: 'order-2', status: ORDER_STATUS.DELIVERED },
+  ];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should return false when there is no active batch', async () => {
+    DeliveryBatchModel.findOne.mockResolvedValue(null);
+    const result = await isBatchComplete(driverId);
+
+    expect(result).toBe(false);
+    expect(DeliveryBatchModel.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('should return false when no orders are found', async () => {
+    DeliveryBatchModel.findOne.mockResolvedValue(activeBatch);
+    getOrdersByIds.mockResolvedValue([]);
+
+    const result = await isBatchComplete(driverId);
+
+    expect(result).toBe(false);
+    expect(DeliveryBatchModel.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('should return false when not all orders are delivered', async () => {
+    DeliveryBatchModel.findOne.mockResolvedValue(activeBatch);
+    getOrdersByIds.mockResolvedValue([
+      deliveredOrders[0],
+      { _id: 'order-2', status: ORDER_STATUS.PENDING },
+    ]);
+
+    const result = await isBatchComplete(driverId);
+
+    expect(result).toBe(false);
+    expect(DeliveryBatchModel.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('should return false when the batch update fails', async () => {
+    DeliveryBatchModel.findOne.mockResolvedValue(activeBatch);
+    getOrdersByIds.mockResolvedValue(deliveredOrders);
+    DeliveryBatchModel.findOneAndUpdate.mockResolvedValue(null);
+
+    const result = await isBatchComplete(driverId);
+
+    expect(result).toBe(false);
+  });
+
+  it('should mark the batch as completed when all orders are delivered', async () => {
+    const completedBatch = {
+      ...activeBatch,
+      status: BATCH_STATUS.COMPLETED,
+    };
+
+    DeliveryBatchModel.findOne.mockResolvedValue(activeBatch);
+    getOrdersByIds.mockResolvedValue(deliveredOrders);
+    DeliveryBatchModel.findOneAndUpdate.mockResolvedValue(completedBatch);
+
+    const result = await isBatchComplete(driverId);
+
+    expect(getOrdersByIds).toHaveBeenCalledWith(activeBatch.orderIds);
+
+    expect(DeliveryBatchModel.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        _id: activeBatch._id,
+        status: BATCH_STATUS.ACTIVE,
+      },
+      {
+        $set: {
+          completedAt: expect.any(Date),
+          status: BATCH_STATUS.COMPLETED,
+        },
+      },
+      {
+        returnDocument: 'after',
+        runValidators: true,
+      }
+    );
+
+    expect(result).toBe(true);
+  });
 });
