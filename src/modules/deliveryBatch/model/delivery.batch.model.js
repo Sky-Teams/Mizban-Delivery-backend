@@ -1,4 +1,4 @@
-import { BATCH_STATUS } from '#shared/utils/enums.js';
+import { BATCH_STATUS, STOP_STATUS, STOP_TYPE } from '#shared/utils/enums.js';
 import { getObjectValues } from '#shared/utils/object.helper.js';
 import mongoose from 'mongoose';
 
@@ -15,11 +15,28 @@ const deliveryBatchSchema = new mongoose.Schema(
         ref: 'Order',
       },
     ],
-    routeOrder: [
+    stops: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Order',
-        // TODO: we will add more field here in future
+        _id: false,
+        orderId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Order',
+          required: true,
+        },
+        stopType: {
+          type: String,
+          enum: getObjectValues(STOP_TYPE),
+          required: true,
+        },
+        location: {
+          type: { type: String, enum: ['Point'], default: 'Point' },
+          coordinates: { type: [Number], required: true },
+        },
+        stopStatus: {
+          type: String,
+          enum: getObjectValues(STOP_STATUS),
+          default: STOP_STATUS.PENDING,
+        },
       },
     ],
     status: {
@@ -29,7 +46,7 @@ const deliveryBatchSchema = new mongoose.Schema(
     },
     startedAt: {
       type: Date,
-      default: null,
+      default: new Date(),
     },
     completedAt: {
       type: Date,
@@ -45,9 +62,7 @@ deliveryBatchSchema.index(
   {
     unique: true,
     partialFilterExpression: {
-      status: {
-        $in: [BATCH_STATUS.ACTIVE],
-      },
+      status: BATCH_STATUS.ACTIVE,
     },
   }
 );

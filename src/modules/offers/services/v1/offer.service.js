@@ -117,10 +117,10 @@ const acceptAnOffer = async (session, offerId, userId) => {
   driver.activeOrders = driver.activeOrders + 1;
   await driver.save({ session });
 
-  await DbJobService.cancelOfferTimeout(offerId);
-
-  // Add order to a active batch or create a new active batch
+  // Add order to an active batch or create a new active batch
   await orderAssignedForBatching(session, driver._id, order._id);
+
+  await DbJobService.cancelOfferTimeout(offerId);
 
   //TODO We need to send notification to admins.
 
