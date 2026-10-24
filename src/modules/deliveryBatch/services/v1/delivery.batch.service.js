@@ -2,8 +2,7 @@ import { DeliveryBatchModel } from '#modules/deliveryBatch/model/delivery.batch.
 import { OrderModel } from '#modules/orders/index.js';
 import { getOrderById, getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
-import { AppError, notFound } from '#shared/errors/error.js';
-import { eventBus } from '#shared/event-bus/eventBus.js';
+import { AppError } from '#shared/errors/error.js';
 import {
   isBatchSizeAvailable,
   isDeliveryCompatible,
@@ -155,7 +154,7 @@ export const orderAssignedForBatching = async (session, driverId, orderId) => {
 };
 
 /** Check batch status for completed orders */
-export const checkBatchForComplete = async (driverId) => {
+export const isBatchComplete = async (driverId) => {
   const activeBatch = await driverActiveBatch(driverId);
 
   if (!activeBatch) return false;
@@ -164,7 +163,7 @@ export const checkBatchForComplete = async (driverId) => {
 
   if (!orders.length || orders.length !== activeBatch.orderIds.length) return false;
 
-  const isBatchCompleted = await orders.every((order) => order.status === ORDER_STATUS.DELIVERED);
+  const isBatchCompleted = orders.every((order) => order.status === ORDER_STATUS.DELIVERED);
   if (!isBatchCompleted) return false;
 
   const completedBatch = await DeliveryBatchModel.findOneAndUpdate(
