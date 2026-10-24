@@ -193,6 +193,12 @@ export class RouteOptimizationService {
     }
   }
 
+  /**
+   * Builds an optimized route using the nearest-neighbor approach.
+   * At each step, selects the nearest eligible stop based on the current location,
+   * while ensuring that each order is picked up before being delivered.
+   * The current location is updated after each selection, and the process continues until all eligible stops are processed.
+   */
   static buildRoute(stops, currentLocation, completedPickupOrderIds = []) {
     if (
       !Array.isArray(stops) ||
@@ -239,7 +245,7 @@ export class RouteOptimizationService {
         remainingStops.splice(index, 1);
       }
 
-      currentLocation = nearStop.location;
+      currentLocation = nearStop.location.coordinates;
     }
 
     return route;
@@ -263,7 +269,7 @@ export class RouteOptimizationService {
 
       return {
         ...plainStop,
-        distance: calculateDistanceMeters(plainStop.location, currentLocation),
+        distance: calculateDistanceMeters(plainStop.location.coordinates, currentLocation),
       };
     });
   }
@@ -279,12 +285,13 @@ export class RouteOptimizationService {
     }
     return nearestStop;
   }
+
   static getSameLocationStops(stops, selectedStop) {
     return stops.filter(
       (stop) =>
         stop.stopType === selectedStop.stopType &&
-        stop.location[0] === selectedStop.location[0] &&
-        stop.location[1] === selectedStop.location[1]
+        stop.location.coordinates[0] === selectedStop.location.coordinates[0] &&
+        stop.location.coordinates[1] === selectedStop.location.coordinates[1]
     );
   }
 
@@ -314,7 +321,7 @@ export class RouteOptimizationService {
         newStops.push({
           orderId: order._id,
           stopType: STOP_TYPE.PICKUP,
-          location: order.pickupLocation.coordinates,
+          location: order.pickupLocation,
           stopStatus: STOP_STATUS.PENDING,
         });
       }
@@ -323,7 +330,7 @@ export class RouteOptimizationService {
         newStops.push({
           orderId: order._id,
           stopType: STOP_TYPE.DELIVERY,
-          location: order.dropoffLocation.coordinates,
+          location: order.dropoffLocation,
           stopStatus: STOP_STATUS.PENDING,
         });
       }
@@ -344,9 +351,9 @@ export class RouteOptimizationService {
       if (
         !stop.orderId ||
         !allowedTypes.includes(stop.stopType) ||
-        !Array.isArray(stop.location) ||
-        stop.location.length !== 2 ||
-        !stop.location.every(
+        !Array.isArray(stop.location?.coordinates) ||
+        stop.location?.coordinates.length !== 2 ||
+        !stop.location.coordinates.every(
           (coordinate) => typeof coordinate === 'number' && Number.isFinite(coordinate)
         )
       ) {

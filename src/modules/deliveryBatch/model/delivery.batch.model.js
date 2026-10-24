@@ -29,8 +29,8 @@ const deliveryBatchSchema = new mongoose.Schema(
           required: true,
         },
         location: {
-          type: [Number],
-          required: true,
+          type: { type: String, enum: ['Point'], default: 'Point' },
+          coordinates: { type: [Number], required: true },
         },
         stopStatus: {
           type: String,
@@ -46,7 +46,7 @@ const deliveryBatchSchema = new mongoose.Schema(
     },
     startedAt: {
       type: Date,
-      default: null,
+      default: new Date(),
     },
     completedAt: {
       type: Date,
