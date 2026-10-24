@@ -1167,7 +1167,7 @@ describe('cancelOrderWithTransaction', () => {
       status: ORDER_STATUS.ASSIGNED,
       timeline: {},
       save: vi.fn(),
-      driverId: null,
+      driverId: 'driver1',
       paymentStatus: PAYMENT_STATUS.PENDING,
       reason: {},
     };
@@ -1196,6 +1196,7 @@ describe('cancelOrderWithTransaction', () => {
     expect(eventBus.emit).toHaveBeenCalledWith(EVENT_BUS_EVENTS.ORDER_CANCELLED, {
       orderId: 'delivery1',
       reason: 'test reason',
+      driverId: order.driverId,
     });
   });
 
@@ -1420,7 +1421,7 @@ describe('returnOrderWithTransaction', () => {
       status: ORDER_STATUS.PICKEDUP,
       timeline: {},
       save: vi.fn(),
-      driverId: null,
+      driverId: 'driver1',
       paymentStatus: PAYMENT_STATUS.PENDING,
       reason: {},
     };
@@ -1449,6 +1450,7 @@ describe('returnOrderWithTransaction', () => {
     expect(eventBus.emit).toHaveBeenCalledWith(EVENT_BUS_EVENTS.ORDER_RETURNED, {
       orderId: 'delivery1',
       reason: 'test reason',
+      driverId: order.driverId,
     });
   });
 

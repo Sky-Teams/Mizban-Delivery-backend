@@ -33,6 +33,7 @@ vi.mock('#modules/deliveryBatch/model/delivery.batch.model.js', () => ({
   },
 }));
 
+//=============== completePickUpStop ==========
 describe('completePickUpStop', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -81,7 +82,7 @@ describe('completePickUpStop', () => {
     expect(result).toBeUndefined();
   });
 });
- 
+
 //================ completeDeliveryStop========
 describe('completeDeliveryStop', () => {
   beforeEach(() => {
@@ -237,7 +238,6 @@ describe('optimizeRoute', () => {
   let validateStopsSpy;
   let buildRouteSpy;
   let validateRouteOrderSpy;
-  let consoleErrorSpy;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -411,5 +411,93 @@ describe('optimizeRoute', () => {
     );
 
     expect(result).toEqual(updatedBatch);
+  });
+});
+
+//================ cancelledOrReturnedDeliveryBatchOrder =======
+describe('cancelledOrReturnedDeliveryBatchOrder', () => {
+  const driverId = 'driver-1';
+  const orderId = 'order-1';
+
+  const activeBatch = {
+    _id: 'batch-1',
+    driver: driverId,
+    orderIds: ['order-1', 'order-2'],
+    stops: [
+      { orderId: 'order-1', stopType: STOP_TYPE.PICKUP },
+      { orderId: 'order-1', stopType: STOP_TYPE.DELIVERY },
+      { orderId: 'order-2', stopType: STOP_TYPE.PICKUP },
+      { orderId: 'order-2', stopType: STOP_TYPE.DELIVERY },
+    ],
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    driverActiveBatch.mockResolvedValue(activeBatch);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should remove the cancelled order and its stops from the batch', async () => {
+    DeliveryBatchModel.findByIdAndUpdate.mockResolvedValue({});
+
+    await RouteOptimizationService.cancelledOrReturnedDeliveryBatchOrder(driverId, orderId);
+
+    expect(DeliveryBatchModel.findByIdAndUpdate).toHaveBeenCalledWith(
+      activeBatch._id,
+      {
+        $set: {
+          orderIds: ['order-2'],
+          stops: [
+            { orderId: 'order-2', stopType: STOP_TYPE.PICKUP },
+            { orderId: 'order-2', stopType: STOP_TYPE.DELIVERY },
+          ],
+        },
+      },
+      {
+        returnDocument: 'after',
+        runValidators: true,
+      }
+    );
+  });
+
+  it('should not optimize the route when no orders remain in the batch', async () => {
+    driverActiveBatch.mockResolvedValue({
+      ...activeBatch,
+      orderIds: ['order-1'],
+      stops: [
+        { orderId: 'order-1', stopType: STOP_TYPE.PICKUP },
+        { orderId: 'order-1', stopType: STOP_TYPE.DELIVERY },
+      ],
+    });
+
+    DeliveryBatchModel.findByIdAndUpdate.mockResolvedValue({});
+
+    await RouteOptimizationService.cancelledOrReturnedDeliveryBatchOrder(driverId, orderId);
+
+    expect(DeliveryBatchModel.findByIdAndUpdate).toHaveBeenCalledWith(
+      activeBatch._id,
+      {
+        $set: {
+          orderIds: [],
+          stops: [],
+        },
+      },
+      {
+        returnDocument: 'after',
+        runValidators: true,
+      }
+    );
+  });
+
+  it('should not update the batch when no active batch exists', async () => {
+    driverActiveBatch.mockResolvedValue(null);
+
+    await RouteOptimizationService.cancelledOrReturnedDeliveryBatchOrder(driverId, orderId);
+
+    expect(DeliveryBatchModel.findByIdAndUpdate).not.toHaveBeenCalled();
   });
 });
