@@ -32,7 +32,6 @@ import {
   PAYMENT_STATUS,
   REASON_TYPES,
   ROLES,
-  OFFER_STATUS,
   SERVICE,
 } from '#shared/utils/enums.js';
 import { DtoService } from '#shared/utils/dtoService.js';
@@ -44,7 +43,6 @@ import {
   calculateDeliveryPrice,
   compareDeliveryPrice,
 } from '#modules/orders/services/v1/pricing.service.js';
-import { orderAssignedForBatching } from '#modules/deliveryBatch/index.js';
 
 vi.mock('#modules/orders/models/order.model.js', () => ({
   OrderModel: {
@@ -416,6 +414,7 @@ describe('assignDriver', () => {
     expect(eventBus.emit).toHaveBeenCalledWith(EVENT_BUS_EVENTS.ORDER_ASSIGNED, {
       orderId: order._id,
       userId: driver.user._id,
+      driverId: 'driver1',
     });
   });
 
