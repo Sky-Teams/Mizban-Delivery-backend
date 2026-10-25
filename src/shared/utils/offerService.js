@@ -55,7 +55,7 @@ export class OfferService {
       const driver = await fetchDriverByDriverId(driversInfo[currentIndex].id);
       if (
         !driver ||
-        driver.status !== DRIVER_STATUS.IDLE ||
+        driver.status === DRIVER_STATUS.OFFLINE ||
         driver.activeOrders >= driver.maxOrders
       ) {
         await increaseDriverIndex(orderId);
