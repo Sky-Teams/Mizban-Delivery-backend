@@ -22,11 +22,7 @@ export const registerOfferListeners = () => {
         type: REDIS_EVENT_TYPE.OFFER_ACCEPTED,
         data: {
           orderId: data.sourceOrderId,
-          driver: {
-            driverId: driver._id.toString(),
-            fullname: driver.user.name,
-            phone: driver.user.phone,
-          },
+          driver: data.driver,
         },
       });
     }

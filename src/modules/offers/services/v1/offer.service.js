@@ -115,6 +115,13 @@ const acceptAnOffer = async (session, offerId, userId) => {
   eventBus.emit(EVENT_BUS_EVENTS.OFFER_ACCEPTED, {
     orderId: order._id,
     driverId: order.driverId,
+    source: order.source,
+    sourceOrderId: order.sourceOrderId,
+    driver: {
+      driverId: driver._id.toString(),
+      fullname: driver.user.name,
+      phone: driver.user.phone,
+    },
   });
 
   return offer;
