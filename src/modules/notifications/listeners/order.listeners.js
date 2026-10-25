@@ -6,7 +6,6 @@ import { DbJobService } from '#shared/utils/dbJob.service.js';
 import { LocationService } from '#shared/utils/locationService.js';
 import {
   EVENT_BUS_EVENTS,
-  OFFER_STATUS,
   ORDER_STATUS,
   REDIS_EVENT_TYPE,
   SOCKET_EVENTS,
@@ -20,7 +19,7 @@ export const registerOrderListeners = () => {
   eventBus.on(EVENT_BUS_EVENTS.ORDER_CREATED, async (data) => {
     const orderId = data.orderId.toString();
 
-    if (data.notifyAdmin !== false) {
+    if (data.notifyAdmin) {
       const payload = NotificationPayloads.orderCreated(orderId);
       await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
     }

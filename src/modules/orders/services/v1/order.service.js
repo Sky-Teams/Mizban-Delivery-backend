@@ -105,6 +105,7 @@ export const addOrder = async (orderData, session) => {
     eventBus.emit(EVENT_BUS_EVENTS.ORDER_CREATED, {
       orderId: newOrder._id,
       pickupLocation: newOrder.pickupLocation,
+      notifyAdmin: true,
     });
   }
 
