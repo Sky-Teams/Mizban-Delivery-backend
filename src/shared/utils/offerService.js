@@ -1,5 +1,6 @@
 import { fetchDriverByDriverId } from '#modules/drivers/index.js';
-import { createOffer, getOffer } from '#modules/offers/index.js';
+import { createOffer } from '#modules/offers/index.js';
+import { findOfferById } from '#modules/offers/services/v1/offer.service.js';
 import { getOrderById, increaseDriverIndex } from '#modules/orders/index.js';
 import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
 import { DbJobService } from './dbJob.service.js';
@@ -116,10 +117,10 @@ export class OfferService {
    * @param {string} param0.driverId
    * @param {string} param0.offerId
    */
-  static async handleOfferTimeout({ orderId, driverId }) {
+  static async handleOfferTimeout({ orderId, driverId, offerId }) {
     console.log('Timeout. No Response From Driver'); // We need this log for testing purpose
 
-    const offer = await getOffer(orderId, driverId);
+    const offer = await findOfferById(offerId);
     if (!offer) {
       await increaseDriverIndex(orderId);
       return await OfferService.sendOfferToDriver(orderId);
