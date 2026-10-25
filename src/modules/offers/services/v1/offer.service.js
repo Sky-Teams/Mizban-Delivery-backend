@@ -11,15 +11,10 @@ import {
   EVENT_BUS_EVENTS,
   OFFER_STATUS,
   ORDER_STATUS,
-  REDIS_CHANNEL,
-  REDIS_EVENT_TYPE,
 } from '#shared/utils/enums.js';
 import mongoose from 'mongoose';
 import { createOfferSchema } from '../../dto/create-offer.schema.js';
 import { DtoService } from '#shared/utils/dtoService.js';
-import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
-
-const offerPublisher = new RedisEventPublisher(REDIS_CHANNEL.ORDER_OFFER_CHANNEL);
 
 /**
  * Create a new offer for an order in the system.
@@ -120,19 +115,6 @@ const acceptAnOffer = async (session, offerId, userId) => {
   eventBus.emit(EVENT_BUS_EVENTS.OFFER_ACCEPTED, {
     orderId: order._id,
     driverId: order.driverId,
-  });
-
-  // Publish event (driver accepted offer)
-  await offerPublisher.publish({
-    type: REDIS_EVENT_TYPE.OFFER_ACCEPTED,
-    data: {
-      orderId: order.sourceOrderId,
-      driver: {
-        driverId: driver._id.toString(),
-        fullname: driver.user.name,
-        phone: driver.user.phone,
-      },
-    },
   });
 
   return offer;
