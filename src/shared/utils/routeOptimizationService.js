@@ -99,6 +99,24 @@ export class RouteOptimizationService {
         (stop) => stop.orderId.toString() !== orderId.toString()
       );
 
+      if (!newOrderIds?.length) {
+        return await DeliveryBatchModel.findByIdAndUpdate(
+          activeBatch._id,
+          {
+            $set: {
+              orderIds: [],
+              stops: [],
+              status: BATCH_STATUS.COMPLETED,
+              completedAt: new Date(),
+            },
+          },
+          {
+            returnDocument: 'after',
+            runValidators: true,
+          }
+        );
+      }
+
       await DeliveryBatchModel.findByIdAndUpdate(
         activeBatch._id,
         {
@@ -112,8 +130,6 @@ export class RouteOptimizationService {
           runValidators: true,
         }
       );
-
-      if (!newOrderIds?.length) return;
 
       return await this.optimizeRoute(driverId);
     } catch (error) {
