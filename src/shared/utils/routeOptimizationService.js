@@ -85,6 +85,58 @@ export class RouteOptimizationService {
     }
   }
 
+  // Update orderIds in batch when an order cancelled or returned
+  static async cancelledOrReturnedDeliveryBatchOrder(driverId, orderId) {
+    try {
+      const activeBatch = await driverActiveBatch(driverId);
+      if (!activeBatch)
+        throw new AppError('Active batch not found', 404, ERROR_CODES.DELIVERY_BATCH_NOT_AVAILABLE);
+
+      const newOrderIds = activeBatch.orderIds?.filter(
+        (id) => id.toString() !== orderId.toString()
+      );
+      const newStops = activeBatch?.stops?.filter(
+        (stop) => stop.orderId.toString() !== orderId.toString()
+      );
+
+      if (!newOrderIds?.length) {
+        return await DeliveryBatchModel.findByIdAndUpdate(
+          activeBatch._id,
+          {
+            $set: {
+              orderIds: [],
+              stops: [],
+              status: BATCH_STATUS.COMPLETED,
+              completedAt: new Date(),
+            },
+          },
+          {
+            returnDocument: 'after',
+            runValidators: true,
+          }
+        );
+      }
+
+      await DeliveryBatchModel.findByIdAndUpdate(
+        activeBatch._id,
+        {
+          $set: {
+            orderIds: newOrderIds,
+            stops: newStops,
+          },
+        },
+        {
+          returnDocument: 'after',
+          runValidators: true,
+        }
+      );
+
+      return await this.optimizeRoute(driverId);
+    } catch (error) {
+      console.log('Error in cancel and return order at delivery batch:', error);
+    }
+  }
+
   static async optimizeRoute(driverId) {
     try {
       const activeBatch = await driverActiveBatch(driverId);
