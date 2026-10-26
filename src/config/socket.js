@@ -6,6 +6,7 @@ import { pushNotification } from '#shared/utils/pushNotification.js';
 import { registerSocketEvents } from '#shared/socket/registerSocketEvents.js';
 import { ROLES } from '#shared/utils/enums.js';
 import { LocationService } from '#shared/utils/locationService.js';
+import { RouteOptimizationService } from '#shared/utils/routeOptimizationService.js';
 
 export class CustomSocket {
   static #io = null;
@@ -57,6 +58,7 @@ export class CustomSocket {
 
       if (socket.role === ROLES.DRIVER) {
         LocationService.startDriverTracking(socket.userId);
+        RouteOptimizationService.sendOptimizedRouteToDriver(socket.userId);
       }
 
       socket.on('disconnect', () => {
@@ -172,6 +174,19 @@ export class CustomSocket {
   // Send live location to admin
   static async sendLiveLocationToAdmins(event, payload) {
     this.getIO().to('admins').emit(event, payload);
+  }
+
+  // Send payload to online user
+  static sendPayloadToOnlineUser(userId, event, payload) {
+    if (!this.#io) throw new Error('Socket is not initialized');
+
+    userId = userId.toString();
+    if (!this.isUserOnline(userId)) {
+      return false;
+    }
+
+    this.getIO().to(userId).emit(event, payload);
+    return true;
   }
 
   // Emit to user online
