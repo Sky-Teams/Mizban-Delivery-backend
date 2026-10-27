@@ -27,6 +27,7 @@ import { authorize, authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { ROLES, SERVICE } from '#shared/utils/enums.js';
 import { orderStatisticsQueryValidator } from '../../dto/order-statistics-query-validator.js';
 import { calculateDeliveryPriceValidator } from '#modules/orders/dto/calculate-delivery-price.schema.js';
+import { retryDriverSearch } from '#modules/orders/services/v1/order.service.js';
 
 const router = express.Router();
 
