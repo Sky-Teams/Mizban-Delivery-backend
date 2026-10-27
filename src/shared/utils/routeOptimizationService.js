@@ -7,7 +7,7 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { isLocationFresh, ordersWithStops } from './batch.helper.js';
 import { calculateDistanceMeters } from './distance.helper.js';
-import { BATCH_STATUS, REDIS_KEYS, SOCKET_EVENTS, STOP_STATUS, STOP_TYPE } from './enums.js';
+import { BATCH_STATUS, ORDER_STATUS, REDIS_KEYS, STOP_STATUS, STOP_TYPE } from './enums.js';
 import { RedisService } from './redisLocationService.js';
 
 export class RouteOptimizationService {
@@ -18,20 +18,20 @@ export class RouteOptimizationService {
         {
           driver: driverId,
           status: BATCH_STATUS.ACTIVE,
-        },
-        {
-          $set: {
-            'stops.$[stop].stopStatus': STOP_STATUS.COMPLETED,
+          stops: {
+            $elemMatch: {
+              orderId,
+              stopStatus: STOP_STATUS.PENDING,
+              stopType: STOP_TYPE.PICKUP,
+            },
           },
         },
         {
-          arrayFilters: [
-            {
-              'stop.orderId': orderId,
-              'stop.stopType': STOP_TYPE.PICKUP,
-              'stop.stopStatus': STOP_STATUS.PENDING,
-            },
-          ],
+          $set: {
+            'stops.$.stopStatus': STOP_STATUS.COMPLETED,
+          },
+        },
+        {
           returnDocument: 'after',
         }
       );
@@ -56,20 +56,20 @@ export class RouteOptimizationService {
         {
           driver: driverId,
           status: BATCH_STATUS.ACTIVE,
-        },
-        {
-          $set: {
-            'stops.$[stop].stopStatus': STOP_STATUS.COMPLETED,
+          stops: {
+            $elemMatch: {
+              orderId,
+              stopStatus: STOP_STATUS.PENDING,
+              stopType: STOP_TYPE.DELIVERY,
+            },
           },
         },
         {
-          arrayFilters: [
-            {
-              'stop.orderId': orderId,
-              'stop.stopType': STOP_TYPE.DELIVERY,
-              'stop.stopStatus': STOP_STATUS.PENDING,
-            },
-          ],
+          $set: {
+            'stops.$.stopStatus': STOP_STATUS.COMPLETED,
+          },
+        },
+        {
           returnDocument: 'after',
         }
       );
@@ -84,6 +84,58 @@ export class RouteOptimizationService {
       return updateBatch;
     } catch (error) {
       console.error('Error in complete delivery stop:', error);
+    }
+  }
+
+  // Update orderIds in batch when an order cancelled or returned
+  static async cancelledOrReturnedDeliveryBatchOrder(driverId, orderId) {
+    try {
+      const activeBatch = await driverActiveBatch(driverId);
+      if (!activeBatch)
+        throw new AppError('Active batch not found', 404, ERROR_CODES.DELIVERY_BATCH_NOT_AVAILABLE);
+
+      const newOrderIds = activeBatch.orderIds?.filter(
+        (id) => id.toString() !== orderId.toString()
+      );
+      const newStops = activeBatch?.stops?.filter(
+        (stop) => stop.orderId.toString() !== orderId.toString()
+      );
+
+      if (!newOrderIds?.length) {
+        return await DeliveryBatchModel.findByIdAndUpdate(
+          activeBatch._id,
+          {
+            $set: {
+              orderIds: [],
+              stops: [],
+              status: BATCH_STATUS.COMPLETED,
+              completedAt: new Date(),
+            },
+          },
+          {
+            returnDocument: 'after',
+            runValidators: true,
+          }
+        );
+      }
+
+      await DeliveryBatchModel.findByIdAndUpdate(
+        activeBatch._id,
+        {
+          $set: {
+            orderIds: newOrderIds,
+            stops: newStops,
+          },
+        },
+        {
+          returnDocument: 'after',
+          runValidators: true,
+        }
+      );
+
+      return await this.optimizeRoute(driverId);
+    } catch (error) {
+      console.log('Error in cancel and return order at delivery batch:', error);
     }
   }
 
@@ -316,7 +368,8 @@ export class RouteOptimizationService {
           orderId: order._id,
           stopType: STOP_TYPE.PICKUP,
           location: order.pickupLocation,
-          stopStatus: STOP_STATUS.PENDING,
+          stopStatus:
+            order.status === ORDER_STATUS.PICKEDUP ? STOP_STATUS.COMPLETED : STOP_STATUS.PENDING,
         });
       }
 
@@ -325,7 +378,8 @@ export class RouteOptimizationService {
           orderId: order._id,
           stopType: STOP_TYPE.DELIVERY,
           location: order.dropoffLocation,
-          stopStatus: STOP_STATUS.PENDING,
+          stopStatus:
+            order.status === ORDER_STATUS.DELIVERED ? STOP_STATUS.COMPLETED : STOP_STATUS.PENDING,
         });
       }
     }
