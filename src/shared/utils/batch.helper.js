@@ -1,7 +1,7 @@
 import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { calculateDistanceMeters } from './distance.helper.js';
 import { DtoService } from './dtoService.js';
-import { BATCH_CONFIG } from './enums.js';
+import { BATCH_CONFIG, STOP_TYPE } from './enums.js';
 
 /** Calculate pick up distance between orders */
 export const isPickupCompatible = (currentOrder, newOrder) => {
@@ -73,10 +73,14 @@ export const ordersWithStops = async (activeBatch) => {
       const order = ordersMap.get(stop.orderId.toString());
       if (!order) return;
 
-      const orderFields = await DtoService.order(order);
       const location = await DtoService.toLatLng(stop.location.coordinates);
       return {
-        ...orderFields,
+        source: order?.source,
+        packageDetails: { ...order?.packageDetails },
+        contactDetails:
+          stop.stopType === STOP_TYPE.PICKUP ? { ...order?.sender } : { ...order?.receiver },
+        deliveryPrice: order?.deliveryPrice?.total,
+        items: [...order?.items],
         status: stop.stopStatus,
         stopType: stop.stopType,
         location: location,
