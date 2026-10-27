@@ -7,7 +7,7 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { isLocationFresh, ordersWithStops } from './batch.helper.js';
 import { calculateDistanceMeters } from './distance.helper.js';
-import { BATCH_STATUS, ORDER_STATUS, REDIS_KEYS, STOP_STATUS, STOP_TYPE } from './enums.js';
+import { BATCH_STATUS, ORDER_STATUS, REDIS_KEYS, SOCKET_EVENTS, STOP_STATUS, STOP_TYPE } from './enums.js';
 import { RedisService } from './redisLocationService.js';
 
 export class RouteOptimizationService {
