@@ -69,23 +69,33 @@ export const ordersWithStops = async (activeBatch) => {
   const ordersMap = new Map(orders.map((order) => [order._id.toString(), order]));
 
   const formattedOrders = await Promise.all(
-    activeBatch.stops.map(async (stop) => {
-      const order = ordersMap.get(stop.orderId.toString());
-      if (!order) return;
+    activeBatch.orderIds.map(async (orderId) => {
+      const order = ordersMap.get(orderId.toString());
+      if (!order) return null;
 
-      const location = await DtoService.toLatLng(stop.location.coordinates);
+      const orderStops = activeBatch.stops.filter(
+        (stop) => stop.orderId.toString() === orderId.toString()
+      );
+
+      const stops = await Promise.all(
+        orderStops.map(async (stop) => ({
+          contactDetails:
+            stop.stopType === STOP_TYPE.PICKUP ? { ...order.sender } : { ...order.receiver },
+          status: stop.stopStatus,
+          stopType: stop.stopType,
+          location: await DtoService.toLatLng(stop.location.coordinates),
+        }))
+      );
+
       return {
-        source: order?.source,
-        packageDetails: { ...order?.packageDetails },
-        contactDetails:
-          stop.stopType === STOP_TYPE.PICKUP ? { ...order?.sender } : { ...order?.receiver },
-        deliveryPrice: order?.deliveryPrice?.total,
-        items: [...order?.items],
-        status: stop.stopStatus,
-        stopType: stop.stopType,
-        location: location,
+        source: order.source,
+        packageDetails: { ...order.packageDetails },
+        deliveryPrice: order.deliveryPrice?.total,
+        items: [...order.items],
+        stops,
       };
     })
   );
-  return formattedOrders;
+
+  return formattedOrders.filter(Boolean);
 };
