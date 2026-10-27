@@ -95,4 +95,11 @@ router.get(
 );
 router.get('/:id', authorizeRole(ROLES.ADMIN), validate(mongoIdValidator), asyncHandler(getOrder));
 
+router.post(
+  '/:id/retry-driver-search',
+  authorizeRole(ROLES.ADMIN),
+  validate(mongoIdValidator),
+  asyncHandler(retryDriverSearch)
+);
+
 export default router;

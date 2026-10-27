@@ -174,3 +174,13 @@ export const getOrder = async (req, res) => {
     data: order,
   });
 };
+
+export const retryOrderDriverSearch = async (req, res) => {
+  const requester = req.user || req.service;
+  if (!requester) throw unauthorized();
+
+  const order = await getOrderById(req.params.id);
+
+  const updated = await retryDriverSearch(order);
+  res.status(200).json({ success: true, data: updated });
+};

@@ -36,6 +36,7 @@ export const retryDriverSearch = async (order) => {
       409,
       ERROR_CODES.ORDER_DRIVER_SEARCH_RETRY_NOT_ALLOWED
     );
+
   order.recommendedDrivers = [];
   order.currentDriverIndex = 0;
   await order.save();
