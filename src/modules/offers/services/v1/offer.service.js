@@ -15,6 +15,7 @@ import {
 import mongoose from 'mongoose';
 import { createOfferSchema } from '../../dto/create-offer.schema.js';
 import { DtoService } from '#shared/utils/dtoService.js';
+import { orderAssignedForBatching } from '#modules/deliveryBatch/index.js';
 
 /**
  * Create a new offer for an order in the system.
@@ -116,6 +117,9 @@ const acceptAnOffer = async (session, offerId, userId) => {
   await driver.save({ session });
 
   await DbJobService.cancelOfferTimeout(offerId);
+
+  // Add order to a active batch or create a new active batch
+  await orderAssignedForBatching(session, driver._id, order._id);
 
   //TODO We need to send notification to admins.
 

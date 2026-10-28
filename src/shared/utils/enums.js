@@ -121,3 +121,15 @@ export const REDIS_EVENT_TYPES = {
   ORDER_PICKEDUP: 'order.pickedUp',
   ORDER_DELIVERED: 'order.delivered',
 };
+
+export const BATCH_STATUS = {
+  ACTIVE: 'active',
+  COMPLETED: 'completed',
+};
+
+export const BATCH_CONFIG = {
+  MAX_PICKUP_DISTANCE_METERS: Number(process.env.MAX_PICKUP_DISTANCE_METERS) || 4000, // meter
+  MAX_DELIVERY_DISTANCE_METERS: Number(process.env.MAX_DELIVERY_DISTANCE_METERS) || 4000, // meter
+  MAX_PREPARATION_MINUTE: Number(process.env.MAX_PREPARATION_MINUTE) || 15, // minute
+  MAX_BATCH_SIZE: Number(process.env.MAX_DELIVERY_BATCH_SIZE) || 5,
+};

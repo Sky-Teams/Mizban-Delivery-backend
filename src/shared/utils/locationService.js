@@ -11,6 +11,8 @@ import { ORDER_STATUS, REDIS_CHANNEL, REDIS_KEYS, SERVICE, SOCKET_EVENTS } from 
 import { RedisService } from './redisLocationService.js';
 import { handleLocationError } from './handleLocationError.js';
 import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
+import { calculateDistanceMeters } from './distance.helper.js';
+import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 
 const locationEventPublisher = new RedisEventPublisher(REDIS_CHANNEL.LIVE_LOCATION_CHANNEL);
 
@@ -37,6 +39,7 @@ export class LocationService {
       )
         throw new AppError('Invalid data location', 400, ERROR_CODES.INVALID_LOCATION_DATA);
 
+      // Frontend coordinates
       const [lat, lng] = data.currentLocation.coordinates;
       /** Validation location data (type, latitude, longitude) */
       updateLocationSchema.parse({
@@ -47,6 +50,23 @@ export class LocationService {
       });
 
       const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driver._id}`;
+
+      /** Calculate driver distance */
+      const prevLocation = await RedisService.getRedisData(driverLocationKey);
+      let distanceMeters = 0;
+      if (prevLocation && Number(prevLocation?.lng) && Number(prevLocation?.lat)) {
+        distanceMeters = calculateDistanceMeters(
+          [Number(prevLocation.lng), Number(prevLocation.lat)],
+          [lng, lat]
+        );
+      }
+
+      // Save driver distance on active batch
+      const activeBatch = await driverActiveBatch(driver._id);
+      if (distanceMeters > 0 && activeBatch) {
+        activeBatch.distanceMeters += distanceMeters;
+        await activeBatch.save();
+      }
 
       const updatedAt = new Date().toISOString();
       /** Save locations in Redis caching  */

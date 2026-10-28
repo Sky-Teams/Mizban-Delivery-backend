@@ -44,6 +44,7 @@ import {
   calculateDeliveryPrice,
   compareDeliveryPrice,
 } from '#modules/orders/services/v1/pricing.service.js';
+import { orderAssignedForBatching } from '#modules/deliveryBatch/index.js';
 
 vi.mock('#modules/orders/models/order.model.js', () => ({
   OrderModel: {
@@ -106,6 +107,10 @@ vi.mock('#shared/utils/date.helper.js', () => ({
 vi.mock('#modules/orders/services/v1/pricing.service.js', () => ({
   calculateDeliveryPrice: vi.fn(),
   compareDeliveryPrice: vi.fn(),
+}));
+
+vi.mock('#modules/deliveryBatch/services/v1/delivery.batch.service.js', () => ({
+  orderAssignedForBatching: vi.fn(),
 }));
 
 const fakeSession = {
