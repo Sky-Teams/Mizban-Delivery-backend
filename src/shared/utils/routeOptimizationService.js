@@ -5,7 +5,7 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError } from '#shared/errors/error.js';
 import { isLocationFresh } from './batch.helper.js';
 import { calculateDistanceMeters } from './distance.helper.js';
-import { BATCH_STATUS, REDIS_KEYS, STOP_STATUS, STOP_TYPE } from './enums.js';
+import { BATCH_STATUS, ORDER_STATUS, REDIS_KEYS, STOP_STATUS, STOP_TYPE } from './enums.js';
 import { RedisService } from './redisLocationService.js';
 
 export class RouteOptimizationService {
@@ -16,20 +16,20 @@ export class RouteOptimizationService {
         {
           driver: driverId,
           status: BATCH_STATUS.ACTIVE,
-        },
-        {
-          $set: {
-            'stops.$[stop].stopStatus': STOP_STATUS.COMPLETED,
+          stops: {
+            $elemMatch: {
+              orderId,
+              stopStatus: STOP_STATUS.PENDING,
+              stopType: STOP_TYPE.PICKUP,
+            },
           },
         },
         {
-          arrayFilters: [
-            {
-              'stop.orderId': orderId,
-              'stop.stopType': STOP_TYPE.PICKUP,
-              'stop.stopStatus': STOP_STATUS.PENDING,
-            },
-          ],
+          $set: {
+            'stops.$.stopStatus': STOP_STATUS.COMPLETED,
+          },
+        },
+        {
           returnDocument: 'after',
         }
       );
@@ -54,20 +54,20 @@ export class RouteOptimizationService {
         {
           driver: driverId,
           status: BATCH_STATUS.ACTIVE,
-        },
-        {
-          $set: {
-            'stops.$[stop].stopStatus': STOP_STATUS.COMPLETED,
+          stops: {
+            $elemMatch: {
+              orderId,
+              stopStatus: STOP_STATUS.PENDING,
+              stopType: STOP_TYPE.DELIVERY,
+            },
           },
         },
         {
-          arrayFilters: [
-            {
-              'stop.orderId': orderId,
-              'stop.stopType': STOP_TYPE.DELIVERY,
-              'stop.stopStatus': STOP_STATUS.PENDING,
-            },
-          ],
+          $set: {
+            'stops.$.stopStatus': STOP_STATUS.COMPLETED,
+          },
+        },
+        {
           returnDocument: 'after',
         }
       );
@@ -338,7 +338,8 @@ export class RouteOptimizationService {
           orderId: order._id,
           stopType: STOP_TYPE.PICKUP,
           location: order.pickupLocation,
-          stopStatus: STOP_STATUS.PENDING,
+          stopStatus:
+            order.status === ORDER_STATUS.PICKEDUP ? STOP_STATUS.COMPLETED : STOP_STATUS.PENDING,
         });
       }
 
@@ -347,7 +348,8 @@ export class RouteOptimizationService {
           orderId: order._id,
           stopType: STOP_TYPE.DELIVERY,
           location: order.dropoffLocation,
-          stopStatus: STOP_STATUS.PENDING,
+          stopStatus:
+            order.status === ORDER_STATUS.DELIVERED ? STOP_STATUS.COMPLETED : STOP_STATUS.PENDING,
         });
       }
     }
