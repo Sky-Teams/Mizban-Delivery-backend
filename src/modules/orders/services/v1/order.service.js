@@ -39,13 +39,15 @@ export const retryDriverSearch = async (order) => {
 
   order.recommendedDrivers = [];
   order.currentDriverIndex = 0;
-  await order.save();
+  const updatedOrder = await order.save();
 
   eventBus.emit(EVENT_BUS_EVENTS.ORDER_CREATED, {
     orderId: order._id,
     pickupLocation: order.pickupLocation,
     notifyAdmin: false,
   });
+
+  return updatedOrder;
 };
 
 const getOrCreateOrder = async (orderId, orderData, driverId, session) => {

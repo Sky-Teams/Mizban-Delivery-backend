@@ -10,6 +10,7 @@ import {
   updateOrder,
   ordersStatistics,
   calculateDeliveryPrice,
+  retryOrderDriverSearch,
 } from '../../controllers/v1/order.controller.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
 import express from 'express';
@@ -27,7 +28,6 @@ import { authorize, authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { ROLES, SERVICE } from '#shared/utils/enums.js';
 import { orderStatisticsQueryValidator } from '../../dto/order-statistics-query-validator.js';
 import { calculateDeliveryPriceValidator } from '#modules/orders/dto/calculate-delivery-price.schema.js';
-import { retryDriverSearch } from '#modules/orders/services/v1/order.service.js';
 
 const router = express.Router();
 
@@ -100,7 +100,7 @@ router.post(
   '/:id/retry-driver-search',
   authorizeRole(ROLES.ADMIN),
   validate(mongoIdValidator),
-  asyncHandler(retryDriverSearch)
+  asyncHandler(retryOrderDriverSearch)
 );
 
 export default router;
