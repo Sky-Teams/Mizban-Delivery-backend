@@ -36,7 +36,7 @@ import {
 } from '#shared/utils/enums.js';
 import { DtoService } from '#shared/utils/dtoService.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
-import { OfferModel } from '#modules/offers/index.js';
+import { createOffer, OfferModel } from '#modules/offers/index.js';
 
 import * as orderService from '#modules/orders/services/v1/order.service.js';
 import {
@@ -62,6 +62,14 @@ vi.mock('#modules/offers/models/offer.model.js', () => ({
     find: vi.fn(),
   },
 }));
+
+vi.mock('#modules/offers/index.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    createOffer: vi.fn(),
+  };
+});
 
 vi.mock('#modules/drivers/index.js', () => ({
   doesDriverExistByDriverId: vi.fn(),
@@ -411,6 +419,11 @@ describe('assignDriver', () => {
     expect(driver.status).toBe(DRIVER_STATUS.ASSIGNED);
     expect(order.save).toHaveBeenCalledWith({ session: fakeSession });
     expect(driver.save).toHaveBeenCalledWith({ session: fakeSession });
+    expect(createOffer).toHaveBeenCalledWith(order._id, 'driver1', {
+      status: OFFER_STATUS.ACCEPTED,
+      respondedAt: expect.any(Date),
+      session: fakeSession,
+    });
     expect(eventBus.emit).toHaveBeenCalledWith(EVENT_BUS_EVENTS.ORDER_ASSIGNED, {
       orderId: order._id,
       userId: driver.user._id,

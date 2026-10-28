@@ -22,7 +22,7 @@ import {
 } from '#shared/utils/queryBuilder.js';
 import { OrderModel } from '../../models/order.model.js';
 import mongoose from 'mongoose';
-import { OfferModel } from '#modules/offers/index.js';
+import { createOffer, OfferModel } from '#modules/offers/index.js';
 import { deduplicateById, getObjectValues } from '#shared/utils/object.helper.js';
 import { buildPaginatedResponse } from '#shared/utils/pagination.js';
 import { calculateDeliveryPrice } from './pricing.service.js';
@@ -287,11 +287,18 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
   // Add order to a active batch or create a new active batch
   await orderAssignedForBatching(session, driver._id, order._id);
 
+  await createOffer(order._id, driverId, {
+    status: OFFER_STATUS.ACCEPTED,
+    respondedAt: new Date(Date.now()),
+    session,
+  });
+
   eventBus.emit(EVENT_BUS_EVENTS.ORDER_ASSIGNED, {
     orderId: order._id,
     userId: driver.user._id,
     driverId: driver._id,
   });
+
   return order;
 };
 
