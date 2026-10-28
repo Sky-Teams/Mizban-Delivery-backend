@@ -25,7 +25,7 @@ import { orderAssignedForBatching } from '#modules/deliveryBatch/index.js';
     @param {String} driverId
     @returns {Object}  offer object
  */
-export const createOffer = async (orderId, driverId) => {
+export const createOffer = async (orderId, driverId, { session, status, respondedAt } = {}) => {
   try {
     const orderOffer = {
       order: orderId.toString(),
@@ -38,11 +38,10 @@ export const createOffer = async (orderId, driverId) => {
 
     const expiredAt = new Date(Date.now() + expiresInSeconds * 1000);
 
-    const newOrderOffer = await OfferModel.create({
-      ...orderOffer,
-      expiredAt,
-    });
-
+    const [newOrderOffer] = await OfferModel.create(
+      [{ ...orderOffer, expiredAt, status, respondedAt }],
+      { session }
+    );
     return newOrderOffer;
   } catch (error) {
     console.log('Error creating orderOffer. ', error);
