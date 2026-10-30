@@ -7,7 +7,14 @@ import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { isLocationFresh, ordersWithStops } from './batch.helper.js';
 import { calculateDistanceMeters } from './distance.helper.js';
-import { BATCH_STATUS, ORDER_STATUS, REDIS_KEYS, SOCKET_EVENTS, STOP_STATUS, STOP_TYPE } from './enums.js';
+import {
+  BATCH_STATUS,
+  ORDER_STATUS,
+  REDIS_KEYS,
+  SOCKET_EVENTS,
+  STOP_STATUS,
+  STOP_TYPE,
+} from './enums.js';
 import { RedisService } from './redisLocationService.js';
 
 export class RouteOptimizationService {
@@ -211,11 +218,7 @@ export class RouteOptimizationService {
       const payload = await ordersWithStops(updatedBatch);
 
       // Send orders with stops to driver
-      CustomSocket.sendPayloadToOnlineUser(
-        driver.user._id,
-        SOCKET_EVENTS.DRIVER.ROUTE_OPTIMIZED,
-        payload
-      );
+      CustomSocket.emitToOnlineUser(driver.user._id, SOCKET_EVENTS.DRIVER.ROUTE_OPTIMIZED, payload);
 
       return updatedBatch;
     } catch (error) {
@@ -233,7 +236,7 @@ export class RouteOptimizationService {
       if (!activeBatch || !activeBatch.orderIds.length || !activeBatch.stops.length) return;
 
       const payload = await ordersWithStops(activeBatch);
-      CustomSocket.sendPayloadToOnlineUser(userId, SOCKET_EVENTS.DRIVER.ROUTE_OPTIMIZED, payload);
+      CustomSocket.emitToOnlineUser(userId, SOCKET_EVENTS.DRIVER.ROUTE_OPTIMIZED, payload);
     } catch (error) {
       console.error('Error to send active batch to driver:', error);
     }

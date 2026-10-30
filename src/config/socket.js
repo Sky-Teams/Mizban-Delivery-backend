@@ -176,21 +176,8 @@ export class CustomSocket {
     this.getIO().to('admins').emit(event, payload);
   }
 
-  // Send payload to online user
-  static sendPayloadToOnlineUser(userId, event, payload) {
-    if (!this.#io) throw new Error('Socket is not initialized');
-
-    userId = userId.toString();
-    if (!this.isUserOnline(userId)) {
-      return false;
-    }
-
-    this.getIO().to(userId).emit(event, payload);
-    return true;
-  }
-
   // Emit to user online
-  static emitToOnlineUser(userId, event) {
+  static emitToOnlineUser(userId, event, payload) {
     if (!this.#io) throw new Error('Socket is not initialized');
 
     userId = userId.toString();
@@ -199,7 +186,11 @@ export class CustomSocket {
       return false;
     }
 
-    this.getIO().to(userId).emit(event);
+    if (!payload) {
+      this.getIO().to(userId).emit(event);
+    } else {
+      this.getIO().to(userId).emit(event, payload);
+    }
 
     return true;
   }
