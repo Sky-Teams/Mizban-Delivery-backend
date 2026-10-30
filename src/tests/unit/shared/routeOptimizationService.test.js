@@ -21,7 +21,7 @@ vi.mock('#shared/utils/batch.helper.js', () => ({
 
 vi.mock('#config/socket.js', () => ({
   CustomSocket: {
-    sendPayloadToOnlineUser: vi.fn(),
+    emitToOnlineUser: vi.fn(),
   },
 }));
 
@@ -555,7 +555,7 @@ describe('sendOptimizedRouteToDriver', () => {
     expect(driverActiveBatch).toHaveBeenCalledWith(driverId);
     expect(ordersWithStops).toHaveBeenCalledWith(activeBatch);
 
-    expect(CustomSocket.sendPayloadToOnlineUser).toHaveBeenCalledWith(
+    expect(CustomSocket.emitToOnlineUser).toHaveBeenCalledWith(
       userId,
       SOCKET_EVENTS.DRIVER.ROUTE_OPTIMIZED,
       payload
@@ -569,7 +569,7 @@ describe('sendOptimizedRouteToDriver', () => {
 
     expect(driverActiveBatch).not.toHaveBeenCalled();
     expect(ordersWithStops).not.toHaveBeenCalled();
-    expect(CustomSocket.sendPayloadToOnlineUser).not.toHaveBeenCalled();
+    expect(CustomSocket.emitToOnlineUser).not.toHaveBeenCalled();
   });
 
   it('should not send the route when the active batch has no stops', async () => {
@@ -582,6 +582,6 @@ describe('sendOptimizedRouteToDriver', () => {
     await RouteOptimizationService.sendOptimizedRouteToDriver(userId);
 
     expect(ordersWithStops).not.toHaveBeenCalled();
-    expect(CustomSocket.sendPayloadToOnlineUser).not.toHaveBeenCalled();
+    expect(CustomSocket.emitToOnlineUser).not.toHaveBeenCalled();
   });
 });
