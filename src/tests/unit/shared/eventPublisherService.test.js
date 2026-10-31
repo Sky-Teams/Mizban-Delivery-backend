@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventPublisherService } from '#shared/events/eventPublisherService.js';
-import { ORDER_STATUS, REDIS_CHANNEL, REDIS_EVENT_TYPES, SERVICE } from '#shared/utils/enums.js';
+import { ORDER_STATUS, REDIS_CHANNEL, REDIS_EVENT_TYPE, SERVICE } from '#shared/utils/enums.js';
 
 const { publishMock, publisherChannels } = vi.hoisted(() => ({
   publishMock: vi.fn(),
@@ -38,7 +38,7 @@ describe('EventPublisherService.publishOrderEvent', () => {
 
   it('should publish pickedUp event for mizban order', async () => {
     await EventPublisherService.publishOrderEvent({
-      type: REDIS_EVENT_TYPES.ORDER_PICKEDUP,
+      type: REDIS_EVENT_TYPE.ORDER_PICKEDUP,
       data: { ...basePayload, pickedUpAt },
       status: ORDER_STATUS.PICKEDUP,
       timestamp: pickedUpAt,
@@ -46,7 +46,7 @@ describe('EventPublisherService.publishOrderEvent', () => {
 
     expect(publishMock).toHaveBeenCalledTimes(1);
     expect(publishMock).toHaveBeenCalledWith({
-      type: REDIS_EVENT_TYPES.ORDER_PICKEDUP,
+      type: REDIS_EVENT_TYPE.ORDER_PICKEDUP,
       data: {
         orderId: 'mizban-order-123',
         driverId: 'driver-123',
@@ -58,7 +58,7 @@ describe('EventPublisherService.publishOrderEvent', () => {
 
   it('should publish delivered event for mizban order', async () => {
     await EventPublisherService.publishOrderEvent({
-      type: REDIS_EVENT_TYPES.ORDER_DELIVERED,
+      type: REDIS_EVENT_TYPE.ORDER_DELIVERED,
       data: { ...basePayload, deliveredAt },
       status: ORDER_STATUS.DELIVERED,
       timestamp: deliveredAt,
@@ -66,7 +66,7 @@ describe('EventPublisherService.publishOrderEvent', () => {
 
     expect(publishMock).toHaveBeenCalledTimes(1);
     expect(publishMock).toHaveBeenCalledWith({
-      type: REDIS_EVENT_TYPES.ORDER_DELIVERED,
+      type: REDIS_EVENT_TYPE.ORDER_DELIVERED,
       data: {
         orderId: 'mizban-order-123',
         driverId: 'driver-123',
@@ -78,7 +78,7 @@ describe('EventPublisherService.publishOrderEvent', () => {
 
   it('should not publish for non-mizban order', async () => {
     await EventPublisherService.publishOrderEvent({
-      type: REDIS_EVENT_TYPES.ORDER_DELIVERED,
+      type: REDIS_EVENT_TYPE.ORDER_DELIVERED,
       data: { ...basePayload, source: undefined, sourceOrderId: undefined, deliveredAt },
       status: ORDER_STATUS.DELIVERED,
       timestamp: deliveredAt,
@@ -94,7 +94,7 @@ describe('EventPublisherService.publishOrderEvent', () => {
 
     await expect(
       EventPublisherService.publishOrderEvent({
-        type: REDIS_EVENT_TYPES.ORDER_DELIVERED,
+        type: REDIS_EVENT_TYPE.ORDER_DELIVERED,
         data: { ...basePayload, deliveredAt },
         status: ORDER_STATUS.DELIVERED,
         timestamp: deliveredAt,

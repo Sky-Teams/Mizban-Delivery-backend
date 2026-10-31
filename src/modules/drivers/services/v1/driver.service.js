@@ -225,7 +225,7 @@ export const addNewDriver = withTransaction(addDriver);
 export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, limit = 10) => {
   try {
     const nearestDrivers = await DriverModel.find({
-      status: DRIVER_STATUS.IDLE,
+      status: { $ne: DRIVER_STATUS.OFFLINE },
       $expr: {
         $lt: ['$activeOrders', '$maxOrders'],
       },
