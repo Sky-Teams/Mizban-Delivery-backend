@@ -46,6 +46,7 @@ export const EVENT_BUS_EVENTS = {
   ORDER_RETURNED: 'order:returned',
   OFFER_ACCEPTED: 'offer:accepted',
   OFFER_REJECTED: 'offer:rejected',
+  DRIVER_LOCATION_AVAILABLE: 'driver:location:available',
 };
 
 export const VEHICLE_TYPE = {
@@ -75,6 +76,7 @@ export const SOCKET_EVENTS = {
     START_TRACKING: 'start_tracking',
     STOP_TRACKING: 'stop_tracking',
     UPDATE_LOCATION: 'update_location',
+    ROUTE_OPTIMIZED: 'route_optimized',
   },
 };
 
@@ -109,6 +111,7 @@ export const settingKeys = {
 // Redis keys
 export const REDIS_KEYS = {
   DRIVER_LOCATION: 'driver:location:',
+  DRIVER_ROUTE_OPTIMIZATION_STARTED: 'driver:route:optimization:started:',
 };
 
 // Redis channel
@@ -123,4 +126,27 @@ export const REDIS_EVENT_TYPE = {
   OFFER_ACCEPTED: 'offer.accepted',
   ORDER_PICKEDUP: 'order.pickedUp',
   ORDER_DELIVERED: 'order.delivered',
+};
+
+export const BATCH_STATUS = {
+  ACTIVE: 'active',
+  COMPLETED: 'completed',
+};
+
+export const BATCH_CONFIG = {
+  MAX_PICKUP_DISTANCE_METERS: Number(process.env.MAX_PICKUP_DISTANCE_METERS) || 4000, // meter
+  MAX_DELIVERY_DISTANCE_METERS: Number(process.env.MAX_DELIVERY_DISTANCE_METERS) || 4000, // meter
+  MAX_PREPARATION_MINUTE: Number(process.env.MAX_PREPARATION_MINUTE) || 15, // minute
+  MAX_BATCH_SIZE: Number(process.env.MAX_DELIVERY_BATCH_SIZE) || 5,
+  MAX_ROUTE_DEVIATION_METERS: Number(process.env.MAX_ROUTE_DEVIATION_METERS) || 10000, // meter
+};
+
+export const STOP_TYPE = {
+  PICKUP: 'pickUp',
+  DELIVERY: 'delivery',
+};
+
+export const STOP_STATUS = {
+  PENDING: 'pending',
+  COMPLETED: 'completed',
 };

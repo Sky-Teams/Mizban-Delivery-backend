@@ -26,6 +26,7 @@ import { createOffer, OfferModel } from '#modules/offers/index.js';
 import { deduplicateById, getObjectValues } from '#shared/utils/object.helper.js';
 import { buildPaginatedResponse } from '#shared/utils/pagination.js';
 import { calculateDeliveryPrice } from './pricing.service.js';
+import { orderAssignedForBatching } from '#modules/deliveryBatch/index.js';
 
 //#region Admin Services
 
@@ -132,6 +133,10 @@ export const getOrderBySourceId = async (sourceOrderId) => {
 
 export const findOrderById = async (orderId) => {
   return await OrderModel.findById(orderId);
+};
+
+export const getOrdersByIds = async (orderIds) => {
+  return OrderModel.find({ _id: { $in: orderIds } });
 };
 
 /**
@@ -301,13 +306,21 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
   await order.save({ session });
   await driver.save({ session });
 
+  // Add order to a active batch or create a new active batch
+  await orderAssignedForBatching(session, driver._id, order._id);
+
   await createOffer(order._id, driverId, {
     status: OFFER_STATUS.ACCEPTED,
     respondedAt: new Date(Date.now()),
     session,
   });
 
-  eventBus.emit(EVENT_BUS_EVENTS.ORDER_ASSIGNED, { orderId: order._id, userId: driver.user._id });
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_ASSIGNED, {
+    orderId: order._id,
+    userId: driver.user._id,
+    driverId: driver._id,
+  });
+
   return order;
 };
 
@@ -451,7 +464,7 @@ export const cancelAnOrder = async (session, orderId, reason, user) => {
   }
 
   await order.save({ session });
-  eventBus.emit(EVENT_BUS_EVENTS.ORDER_CANCELLED, { orderId, reason });
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_CANCELLED, { orderId, reason, driverId: order.driverId });
 
   // Return filtered fields to driver
   if (user.role === ROLES.DRIVER) return DtoService.order(order);
@@ -497,7 +510,7 @@ export const returnAnOrder = async (session, orderId, reason, user) => {
   }
 
   await order.save({ session });
-  eventBus.emit(EVENT_BUS_EVENTS.ORDER_RETURNED, { orderId, reason });
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_RETURNED, { orderId, reason, driverId: order.driverId });
 
   // Return filtered fields to driver
   if (user.role === ROLES.DRIVER) return DtoService.order(order);

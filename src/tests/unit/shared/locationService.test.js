@@ -8,6 +8,8 @@ import { startLocationSync, stopLocationSync } from '../../../jobs/locationSync.
 import { DtoService } from '#shared/utils/dtoService.js';
 import { handleLocationError } from '#shared/utils/handleLocationError.js';
 import { RedisService } from '#shared/utils/redisLocationService.js';
+import { REDIS_KEYS } from '#shared/utils/enums.js';
+import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 
 vi.mock('#modules/drivers/services/v1/driver.service.js', () => ({
   fetchDriverByUserId: vi.fn(),
@@ -26,6 +28,7 @@ vi.mock('#shared/utils/redisLocationService.js', () => ({
     saveDataToRedis: vi.fn(),
     getRedisData: vi.fn(),
     removeRedisData: vi.fn(),
+    setIfNotExists: vi.fn(),
   },
 }));
 
@@ -46,6 +49,10 @@ vi.mock('#config/socket.js', () => ({
 vi.mock('../../../jobs/locationSync.js', () => ({
   startLocationSync: vi.fn(),
   stopLocationSync: vi.fn(),
+}));
+
+vi.mock('#modules/deliveryBatch/services/v1/delivery.batch.service.js', () => ({
+  driverActiveBatch: vi.fn(),
 }));
 
 const { publishMock } = vi.hoisted(() => ({
@@ -292,6 +299,13 @@ describe('LocationService', () => {
 
       updateDriverLocation.mockResolvedValue(driver);
 
+      const activeBatch = {
+        _id: 'active_1',
+      };
+
+      driverActiveBatch.mockResolvedValue(activeBatch);
+      const optimizationBatchKey = `${REDIS_KEYS.DRIVER_ROUTE_OPTIMIZATION_STARTED}${driver._id}:${activeBatch._id}`;
+
       RedisService.removeRedisData.mockResolvedValue(undefined);
 
       stopLocationSync.mockResolvedValue(undefined);
@@ -312,6 +326,7 @@ describe('LocationService', () => {
       expect(RedisService.removeRedisData).toHaveBeenCalledWith(
         expect.stringContaining('driver-123')
       );
+      expect(RedisService.removeRedisData).toHaveBeenCalledWith(optimizationBatchKey);
 
       expect(stopLocationSync).toHaveBeenCalledWith('driver-123');
 

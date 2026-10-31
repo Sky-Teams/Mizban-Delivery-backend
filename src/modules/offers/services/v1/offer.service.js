@@ -15,6 +15,7 @@ import {
 import mongoose from 'mongoose';
 import { createOfferSchema } from '../../dto/create-offer.schema.js';
 import { DtoService } from '#shared/utils/dtoService.js';
+import { orderAssignedForBatching } from '#modules/deliveryBatch/index.js';
 
 /**
  * Create a new offer for an order in the system.
@@ -106,6 +107,9 @@ const acceptAnOffer = async (session, offerId, userId) => {
   // Increase the number of active orders
   driver.activeOrders = driver.activeOrders + 1;
   await driver.save({ session });
+
+  // Add order to an active batch or create a new active batch
+  await orderAssignedForBatching(session, driver._id, order._id);
 
   await DbJobService.cancelOfferTimeout(offerId);
 
