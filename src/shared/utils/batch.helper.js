@@ -1,5 +1,7 @@
+import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { calculateDistanceMeters } from './distance.helper.js';
-import { BATCH_CONFIG } from './enums.js';
+import { DtoService } from './dtoService.js';
+import { BATCH_CONFIG, STOP_TYPE } from './enums.js';
 
 /** Calculate pick up distance between orders */
 export const isPickupCompatible = (currentOrder, newOrder) => {
@@ -59,4 +61,41 @@ export const isLocationFresh = async (location) => {
     Number.isFinite(locationAge) && locationAge >= 0 && locationAge <= MAX_LOCATION_AGE;
 
   return isLocationNew;
+};
+
+// Filter orders with stops
+export const ordersWithStops = async (activeBatch) => {
+  const orders = await getOrdersByIds(activeBatch.orderIds);
+  const ordersMap = new Map(orders.map((order) => [order._id.toString(), order]));
+
+  const formattedOrders = await Promise.all(
+    activeBatch.orderIds.map(async (orderId) => {
+      const order = ordersMap.get(orderId.toString());
+      if (!order) return null;
+
+      const orderStops = activeBatch.stops.filter(
+        (stop) => stop.orderId.toString() === orderId.toString()
+      );
+
+      const stops = await Promise.all(
+        orderStops.map(async (stop) => ({
+          contactDetails:
+            stop.stopType === STOP_TYPE.PICKUP ? { ...order?.sender } : { ...order?.receiver },
+          status: stop.stopStatus,
+          stopType: stop.stopType,
+          location: await DtoService.toLatLng(stop.location.coordinates),
+        }))
+      );
+
+      return {
+        source: order?.source,
+        packageDetails: { ...order?.packageDetails },
+        deliveryPrice: order?.deliveryPrice?.total,
+        items: [...order?.items],
+        stops,
+      };
+    })
+  );
+
+  return formattedOrders.filter(Boolean);
 };
