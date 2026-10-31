@@ -293,7 +293,11 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
     session,
   });
 
-  eventBus.emit(EVENT_BUS_EVENTS.ORDER_ASSIGNED, { orderId: order._id, userId: driver.user._id });
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_ASSIGNED, {
+    orderId: order._id,
+    userId: driver.user._id,
+    driverId: driver._id,
+  });
 
   return order;
 };
@@ -438,7 +442,7 @@ export const cancelAnOrder = async (session, orderId, reason, user) => {
   }
 
   await order.save({ session });
-  eventBus.emit(EVENT_BUS_EVENTS.ORDER_CANCELLED, { orderId, reason });
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_CANCELLED, { orderId, reason, driverId: order.driverId });
 
   // Return filtered fields to driver
   if (user.role === ROLES.DRIVER) return DtoService.order(order);
@@ -484,7 +488,7 @@ export const returnAnOrder = async (session, orderId, reason, user) => {
   }
 
   await order.save({ session });
-  eventBus.emit(EVENT_BUS_EVENTS.ORDER_RETURNED, { orderId, reason });
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_RETURNED, { orderId, reason, driverId: order.driverId });
 
   // Return filtered fields to driver
   if (user.role === ROLES.DRIVER) return DtoService.order(order);

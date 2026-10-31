@@ -748,6 +748,11 @@ export const ERROR_MESSAGES = {
     fa: 'مجموعه سفارش‌ها در دسترس نیست',
     ps: 'د فرمایشونو مجموعه شتون نه لري',
   },
+  [ERROR_CODES.INVALID_BATCH_STOPS]: {
+    en: 'Delivery batch contains invalid stops',
+    fa: 'توقف‌های مجموعه سفارش‌ها نامعتبر است',
+    ps: 'د فرمایشونو په مجموعه کې تمځایونه ناسم دي',
+  },
   [ERROR_CODES.BATCH_PICKUP_NOT_COMPATIBLE]: {
     en: 'Order pickup is not compatible with the active batch',
     fa: 'محل دریافت سفارش با مجموعه سفارش‌های فعال سازگار نیست',

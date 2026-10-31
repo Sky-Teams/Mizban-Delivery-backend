@@ -34,4 +34,18 @@ export class RedisService {
   static removeRedisData(key) {
     return redisClient.del(key);
   }
+
+  /**
+   * Set a key only if it does not already exist.
+   * @param {string} key
+   * @param {string} value
+   * @returns {Promise<boolean>}
+   */
+  static async setIfNotExists(key, value = '1') {
+    const result = await redisClient.set(key, value, {
+      NX: true,
+    });
+
+    return result === 'OK';
+  }
 }
