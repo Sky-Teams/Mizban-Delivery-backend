@@ -1,7 +1,9 @@
+import { CustomSocket } from '#config/socket.js';
 import { DeliveryBatchModel } from '#modules/deliveryBatch/model/delivery.batch.model.js';
 import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
-import { isLocationFresh } from '#shared/utils/batch.helper.js';
-import { BATCH_STATUS, STOP_STATUS, STOP_TYPE } from '#shared/utils/enums.js';
+import { fetchDriverByDriverId, fetchDriverByUserId } from '#modules/drivers/index.js';
+import { isLocationFresh, ordersWithStops } from '#shared/utils/batch.helper.js';
+import { BATCH_STATUS, SOCKET_EVENTS, STOP_STATUS, STOP_TYPE } from '#shared/utils/enums.js';
 import { RedisService } from '#shared/utils/redisLocationService.js';
 import { RouteOptimizationService } from '#shared/utils/routeOptimizationService.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,6 +16,18 @@ vi.mock('#modules/deliveryBatch/model/delivery.batch.model.js', () => ({
 
 vi.mock('#shared/utils/batch.helper.js', () => ({
   isLocationFresh: vi.fn(),
+  ordersWithStops: vi.fn(),
+}));
+
+vi.mock('#config/socket.js', () => ({
+  CustomSocket: {
+    emitToOnlineUser: vi.fn(),
+  },
+}));
+
+vi.mock('#modules/drivers/index.js', () => ({
+  fetchDriverByDriverId: vi.fn(),
+  fetchDriverByUserId: vi.fn(),
 }));
 
 vi.mock('#modules/deliveryBatch/services/v1/delivery.batch.service.js', () => ({
@@ -53,20 +67,20 @@ describe('completePickUpStop', () => {
       {
         driver: 'driver-1',
         status: BATCH_STATUS.ACTIVE,
-      },
-      {
-        $set: {
-          'stops.$[stop].stopStatus': STOP_STATUS.COMPLETED,
+        stops: {
+          $elemMatch: {
+            orderId: 'order-1',
+            stopStatus: STOP_STATUS.PENDING,
+            stopType: STOP_TYPE.PICKUP,
+          },
         },
       },
       {
-        arrayFilters: [
-          {
-            'stop.orderId': 'order-1',
-            'stop.stopType': STOP_TYPE.PICKUP,
-            'stop.stopStatus': STOP_STATUS.PENDING,
-          },
-        ],
+        $set: {
+          'stops.$.stopStatus': STOP_STATUS.COMPLETED,
+        },
+      },
+      {
         returnDocument: 'after',
       }
     );
@@ -103,20 +117,20 @@ describe('completeDeliveryStop', () => {
       {
         driver: 'driver-1',
         status: BATCH_STATUS.ACTIVE,
-      },
-      {
-        $set: {
-          'stops.$[stop].stopStatus': STOP_STATUS.COMPLETED,
+        stops: {
+          $elemMatch: {
+            orderId: 'order-1',
+            stopStatus: STOP_STATUS.PENDING,
+            stopType: STOP_TYPE.DELIVERY,
+          },
         },
       },
       {
-        arrayFilters: [
-          {
-            'stop.orderId': 'order-1',
-            'stop.stopType': STOP_TYPE.DELIVERY,
-            'stop.stopStatus': STOP_STATUS.PENDING,
-          },
-        ],
+        $set: {
+          'stops.$.stopStatus': STOP_STATUS.COMPLETED,
+        },
+      },
+      {
         returnDocument: 'after',
       }
     );
@@ -266,6 +280,13 @@ describe('optimizeRoute', () => {
       stops: [pickupStop, deliveryStop],
     };
 
+    fetchDriverByDriverId.mockResolvedValue({
+      _id: 'driver-1',
+      user: {
+        _id: 'user-1',
+      },
+    });
+
     DeliveryBatchModel.findByIdAndUpdate.mockResolvedValue(updatedBatch);
 
     const result = await RouteOptimizationService.optimizeRoute(driverId);
@@ -273,19 +294,6 @@ describe('optimizeRoute', () => {
     expect(buildRouteSpy).toHaveBeenCalledWith([pickupStop, deliveryStop], [0, 0], []);
 
     expect(validateRouteOrderSpy).toHaveBeenCalledWith([pickupStop, deliveryStop], []);
-
-    expect(DeliveryBatchModel.findByIdAndUpdate).toHaveBeenCalledWith(
-      activeBatch._id,
-      {
-        $set: {
-          stops: [pickupStop, deliveryStop],
-        },
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
 
     expect(result).toEqual(updatedBatch);
   });
@@ -391,6 +399,13 @@ describe('optimizeRoute', () => {
       stops: [completedPickup, pendingDelivery],
     };
 
+    fetchDriverByDriverId.mockResolvedValue({
+      _id: 'driver-1',
+      user: {
+        _id: 'user-1',
+      },
+    });
+
     DeliveryBatchModel.findByIdAndUpdate.mockResolvedValue(updatedBatch);
 
     const result = await RouteOptimizationService.optimizeRoute(driverId);
@@ -484,6 +499,8 @@ describe('cancelledOrReturnedDeliveryBatchOrder', () => {
         $set: {
           orderIds: [],
           stops: [],
+          status: BATCH_STATUS.COMPLETED,
+          completedAt: expect.any(Date),
         },
       },
       {
@@ -499,5 +516,72 @@ describe('cancelledOrReturnedDeliveryBatchOrder', () => {
     await RouteOptimizationService.cancelledOrReturnedDeliveryBatchOrder(driverId, orderId);
 
     expect(DeliveryBatchModel.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+});
+
+//================ sendOptimizedRouteToDriver ============
+describe('sendOptimizedRouteToDriver', () => {
+  const userId = 'user-1';
+  const driverId = 'driver-1';
+
+  const activeBatch = {
+    _id: 'batch-1',
+    driver: driverId,
+    orderIds: ['order-1'],
+    stops: [
+      {
+        orderId: 'order-1',
+        stopType: STOP_TYPE.PICKUP,
+        stopStatus: STOP_STATUS.PENDING,
+      },
+    ],
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should send the optimized route to the driver', async () => {
+    const driver = { _id: driverId };
+    const payload = [{ orderId: 'order-1' }];
+
+    fetchDriverByUserId.mockResolvedValue(driver);
+    driverActiveBatch.mockResolvedValue(activeBatch);
+    ordersWithStops.mockResolvedValue(payload);
+
+    await RouteOptimizationService.sendOptimizedRouteToDriver(userId);
+
+    expect(fetchDriverByUserId).toHaveBeenCalledWith(userId);
+    expect(driverActiveBatch).toHaveBeenCalledWith(driverId);
+    expect(ordersWithStops).toHaveBeenCalledWith(activeBatch);
+
+    expect(CustomSocket.emitToOnlineUser).toHaveBeenCalledWith(
+      userId,
+      SOCKET_EVENTS.DRIVER.ROUTE_OPTIMIZED,
+      payload
+    );
+  });
+
+  it('should throw notFound when the driver does not exist', async () => {
+    fetchDriverByUserId.mockResolvedValue(null);
+
+    await RouteOptimizationService.sendOptimizedRouteToDriver(userId);
+
+    expect(driverActiveBatch).not.toHaveBeenCalled();
+    expect(ordersWithStops).not.toHaveBeenCalled();
+    expect(CustomSocket.emitToOnlineUser).not.toHaveBeenCalled();
+  });
+
+  it('should not send the route when the active batch has no stops', async () => {
+    fetchDriverByUserId.mockResolvedValue({ _id: driverId });
+    driverActiveBatch.mockResolvedValue({
+      ...activeBatch,
+      stops: [],
+    });
+
+    await RouteOptimizationService.sendOptimizedRouteToDriver(userId);
+
+    expect(ordersWithStops).not.toHaveBeenCalled();
+    expect(CustomSocket.emitToOnlineUser).not.toHaveBeenCalled();
   });
 });
