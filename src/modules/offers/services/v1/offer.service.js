@@ -49,17 +49,9 @@ export const createOffer = async (orderId, driverId, { session, status, responde
   }
 };
 
-/**
- * Get offer by orderId and driverId
- * @param {String} orderId
- * @param {String} driverId
- * @returns Offer object
- */
-export const getOffer = async (orderId, driverId) => {
-  const orderOffer = { order: orderId.toString(), driver: driverId.toString() }; // We convert to string, because from most places we send objectId
-  createOfferSchema.parse(orderOffer);
+export const findOfferById = async (offerId) => {
+  const offer = await OfferModel.findById(offerId);
 
-  const offer = await OfferModel.findOne(orderOffer);
   return offer;
 };
 
@@ -126,6 +118,13 @@ const acceptAnOffer = async (session, offerId, userId) => {
   eventBus.emit(EVENT_BUS_EVENTS.OFFER_ACCEPTED, {
     orderId: order._id,
     driverId: order.driverId,
+    source: order.source,
+    sourceOrderId: order.sourceOrderId,
+    driver: {
+      driverId: driver._id.toString(),
+      fullname: driver.user.name,
+      phone: driver.user.phone,
+    },
   });
 
   return offer;
