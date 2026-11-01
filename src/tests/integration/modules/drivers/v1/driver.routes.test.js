@@ -620,6 +620,34 @@ describe('Drivers API v1 Integration', () => {
       expect(result.status).toBe(400);
     });
   });
+
+  describe('GET /api/drivers/id/distance', () => {
+    let newDriverId = null;
+    beforeEach(async () => {
+      const { user } = await createFakeUserWithToken('driver');
+      const driverInfo = await createFakeDriver(user);
+      newDriverId = driverInfo._id;
+    });
+
+    it('should return driver distance for a specific date', async () => {
+      const result = await request(app)
+        .get(`/api/drivers/${newDriverId}/distance`)
+        .query({ date: '2026-10-30' })
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.status).toBe(200);
+    });
+    it('should throw an error when driver not found', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+
+      const result = await request(app)
+        .get(`/api/drivers/${fakeId}/distance`)
+        .query({ date: '2026-10-30' })
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.status).toBe(404);
+    });
+  });
 });
 
 // We don't need these tests.(For User)
