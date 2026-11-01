@@ -1,5 +1,5 @@
 import { findNearestAndScore } from '#modules/drivers/index.js';
-import { getOfferByOrderId } from '#modules/offers/index.js';
+import { getOfferByOrderId, OfferModel } from '#modules/offers/index.js';
 import { addDriversDataInOrder } from '#modules/orders/index.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
 import { DbJobService } from '#shared/utils/dbJob.service.js';
@@ -7,7 +7,7 @@ import { LocationService } from '#shared/utils/locationService.js';
 import {
   EVENT_BUS_EVENTS,
   ORDER_STATUS,
-  REDIS_EVENT_TYPES,
+  REDIS_EVENT_TYPE,
   SOCKET_EVENTS,
 } from '#shared/utils/enums.js';
 import { EventPublisherService } from '#shared/events/eventPublisherService.js';
@@ -19,8 +19,10 @@ export const registerOrderListeners = () => {
   eventBus.on(EVENT_BUS_EVENTS.ORDER_CREATED, async (data) => {
     const orderId = data.orderId.toString();
 
-    const payload = NotificationPayloads.orderCreated(orderId);
-    await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
+    if (data.notifyAdmin) {
+      const payload = NotificationPayloads.orderCreated(orderId);
+      await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
+    }
 
     const drivers = await findNearestAndScore(data.pickupLocation.coordinates);
 
@@ -44,7 +46,7 @@ export const registerOrderListeners = () => {
   eventBus.on(EVENT_BUS_EVENTS.ORDER_PICKEDUP, async (data) => {
     // Notify Mizban: order pickedUp
     await EventPublisherService.publishOrderEvent({
-      type: REDIS_EVENT_TYPES.ORDER_PICKEDUP,
+      type: REDIS_EVENT_TYPE.ORDER_PICKEDUP,
       data,
       status: ORDER_STATUS.PICKEDUP,
       timestamp: data.pickedUpAt,
@@ -62,7 +64,7 @@ export const registerOrderListeners = () => {
   eventBus.on(EVENT_BUS_EVENTS.ORDER_DELIVERED, async (data) => {
     // Notify Mizban: order delivered
     await EventPublisherService.publishOrderEvent({
-      type: REDIS_EVENT_TYPES.ORDER_DELIVERED,
+      type: REDIS_EVENT_TYPE.ORDER_DELIVERED,
       data,
       status: ORDER_STATUS.DELIVERED,
       timestamp: data.deliveredAt,

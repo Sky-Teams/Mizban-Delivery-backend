@@ -30,6 +30,27 @@ import { orderAssignedForBatching } from '#modules/deliveryBatch/index.js';
 
 //#region Admin Services
 
+export const retryDriverSearch = async (order) => {
+  if (order.status !== ORDER_STATUS.CREATED)
+    throw new AppError(
+      'Cannot retry driver search: order is no longer in the created state.',
+      409,
+      ERROR_CODES.ORDER_DRIVER_SEARCH_RETRY_NOT_ALLOWED
+    );
+
+  order.recommendedDrivers = [];
+  order.currentDriverIndex = 0;
+  const updatedOrder = await order.save();
+
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_CREATED, {
+    orderId: order._id,
+    pickupLocation: order.pickupLocation,
+    notifyAdmin: false,
+  });
+
+  return updatedOrder;
+};
+
 const getOrCreateOrder = async (orderId, orderData, driverId, session) => {
   let order = orderId ? await findOrderById(orderId) : null;
 
@@ -88,6 +109,7 @@ export const addOrder = async (orderData, session) => {
     eventBus.emit(EVENT_BUS_EVENTS.ORDER_CREATED, {
       orderId: newOrder._id,
       pickupLocation: newOrder.pickupLocation,
+      notifyAdmin: true,
     });
   }
 

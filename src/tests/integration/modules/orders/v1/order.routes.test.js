@@ -1279,6 +1279,26 @@ describe('Order API v1 Integration', () => {
     });
   });
 
+  describe('POST /api/orders/:id/retry-driver-search', () => {
+    it('should reset driver search and return the updated order', async () => {
+      const order = await createFakeOrder({
+        recommendedDrivers: [{ id: new mongoose.Types.ObjectId() }],
+        currentDriverIndex: 1,
+      });
+
+      const res = await postWithAuth(app, `${baseURL}/${order._id}/retry-driver-search`, {}, token);
+      const updatedOrder = await OrderModel.findById(order._id);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data._id).toBe(order._id.toString());
+      expect(res.body.data.recommendedDrivers).toEqual([]);
+      expect(res.body.data.currentDriverIndex).toBe(0);
+      expect(updatedOrder.recommendedDrivers).toEqual([]);
+      expect(updatedOrder.currentDriverIndex).toBe(0);
+    });
+  });
+
   describe('GET /api/orders/statistics', () => {
     beforeEach(async () => {
       vi.clearAllMocks();

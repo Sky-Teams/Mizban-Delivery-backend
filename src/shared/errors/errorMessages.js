@@ -503,6 +503,12 @@ export const ERROR_MESSAGES = {
     ps: 'بېرته ګرځول اجازه نشته',
   },
 
+  [ERROR_CODES.ORDER_DRIVER_SEARCH_RETRY_NOT_ALLOWED]: {
+    en: 'Driver search can only be retried while the order is in the created state',
+    fa: 'جستجوی راننده فقط زمانی قابل تکرار است که سفارش در وضعیت ایجادشده باشد',
+    ps: 'د موټرچلوونکي لټون یوازې هغه وخت بیا ترسره کېدای شي چې فرمایش د جوړېدو په حالت کې وي',
+  },
+
   [ERROR_CODES.INVALID_CANCEL_REASON]: {
     en: 'Invalid cancel reason',
     fa: 'دلیل لغو نامعتبر است',
