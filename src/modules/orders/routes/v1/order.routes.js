@@ -10,6 +10,7 @@ import {
   updateOrder,
   ordersStatistics,
   calculateDeliveryPrice,
+  retryOrderDriverSearch,
 } from '../../controllers/v1/order.controller.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
 import express from 'express';
@@ -32,7 +33,7 @@ const router = express.Router();
 
 router.post(
   '/',
-  authorizeRole(ROLES.ADMIN),
+  authorize({ roles: [ROLES.ADMIN], services: [SERVICE.MIZBAN] }),
   validate(createOrderValidator),
   asyncHandler(createOrder)
 );
@@ -94,5 +95,12 @@ router.get(
   asyncHandler(ordersStatistics)
 );
 router.get('/:id', authorizeRole(ROLES.ADMIN), validate(mongoIdValidator), asyncHandler(getOrder));
+
+router.post(
+  '/:id/retry-driver-search',
+  authorizeRole(ROLES.ADMIN),
+  validate(mongoIdValidator),
+  asyncHandler(retryOrderDriverSearch)
+);
 
 export default router;

@@ -10,6 +10,8 @@ import {
   returnOrderWithTransaction,
   getOrdersStatistics,
   calculateOrderDeliveryPrice,
+  getOrderBySourceId,
+  retryDriverSearch,
 } from '../../services/v1/order.service.js';
 import { notFound, unauthorized } from '#shared/errors/error.js';
 import { ROLES } from '#shared/utils/enums.js';
@@ -18,7 +20,16 @@ import { DtoService } from '#shared/utils/dtoService.js';
 import { cleanObject } from '#shared/utils/object.helper.js';
 
 export const createOrder = async (req, res) => {
-  if (!req.user) throw unauthorized();
+  const requester = req.user || req.service;
+  if (!requester) throw unauthorized();
+
+  if (req.body.sourceOrderId) {
+    const existingOrder = await getOrderBySourceId(req.body.sourceOrderId);
+    if (existingOrder) {
+      const order = await retryDriverSearch(existingOrder);
+      return res.status(200).json({ success: true, data: order });
+    }
+  }
 
   const order = await addOrder(req.body);
 
@@ -162,4 +173,14 @@ export const getOrder = async (req, res) => {
     success: true,
     data: order,
   });
+};
+
+export const retryOrderDriverSearch = async (req, res) => {
+  const requester = req.user || req.service;
+  if (!requester) throw unauthorized();
+
+  const order = await getOrderById(req.params.id);
+
+  const updated = await retryDriverSearch(order);
+  res.status(200).json({ success: true, data: updated });
 };
