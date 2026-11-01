@@ -1,11 +1,20 @@
+import { CustomSocket } from '#config/socket.js';
 import { DeliveryBatchModel } from '#modules/deliveryBatch/model/delivery.batch.model.js';
 import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
+import { fetchDriverByDriverId, fetchDriverByUserId } from '#modules/drivers/index.js';
 import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
-import { AppError } from '#shared/errors/error.js';
-import { isLocationFresh } from './batch.helper.js';
+import { AppError, notFound } from '#shared/errors/error.js';
+import { isLocationFresh, ordersWithStops } from './batch.helper.js';
 import { calculateDistanceMeters } from './distance.helper.js';
-import { BATCH_STATUS, ORDER_STATUS, REDIS_KEYS, STOP_STATUS, STOP_TYPE } from './enums.js';
+import {
+  BATCH_STATUS,
+  ORDER_STATUS,
+  REDIS_KEYS,
+  SOCKET_EVENTS,
+  STOP_STATUS,
+  STOP_TYPE,
+} from './enums.js';
 import { RedisService } from './redisLocationService.js';
 
 export class RouteOptimizationService {
@@ -139,6 +148,9 @@ export class RouteOptimizationService {
 
   static async optimizeRoute(driverId) {
     try {
+      const driver = await fetchDriverByDriverId(driverId);
+      if (!driver) throw notFound('driver');
+
       const activeBatch = await driverActiveBatch(driverId);
       if (!activeBatch)
         throw new AppError('Active batch not found', 404, ERROR_CODES.DELIVERY_BATCH_NOT_AVAILABLE);
@@ -203,9 +215,30 @@ export class RouteOptimizationService {
         { new: true, runValidators: true }
       );
 
+      const payload = await ordersWithStops(updatedBatch);
+
+      // Send orders with stops to driver
+      CustomSocket.emitToOnlineUser(driver.user._id, SOCKET_EVENTS.DRIVER.ROUTE_OPTIMIZED, payload);
+
       return updatedBatch;
     } catch (error) {
       console.error('Error in route optimization:', error);
+    }
+  }
+
+  // Send active batch,and orders  with stops to driver
+  static async sendOptimizedRouteToDriver(userId) {
+    try {
+      const driver = await fetchDriverByUserId(userId);
+      if (!driver) throw notFound('driver');
+
+      const activeBatch = await driverActiveBatch(driver._id);
+      if (!activeBatch || !activeBatch.orderIds.length || !activeBatch.stops.length) return;
+
+      const payload = await ordersWithStops(activeBatch);
+      CustomSocket.emitToOnlineUser(userId, SOCKET_EVENTS.DRIVER.ROUTE_OPTIMIZED, payload);
+    } catch (error) {
+      console.error('Error to send active batch to driver:', error);
     }
   }
 
