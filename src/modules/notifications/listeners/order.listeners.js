@@ -1,3 +1,4 @@
+import { isBatchComplete } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 import { findNearestAndScore } from '#modules/drivers/index.js';
 import { getOfferByOrderId, OfferModel } from '#modules/offers/index.js';
 import { addDriversDataInOrder } from '#modules/orders/index.js';
@@ -14,6 +15,7 @@ import { EventPublisherService } from '#shared/events/eventPublisherService.js';
 import { NotificationPayloads } from '#shared/utils/notificationPayloadBuilder.js';
 import { NotificationService } from '#shared/utils/notificationService.js';
 import { OfferService } from '#shared/utils/offerService.js';
+import { RouteOptimizationService } from '#shared/utils/routeOptimizationService.js';
 
 export const registerOrderListeners = () => {
   eventBus.on(EVENT_BUS_EVENTS.ORDER_CREATED, async (data) => {
@@ -41,9 +43,15 @@ export const registerOrderListeners = () => {
     // Cancel the process of sending offer to drivers
     const offer = await getOfferByOrderId(data.orderId);
     if (offer) await DbJobService.cancelOfferTimeout(offer._id);
+
+    // Route optimization for delivery batch stops
+    await RouteOptimizationService.optimizeRoute(data.driverId);
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_PICKEDUP, async (data) => {
+    // Mark the pickup stop as completed in the delivery batch
+    await RouteOptimizationService.completePickUpStop(data.driverId, data.orderId);
+
     // Notify Mizban: order pickedUp
     await EventPublisherService.publishOrderEvent({
       type: REDIS_EVENT_TYPE.ORDER_PICKEDUP,
@@ -62,6 +70,12 @@ export const registerOrderListeners = () => {
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_DELIVERED, async (data) => {
+    // Mark deliver stop as completed in delivery batch
+    await RouteOptimizationService.completeDeliveryStop(data.driverId, data.orderId);
+
+    // Check batch orders completed
+    await isBatchComplete(data.driverId);
+
     // Notify Mizban: order delivered
     await EventPublisherService.publishOrderEvent({
       type: REDIS_EVENT_TYPE.ORDER_DELIVERED,
@@ -79,11 +93,22 @@ export const registerOrderListeners = () => {
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_CANCELLED, async (data) => {
+    // If an order cancelled updated the batch orders and stop
+    await RouteOptimizationService.cancelledOrReturnedDeliveryBatchOrder(
+      data.driverId,
+      data.orderId
+    );
+
     const payload = NotificationPayloads.orderCancelled(data.orderId, data.reason);
     await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_RETURNED, async (data) => {
+    // If an order returned updated the batch orders and stop
+    await RouteOptimizationService.cancelledOrReturnedDeliveryBatchOrder(
+      data.driverId,
+      data.orderId
+    );
     const payload = NotificationPayloads.orderReturned(data.orderId, data.reason);
     await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
   });

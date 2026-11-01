@@ -1,7 +1,12 @@
+import {
+  canAddNewOrder,
+  driverActiveBatch,
+} from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 import { fetchDriverByDriverId } from '#modules/drivers/index.js';
 import { createOffer } from '#modules/offers/index.js';
 import { findOfferById } from '#modules/offers/services/v1/offer.service.js';
 import { getOrderById, increaseDriverIndex } from '#modules/orders/index.js';
+import { isBatchSizeAvailable } from './batch.helper.js';
 import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
 import { DbJobService } from './dbJob.service.js';
 import { DtoService } from './dtoService.js';
@@ -53,10 +58,21 @@ export class OfferService {
       }
 
       const driver = await fetchDriverByDriverId(driversInfo[currentIndex].id);
+      let activeBatch;
+      if (driver) {
+        activeBatch = await driverActiveBatch(driver._id);
+      }
+
+      let canAddOrderToBatch;
+      if (activeBatch) {
+        canAddOrderToBatch = await canAddNewOrder(activeBatch, orderId, { throwOnError: false });
+      }
+
       if (
         !driver ||
         driver.status === DRIVER_STATUS.OFFLINE ||
-        driver.activeOrders >= driver.maxOrders
+        (activeBatch && !isBatchSizeAvailable(activeBatch)) ||
+        (activeBatch && !canAddOrderToBatch)
       ) {
         await increaseDriverIndex(orderId);
         return await OfferService.sendOfferToDriver(orderId);
