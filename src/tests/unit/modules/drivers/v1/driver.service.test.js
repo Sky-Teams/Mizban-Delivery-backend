@@ -14,7 +14,7 @@ import {
 import { UserModel } from '#modules/users/index.js';
 import { hashPassword } from '#shared/utils/jwt.js';
 import { AppError } from '#shared/errors/error.js';
-import mongoose, { trusted } from 'mongoose';
+import mongoose from 'mongoose';
 import { VERIFICATION_STATUS } from '#shared/utils/enums.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { calculateDeliveryBatchesDistance } from '#modules/deliveryBatch/index.js';
