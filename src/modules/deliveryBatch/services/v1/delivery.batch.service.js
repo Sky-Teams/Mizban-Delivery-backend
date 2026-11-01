@@ -153,6 +153,40 @@ export const orderAssignedForBatching = async (session, driverId, orderId) => {
   return addOrderToActiveBatch(session, activeBatch._id, driverId, orderId);
 };
 
+export const calculateDeliveryBatchesDistance = async (filter) => {
+  const result = await DeliveryBatchModel.aggregate([
+    {
+      $match: filter,
+    },
+    {
+      $group: {
+        _id: null,
+        driverId: { $first: '$driver' },
+        totalDistanceMeters: {
+          $sum: '$distanceMeters',
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        driverId: 1,
+        totalDistanceKilometers: {
+          $divide: ['$totalDistanceMeters', 1000],
+        },
+      },
+    },
+  ]);
+
+  return (
+    result[0] ?? {
+      driverId: filter.driver,
+      totalDistanceMeters: 0,
+      totalDistanceKilometers: 0,
+    }
+  );
+};
+
 /** Check batch status for completed orders */
 export const isBatchComplete = async (driverId) => {
   const activeBatch = await driverActiveBatch(driverId);

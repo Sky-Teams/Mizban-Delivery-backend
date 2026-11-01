@@ -12,6 +12,10 @@ import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { GeoService } from '#shared/utils/geoService.js';
 import { DriverScore } from '#shared/utils/scorePrediction.js';
 import { DRIVER_STATUS, REASON_TYPES, VERIFICATION_STATUS } from '#shared/utils/enums.js';
+import { calculateDeliveryBatchesDistance } from '#modules/deliveryBatch/index.js';
+import mongoose from 'mongoose';
+import { DateHelper } from '#shared/utils/date.helper.js';
+import { DateTime } from 'luxon';
 //#region Services
 
 /** Fetch all Drivers with pagination functionality */
@@ -296,6 +300,49 @@ export const getDriverStatisticsService = async () => {
   ]);
 
   return stats;
+};
+
+export const getDriverDistanceService = async (driverId, query) => {
+  const { date, startDate, endDate } = query;
+
+  const driverExist = await doesDriverExistByDriverId(driverId);
+  if (!driverExist) throw notFound('driver');
+
+  if (date && (startDate || endDate))
+    throw new AppError('Use either date or date range', 400, ERROR_CODES.INVALID_DATE_FORMAT);
+
+  if (endDate && !startDate)
+    throw new AppError(
+      'startDate is required when endDate is provided',
+      400,
+      ERROR_CODES.INVALID_PARAMETER_START_DATE
+    );
+
+  const today = DateTime.now().setZone(DateHelper.TIMEZONES.kabul).toISODate();
+
+  const fromDate = date || startDate || today;
+  const toDate = date || endDate || today;
+
+  const from = DateHelper.getStartOfDateInTimezone(fromDate);
+  const to = DateHelper.getEndOfDateInTimezone(toDate);
+
+  const endDateStart = DateHelper.getStartOfDateInTimezone(toDate);
+
+  if (from > endDateStart)
+    throw new AppError(
+      'startDate cannot be greater than endDate',
+      400,
+      ERROR_CODES.INVALID_PARAMETER_START_DATE
+    );
+
+  const filter = {
+    driver: new mongoose.Types.ObjectId(driverId),
+    startedAt: { $lt: to },
+    $or: [{ completedAt: { $gte: from } }, { completedAt: null }],
+  };
+
+  const driverDistance = await calculateDeliveryBatchesDistance(filter);
+  return driverDistance;
 };
 
 //#endregion

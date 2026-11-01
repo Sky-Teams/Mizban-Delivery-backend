@@ -17,6 +17,10 @@ import { AppError } from '#shared/errors/error.js';
 import mongoose from 'mongoose';
 import { VERIFICATION_STATUS } from '#shared/utils/enums.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import { calculateDeliveryBatchesDistance } from '#modules/deliveryBatch/index.js';
+import { DateHelper } from '#shared/utils/date.helper.js';
+import { DateTime } from 'luxon';
+import { getDriverDistanceService } from '#modules/drivers/services/v1/driver.service.js';
 
 // Mock the driver model
 vi.mock('#modules/drivers/models/driver.model.js', () => ({
@@ -43,6 +47,19 @@ vi.mock('#shared/utils/jwt.js', () => ({
   hashPassword: vi.fn(),
 }));
 
+vi.mock('#modules/deliveryBatch/index.js', () => ({
+  calculateDeliveryBatchesDistance: vi.fn(),
+}));
+
+vi.mock('#shared/utils/date.helper.js', () => ({
+  DateHelper: {
+    TIMEZONES: {
+      kabul: 'Asia/Kabul',
+    },
+    getStartOfDateInTimezone: vi.fn(),
+    getEndOfDateInTimezone: vi.fn(),
+  },
+}));
 // ------------------- Mock Mongoose session -------------------
 const fakeSession = {
   startTransaction: vi.fn(),
@@ -328,6 +345,140 @@ describe('Driver Services', () => {
       });
 
       await rejectDriverRequest('123');
+    });
+  });
+
+  describe('getDriverDistanceService', () => {
+    const driverId = new mongoose.Types.ObjectId().toString();
+
+    const today = DateTime.now().setZone('Asia/Kabul').toISODate();
+
+    const distanceResult = {
+      totalDistanceMeters: 12500,
+      totalDistanceKilometers: 12.5,
+    };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      DriverModel.exists.mockResolvedValue({ _id: driverId.toString() });
+      calculateDeliveryBatchesDistance.mockResolvedValue(distanceResult);
+
+      DateHelper.getStartOfDateInTimezone.mockImplementation(
+        (date) => new Date(`${date}T00:00:00.000Z`)
+      );
+
+      DateHelper.getEndOfDateInTimezone.mockImplementation(
+        (date) => new Date(`${date}T23:59:59.999Z`)
+      );
+    });
+
+    describe('validation', () => {
+      it('should throw 404 when the driver does not exist', async () => {
+        DriverModel.exists.mockResolvedValue(null);
+
+        await expect(getDriverDistanceService(driverId, {})).rejects.toMatchObject({
+          status: 404,
+        });
+
+        expect(calculateDeliveryBatchesDistance).not.toHaveBeenCalled();
+      });
+
+      it('should reject when endDate is provided without startDate', async () => {
+        await expect(
+          getDriverDistanceService(driverId, {
+            endDate: '2026-10-31',
+          })
+        ).rejects.toMatchObject({
+          status: 400,
+          code: ERROR_CODES.INVALID_PARAMETER_START_DATE,
+        });
+
+        expect(calculateDeliveryBatchesDistance).not.toHaveBeenCalled();
+      });
+
+      it('should reject when startDate is greater than endDate', async () => {
+        await expect(
+          getDriverDistanceService(driverId, {
+            startDate: '2026-10-31',
+            endDate: '2026-10-29',
+          })
+        ).rejects.toMatchObject({
+          status: 400,
+          code: ERROR_CODES.INVALID_PARAMETER_START_DATE,
+        });
+
+        expect(calculateDeliveryBatchesDistance).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('distance calculation', () => {
+      it('should use today in Kabul when no date filters are provided', async () => {
+        const from = new Date('2026-11-01T00:00:00.000Z');
+        const to = new Date('2026-11-01T23:59:59.999Z');
+
+        DateHelper.getStartOfDateInTimezone.mockReturnValue(from);
+        DateHelper.getEndOfDateInTimezone.mockReturnValue(to);
+
+        const result = await getDriverDistanceService(driverId, {});
+
+        expect(DateHelper.getStartOfDateInTimezone).toHaveBeenCalledWith(today);
+        expect(DateHelper.getEndOfDateInTimezone).toHaveBeenCalledWith(today);
+
+        expect(calculateDeliveryBatchesDistance).toHaveBeenCalledWith({
+          driver: new mongoose.Types.ObjectId(driverId),
+          startedAt: { $lt: to },
+          $or: [{ completedAt: { $gte: from } }, { completedAt: null }],
+        });
+
+        expect(result).toEqual(distanceResult);
+      });
+
+      it('should calculate distance for a specific date', async () => {
+        const date = '2026-10-30';
+        const from = new Date('2026-10-30T00:00:00.000Z');
+        const to = new Date('2026-10-30T23:59:59.999Z');
+
+        DateHelper.getStartOfDateInTimezone.mockReturnValue(from);
+        DateHelper.getEndOfDateInTimezone.mockReturnValue(to);
+
+        const result = await getDriverDistanceService(driverId, { date });
+
+        expect(DateHelper.getStartOfDateInTimezone).toHaveBeenCalledWith(date);
+        expect(DateHelper.getEndOfDateInTimezone).toHaveBeenCalledWith(date);
+        expect(result).toEqual(distanceResult);
+      });
+
+      it('should calculate distance for a date range', async () => {
+        const startDate = '2026-10-28';
+        const endDate = '2026-10-30';
+
+        const from = new Date('2026-10-28T00:00:00.000Z');
+        const to = new Date('2026-10-30T23:59:59.999Z');
+        const endDateStart = new Date('2026-10-30T00:00:00.000Z');
+
+        DateHelper.getStartOfDateInTimezone
+          .mockReturnValueOnce(from)
+          .mockReturnValueOnce(endDateStart);
+
+        DateHelper.getEndOfDateInTimezone.mockReturnValue(to);
+
+        const result = await getDriverDistanceService(driverId, {
+          startDate,
+          endDate,
+        });
+
+        expect(DateHelper.getStartOfDateInTimezone).toHaveBeenCalledWith(startDate);
+        expect(DateHelper.getStartOfDateInTimezone).toHaveBeenCalledWith(endDate);
+        expect(DateHelper.getEndOfDateInTimezone).toHaveBeenCalledWith(endDate);
+
+        expect(calculateDeliveryBatchesDistance).toHaveBeenCalledWith({
+          driver: new mongoose.Types.ObjectId(driverId),
+          startedAt: { $lt: to },
+          $or: [{ completedAt: { $gte: from } }, { completedAt: null }],
+        });
+
+        expect(result).toEqual(distanceResult);
+      });
     });
   });
 });

@@ -7,6 +7,7 @@ import {
   doesDriverExist,
   fetchDriverByDriverId,
   fetchDrivers,
+  getDriverDistanceService,
   getDriverStatisticsService,
   modifyExistedDriver,
   rejectDriverRequest,
@@ -95,6 +96,15 @@ export const getDriverStatistics = async (req, res) => {
   res.status(200).json({
     success: true,
     data: drivers,
+  });
+};
+
+export const getDriverDistance = async (req, res) => {
+  const driverDistance = await getDriverDistanceService(req.params.id, req.query);
+
+  res.status(200).json({
+    success: true,
+    data: driverDistance,
   });
 };
 

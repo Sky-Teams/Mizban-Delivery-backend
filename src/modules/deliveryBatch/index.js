@@ -1,1 +1,4 @@
-export { orderAssignedForBatching } from './services/v1/delivery.batch.service.js';
+export {
+  orderAssignedForBatching,
+  calculateDeliveryBatchesDistance,
+} from './services/v1/delivery.batch.service.js';
