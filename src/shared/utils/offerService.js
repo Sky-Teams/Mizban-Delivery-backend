@@ -6,11 +6,8 @@ import { fetchDriverByDriverId } from '#modules/drivers/index.js';
 import { createOffer } from '#modules/offers/index.js';
 import { findOfferById } from '#modules/offers/services/v1/offer.service.js';
 import { getOrderById, increaseDriverIndex } from '#modules/orders/index.js';
-<<<<<<< HEAD
 import { isBatchSizeAvailable } from './batch.helper.js';
-=======
 import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
->>>>>>> 65b8731a87dcae4883138a56613e43282102cdad
 import { DbJobService } from './dbJob.service.js';
 import { DtoService } from './dtoService.js';
 import {
