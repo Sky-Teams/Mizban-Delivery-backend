@@ -103,6 +103,10 @@ const updateDriverSchema = z.object({
     .partial(), // make all fields optional for update
 });
 
+// update driver rating
+const addDriverRating = 
+
+
 export const updateDriverValidator = (req) => {
   return updateDriverSchema.safeParse({ body: req.body });
 };

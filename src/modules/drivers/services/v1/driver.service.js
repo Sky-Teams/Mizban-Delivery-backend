@@ -298,6 +298,10 @@ export const getDriverStatisticsService = async () => {
   return stats;
 };
 
+export const addDriverFeedbackService = async(driverId, )=>{
+
+}
+
 //#endregion
 
 //#region User Services => For now we dont need these services, in future we can use them

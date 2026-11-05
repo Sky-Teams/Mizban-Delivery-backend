@@ -98,6 +98,17 @@ export const getDriverStatistics = async (req, res) => {
   });
 };
 
+// Add driver rating
+export const addDriverFeedback = async (req, res) => {
+  const requester = req.service;
+  if (!requester) throw unauthorized();
+
+  const driverId = req.params.id
+  
+
+  const driverFeedback = 
+};
+
 //#endregion
 
 //#region Driver controllers

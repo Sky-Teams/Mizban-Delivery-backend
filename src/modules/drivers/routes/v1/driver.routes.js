@@ -82,4 +82,11 @@ router.put(
   asyncHandler(modifyDriver)
 );
 
+router.patch(
+  '/:id/rating',
+  authorize({ services: [SERVICE.MIZBAN] }),
+  validate(mongoIdValidator),
+  asyncHandler()
+);
+
 export default router;
