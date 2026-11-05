@@ -77,22 +77,25 @@ export const ordersWithStops = async (activeBatch) => {
         (stop) => stop.orderId.toString() === orderId.toString()
       );
 
-      const stops = await Promise.all(
-        orderStops.map(async (stop) => ({
-          contactDetails:
-            stop.stopType === STOP_TYPE.PICKUP ? { ...order?.sender } : { ...order?.receiver },
-          status: stop.stopStatus,
-          stopType: stop.stopType,
-          location: await DtoService.toLatLng(stop.location.coordinates),
-        }))
-      );
+      const stops = orderStops.map((stop) => ({
+        sequence:
+          activeBatch.stops.findIndex(
+            (s) => s.orderId.toString() === stop.orderId.toString() && s.stopType === stop.stopType
+          ) + 1,
+        stopStatus: stop.stopStatus,
+        stopType: stop.stopType,
+        location: DtoService.toLatLng(stop.location.coordinates),
+        contactDetails:
+          stop.stopType === STOP_TYPE.PICKUP ? { ...order?.sender } : { ...order?.receiver },
+      }));
 
       return {
+        orderId: order._id,
+        stops,
         source: order?.source,
         packageDetails: { ...order?.packageDetails },
         deliveryPrice: order?.deliveryPrice?.total,
         items: [...order?.items],
-        stops,
       };
     })
   );
