@@ -23,6 +23,9 @@ export class RouteOptimizationService {
   // Mark pickup stop as completed
   static async completePickUpStop(driverId, orderId) {
     try {
+      const driver = await fetchDriverByDriverId(driverId);
+      if (!driver) throw notFound('driver');
+
       const updateBatch = await DeliveryBatchModel.findOneAndUpdate(
         {
           driver: driverId,
@@ -52,6 +55,10 @@ export class RouteOptimizationService {
           ERROR_CODES.PICKUP_NOT_ALLOWED
         );
 
+      // Resend route optimized
+      const payload = await ordersWithStops(updateBatch);
+      CustomSocket.emitToOnlineUser(driver.user._id, SOCKET_EVENTS.DRIVER.ROUTE_OPTIMIZED, payload);
+
       return updateBatch;
     } catch (error) {
       console.error('Error in complete pickup stop:', error);
@@ -61,6 +68,9 @@ export class RouteOptimizationService {
   // Mark deliver stop as completed
   static async completeDeliveryStop(driverId, orderId) {
     try {
+      const driver = await fetchDriverByDriverId(driverId);
+      if (!driver) throw notFound('driver');
+
       const updateBatch = await DeliveryBatchModel.findOneAndUpdate(
         {
           driver: driverId,
@@ -89,6 +99,10 @@ export class RouteOptimizationService {
           404,
           ERROR_CODES.DELIVERY_NOT_DELIVERABLE
         );
+
+      // Resend route optimized
+      const payload = await ordersWithStops(updateBatch);
+      CustomSocket.emitToOnlineUser(driver.user._id, SOCKET_EVENTS.DRIVER.ROUTE_OPTIMIZED, payload);
 
       return updateBatch;
     } catch (error) {
@@ -149,6 +163,7 @@ export class RouteOptimizationService {
         }
       );
 
+      // Re-optimization routes and send it to driver
       return await this.optimizeRoute(driverId);
     } catch (error) {
       console.log('Error in cancel and return order at delivery batch:', error);
