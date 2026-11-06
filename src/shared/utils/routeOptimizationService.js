@@ -5,10 +5,12 @@ import { fetchDriverByDriverId, fetchDriverByUserId } from '#modules/drivers/ind
 import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
+import { eventBus } from '#shared/event-bus/eventBus.js';
 import { isLocationFresh, ordersWithStops } from './batch.helper.js';
 import { calculateDistanceMeters } from './distance.helper.js';
 import {
   BATCH_STATUS,
+  EVENT_BUS_EVENTS,
   ORDER_STATUS,
   REDIS_KEYS,
   SOCKET_EVENTS,
@@ -97,6 +99,9 @@ export class RouteOptimizationService {
   // Update orderIds in batch when an order cancelled or returned
   static async cancelledOrReturnedDeliveryBatchOrder(driverId, orderId) {
     try {
+      const driver = await fetchDriverByDriverId(driverId);
+      if (!driver) throw notFound('driver');
+
       const activeBatch = await driverActiveBatch(driverId);
       if (!activeBatch)
         throw new AppError('Active batch not found', 404, ERROR_CODES.DELIVERY_BATCH_NOT_AVAILABLE);
@@ -109,7 +114,7 @@ export class RouteOptimizationService {
       );
 
       if (!newOrderIds?.length) {
-        return await DeliveryBatchModel.findByIdAndUpdate(
+        await DeliveryBatchModel.findByIdAndUpdate(
           activeBatch._id,
           {
             $set: {
@@ -124,6 +129,10 @@ export class RouteOptimizationService {
             runValidators: true,
           }
         );
+
+        eventBus.emit(EVENT_BUS_EVENTS.STOP_DRIVER_TRACKING, { userId: driver.user._id });
+
+        return;
       }
 
       await DeliveryBatchModel.findByIdAndUpdate(

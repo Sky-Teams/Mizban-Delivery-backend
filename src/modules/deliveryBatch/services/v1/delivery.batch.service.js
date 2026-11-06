@@ -1,15 +1,17 @@
 import { DeliveryBatchModel } from '#modules/deliveryBatch/model/delivery.batch.model.js';
+import { fetchDriverByDriverId } from '#modules/drivers/index.js';
 import { OrderModel } from '#modules/orders/index.js';
 import { getOrderById, getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
-import { AppError } from '#shared/errors/error.js';
+import { AppError, notFound } from '#shared/errors/error.js';
+import { eventBus } from '#shared/event-bus/eventBus.js';
 import {
   isBatchSizeAvailable,
   isDeliveryCompatible,
   isPickupCompatible,
   isPreparationCompatible,
 } from '#shared/utils/batch.helper.js';
-import { BATCH_STATUS, ORDER_STATUS } from '#shared/utils/enums.js';
+import { BATCH_STATUS, EVENT_BUS_EVENTS, ORDER_STATUS } from '#shared/utils/enums.js';
 
 const addOrderToActiveBatch = async (session, deliveryBatchId, driverId, orderId) => {
   const updateDeliveryBatch = await DeliveryBatchModel.findOneAndUpdate(
@@ -155,6 +157,9 @@ export const orderAssignedForBatching = async (session, driverId, orderId) => {
 
 /** Check batch status for completed orders */
 export const isBatchComplete = async (driverId) => {
+  const driver = await fetchDriverByDriverId(driverId);
+  if (!driver) throw notFound('driver');
+
   const activeBatch = await driverActiveBatch(driverId);
 
   if (!activeBatch) return false;
@@ -184,6 +189,8 @@ export const isBatchComplete = async (driverId) => {
   );
 
   if (!completedBatch) return false;
+
+  eventBus.emit(EVENT_BUS_EVENTS.STOP_DRIVER_TRACKING, { userId: driver.user._id });
 
   return Boolean(completedBatch);
 };
