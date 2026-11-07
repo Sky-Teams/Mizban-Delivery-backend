@@ -1,7 +1,11 @@
 import { CustomSocket } from '#config/socket.js';
 import { DeliveryBatchModel } from '#modules/deliveryBatch/model/delivery.batch.model.js';
 import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
-import { fetchDriverByDriverId, fetchDriverByUserId } from '#modules/drivers/index.js';
+import {
+  fetchDriverByDriverId,
+  fetchDriverByUserId,
+  getDriverLocationByDriverId,
+} from '#modules/drivers/index.js';
 import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
@@ -181,20 +185,29 @@ export class RouteOptimizationService {
 
       // Get driver's current location
       const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driverId}`;
-      const location = await RedisService.getRedisData(driverLocationKey);
+      let location = await RedisService.getRedisData(driverLocationKey);
       // Check location is old or new
       const isLocationNew = await isLocationFresh(location);
 
-      if (
-        !location ||
-        location.lng == null ||
-        location.lat == null ||
-        !Number.isFinite(Number(location.lng)) ||
-        !Number.isFinite(Number(location.lat)) ||
-        !isLocationNew
-      ) {
-        return;
+      // If driver location in Redis does not exist or old, Use driver location to route optimization
+      if (!isLocationNew || location.lng == null || location.lat == null) {
+        const lastDriverLocation = await getDriverLocationByDriverId(driverId);
+        location = {
+          lng: lastDriverLocation?.currentLocation?.coordinates[1],
+          lat: lastDriverLocation?.currentLocation?.coordinates[0],
+        };
       }
+
+      if (!location)
+        if (
+          !location ||
+          location.lng == null ||
+          location.lat == null ||
+          !Number.isFinite(Number(location.lng)) ||
+          !Number.isFinite(Number(location.lat))
+        ) {
+          return;
+        }
 
       const newStops = await this.createStop(activeBatch);
       const allStops = [...(activeBatch.stops ?? []), ...newStops];
