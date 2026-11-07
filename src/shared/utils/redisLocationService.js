@@ -42,8 +42,12 @@ export class RedisService {
    * @returns {Promise<boolean>}
    */
   static async setIfNotExists(key, value = '1') {
+    const REDIS_DATA_EXPIRATION_TIME =
+      Number(process.env.REDIS_DATA_EXPIRATION_HOURS || 2) * 60 * 60;
+
     const result = await redisClient.set(key, value, {
       NX: true,
+      EX: REDIS_DATA_EXPIRATION_TIME,
     });
 
     return result === 'OK';
