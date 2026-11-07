@@ -254,6 +254,17 @@ export class RouteOptimizationService {
 
       const payload = await ordersWithStops(updatedBatch);
 
+      // Save last optimization location in redis
+      const updatedAt = new Date().toISOString();
+      await RedisService.saveDataToRedis(
+        `${REDIS_KEYS.DRIVER_LAST_OPTIMIZATION_LOCATION}${driverId}`,
+        {
+          lat: String(location.lat),
+          lng: String(location.lng),
+          updatedAt,
+        }
+      );
+
       // Send orders with stops to driver
       CustomSocket.emitToOnlineUser(driver.user._id, SOCKET_EVENTS.DRIVER.ROUTE_OPTIMIZED, payload);
 

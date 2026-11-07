@@ -23,7 +23,6 @@ import { RedisEventPublisher } from '#shared/events/RedisEventPublisher.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
 import { calculateDistanceMeters } from './distance.helper.js';
 import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
-import { isLocationFresh } from './batch.helper.js';
 
 const locationEventPublisher = new RedisEventPublisher(REDIS_CHANNEL.LIVE_LOCATION_CHANNEL);
 
@@ -79,16 +78,16 @@ export class LocationService {
 
         const isFirstLocation = await RedisService.setIfNotExists(optimizationBatchKey);
 
-        const isLocationNew = await isLocationFresh(location);
-        if (!isLocationNew) return;
-
-        const nextStop = activeBatch.stops.find((stop) => stop.stopStatus === STOP_STATUS.PENDING);
-        const deviationMeters = nextStop
-          ? calculateDistanceMeters(
-              [lng, lat],
-              [nextStop.location.coordinates[0], nextStop.location.coordinates[1]]
-            )
-          : 0;
+        const lastOptimizedLocation = await RedisService.getRedisData(
+          `${REDIS_KEYS.DRIVER_LAST_OPTIMIZATION_LOCATION}${driver._id}`
+        );
+        let deviationMeters;
+        if (lastOptimizedLocation) {
+          deviationMeters = calculateDistanceMeters(
+            [Number(lastOptimizedLocation.lng), Number(lastOptimizedLocation.lat)],
+            [lng, lat]
+          );
+        }
 
         if (
           isFirstLocation ||

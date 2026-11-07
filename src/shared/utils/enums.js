@@ -113,6 +113,7 @@ export const settingKeys = {
 export const REDIS_KEYS = {
   DRIVER_LOCATION: 'driver:location:',
   DRIVER_ROUTE_OPTIMIZATION_STARTED: 'driver:route:optimization:started:',
+  DRIVER_LAST_OPTIMIZATION_LOCATION: 'driver:last-optimization-location:',
 };
 
 // Redis channel
@@ -139,7 +140,7 @@ export const BATCH_CONFIG = {
   MAX_DELIVERY_DISTANCE_METERS: Number(process.env.MAX_DELIVERY_DISTANCE_METERS) || 4000, // meter
   MAX_PREPARATION_MINUTE: Number(process.env.MAX_PREPARATION_MINUTE) || 15, // minute
   MAX_BATCH_SIZE: Number(process.env.MAX_DELIVERY_BATCH_SIZE) || 5,
-  MAX_ROUTE_DEVIATION_METERS: Number(process.env.MAX_ROUTE_DEVIATION_METERS) || 10000, // meter
+  MAX_ROUTE_DEVIATION_METERS: Number(process.env.MAX_ROUTE_DEVIATION_METERS) || 2000, // meter
 };
 
 export const STOP_TYPE = {
