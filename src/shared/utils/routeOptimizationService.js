@@ -189,7 +189,7 @@ export class RouteOptimizationService {
       // Check location is old or new
       const isLocationNew = await isLocationFresh(location);
 
-      // If driver location in Redis does not exist or old, Use driver location to route optimization
+      // If driver location in Redis does not exist or old, Use driver location in database to route optimization
       if (!isLocationNew || location.lng == null || location.lat == null) {
         const lastDriverLocation = await getDriverLocationByDriverId(driverId);
         location = {
@@ -312,10 +312,10 @@ export class RouteOptimizationService {
       return null;
     }
 
-    // Build initial route using Greedy
+    // Build initial route using Greedy algorithm
     const greedyRoute = this.buildGreedyRoute(stops, completedPickupOrderIds);
 
-    // Optimize route using 2-opt
+    // Optimize route using 2-opt algorithm
     const optimizedRoute = this.optimizeRouteWith2Opt(greedyRoute, currentLocation);
 
     return optimizedRoute;
@@ -333,7 +333,6 @@ export class RouteOptimizationService {
 
       // Select based only on estimatedReadyAt
       const nextStop = this.getBestNextStop(eligibleStops);
-      console.log('nextStop', nextStop);
       if (!nextStop) break;
 
       route.push(nextStop);
