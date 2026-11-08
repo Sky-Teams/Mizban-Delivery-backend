@@ -172,7 +172,7 @@ export const calculateDeliveryBatchesDistance = async (filter) => {
         _id: 0,
         driverId: 1,
         totalDistanceKilometers: {
-          $divide: ['$totalDistanceMeters', 1000],
+          $round: [{ $divide: ['$totalDistanceMeters', 1000] }, 2],
         },
       },
     },

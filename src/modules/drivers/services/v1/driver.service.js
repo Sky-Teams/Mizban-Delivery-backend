@@ -326,9 +326,9 @@ export const getDriverDistanceService = async (driverId, query) => {
   const from = DateHelper.getStartOfDateInTimezone(fromDate);
   const to = DateHelper.getEndOfDateInTimezone(toDate);
 
-  const endDateStart = DateHelper.getStartOfDateInTimezone(toDate);
+  const endDateStartOfDay = DateHelper.getStartOfDateInTimezone(toDate);
 
-  if (from > endDateStart)
+  if (from > endDateStartOfDay)
     throw new AppError(
       'startDate cannot be greater than endDate',
       400,
