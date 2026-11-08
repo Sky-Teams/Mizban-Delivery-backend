@@ -17,6 +17,12 @@ import {
   orderAssignedForBatching,
 } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 import { getOrdersByIds, getOrderById } from '#modules/orders/services/v1/order.service.js';
+import { fetchDriverByDriverId } from '#modules/drivers/index.js';
+
+vi.mock('#modules/drivers/index.js', () => ({
+  fetchDriverByDriverId: vi.fn(),
+  fetchDriverByUserId: vi.fn(),
+}));
 
 vi.mock('#modules/deliveryBatch/model/delivery.batch.model.js', () => ({
   DeliveryBatchModel: {
@@ -324,6 +330,13 @@ describe('isBatchComplete', () => {
   });
 
   it('should return false when there is no active batch', async () => {
+    fetchDriverByDriverId.mockResolvedValue({
+      _id: 'driver-1',
+      user: {
+        _id: 'user-1',
+      },
+    });
+
     DeliveryBatchModel.findOne.mockResolvedValue(null);
     const result = await isBatchComplete(driverId);
 
