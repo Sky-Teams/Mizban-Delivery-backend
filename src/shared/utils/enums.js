@@ -114,6 +114,7 @@ export const REDIS_KEYS = {
   DRIVER_LOCATION: 'driver:location:',
   DRIVER_ROUTE_OPTIMIZATION_STARTED: 'driver:route:optimization:started:',
   DRIVER_LAST_OPTIMIZATION_LOCATION: 'driver:last-optimization-location:',
+  DRIVER_LOCATION_UPDATE_LIMIT: 'driver:location:update:limit:',
 };
 
 // Redis channel

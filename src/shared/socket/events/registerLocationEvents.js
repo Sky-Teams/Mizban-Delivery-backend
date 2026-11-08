@@ -1,8 +1,13 @@
 import { LocationService } from '#shared/utils/locationService.js';
 import { SOCKET_EVENTS } from '#shared/utils/enums.js';
+import { RedisService } from '#shared/utils/redisLocationService.js';
 
 export const registerLocationEvents = (socket) => {
   socket.on(SOCKET_EVENTS.DRIVER.UPDATE_LOCATION, async (data) => {
+    const canUpdate = await RedisService.setIfNotExists(socket.userId);
+
+    if (!canUpdate) return;
+
     /** Update Driver Location To Redis and Send Driver Location to Admin */
     await LocationService.updateLocation(socket.userId, data);
   });
