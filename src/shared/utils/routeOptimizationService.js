@@ -10,11 +10,7 @@ import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
 import { eventBus } from '#shared/event-bus/eventBus.js';
-import {
-  getEstimatedReadyAt,
-  isLocationFresh,
-  ordersWithStops,
-} from './batch.helper.js';
+import { getEstimatedReadyAt, isLocationFresh, ordersWithStops } from './batch.helper.js';
 import { calculateDistanceMeters } from './distance.helper.js';
 import {
   BATCH_STATUS,
@@ -202,16 +198,15 @@ export class RouteOptimizationService {
         };
       }
 
-      if (!location)
-        if (
-          !location ||
-          location.lng == null ||
-          location.lat == null ||
-          !Number.isFinite(Number(location.lng)) ||
-          !Number.isFinite(Number(location.lat))
-        ) {
-          return;
-        }
+      if (
+        !location ||
+        location.lng == null ||
+        location.lat == null ||
+        !Number.isFinite(Number(location.lng)) ||
+        !Number.isFinite(Number(location.lat))
+      ) {
+        return;
+      }
 
       const newStops = await this.createStop(activeBatch);
       const allStops = [...(activeBatch.stops ?? []), ...newStops];
@@ -311,20 +306,17 @@ export class RouteOptimizationService {
       !Array.isArray(stops) ||
       !stops.length ||
       !Array.isArray(currentLocation) ||
-      currentLocation.length !== 2
+      currentLocation.length !== 2 ||
+      !currentLocation.every(Number.isFinite)
     ) {
       return null;
     }
 
     // Build initial route using Greedy
-    const greedyRoute = this.buildGreedyRoute(stops, currentLocation, completedPickupOrderIds);
+    const greedyRoute = this.buildGreedyRoute(stops, completedPickupOrderIds);
 
     // Optimize route using 2-opt
-    const optimizedRoute = this.optimizeRouteWith2Opt(
-      greedyRoute,
-      currentLocation,
-      completedPickupOrderIds
-    );
+    const optimizedRoute = this.optimizeRouteWith2Opt(greedyRoute, currentLocation);
 
     return optimizedRoute;
   }
