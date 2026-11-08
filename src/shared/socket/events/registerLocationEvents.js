@@ -4,7 +4,7 @@ import { RedisService } from '#shared/utils/redisLocationService.js';
 
 export const registerLocationEvents = (socket) => {
   socket.on(SOCKET_EVENTS.DRIVER.UPDATE_LOCATION, async (data) => {
-    const canUpdate = await RedisService.setIfNotExists(socket.userId);
+    const canUpdate = await RedisService.canProcessLocationUpdate(socket.userId);
 
     if (!canUpdate) return;
 
