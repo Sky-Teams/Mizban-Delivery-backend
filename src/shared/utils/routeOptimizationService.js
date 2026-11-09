@@ -220,11 +220,12 @@ export class RouteOptimizationService {
         ...(protectedStop ? [protectedStop?.orderId?.toString()] : []),
       ];
 
-      const route = this.buildRoute(
-        pendingStops,
-        [Number(location.lng), Number(location.lat)],
-        completedPickupOrderIds
-      );
+      // Add location base on protected route or driver location
+      const currentLocation = protectedStop
+        ? protectedStop.location.coordinates
+        : [Number(location.lng), Number(location.lat)];
+
+      const route = this.buildRoute(pendingStops, currentLocation, completedPickupOrderIds);
 
       if (!route || route.length !== pendingStops.length) {
         return;
