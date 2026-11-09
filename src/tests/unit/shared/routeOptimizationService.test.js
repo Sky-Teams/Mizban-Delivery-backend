@@ -474,7 +474,7 @@ describe('optimizeRoute', () => {
 
     expect(buildRouteSpy).toHaveBeenCalledWith(
       [deliveryStop, secondStops, secondDelivery],
-      [0, 0],
+      [1, 1],
       ['order-1']
     );
 
