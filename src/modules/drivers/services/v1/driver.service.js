@@ -229,6 +229,9 @@ export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, lim
     let nearestDrivers;
     nearestDrivers = await DriverModel.find({
       status: { $ne: DRIVER_STATUS.OFFLINE },
+      $expr: {
+        $lt: ['$activeOrders', '$maxOrders'],
+      },
       currentLocation: {
         $near: {
           $geometry: { type: 'Point', coordinates: pickupLocation },
