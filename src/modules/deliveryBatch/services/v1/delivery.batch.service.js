@@ -99,10 +99,10 @@ export const driverActiveBatch = async (driverId) => {
   });
 };
 
-export const canAddNewOrder = async (batch, orderId, { throwOnError = true } = {}) => {
-  const orders = await getOrdersByIds(batch.orderIds);
+export const canAddNewOrder = async (session, batch, orderId, { throwOnError = true } = {}) => {
+  const orders = await getOrdersByIds(batch.orderIds, session);
 
-  const newOrderDetails = await getOrderById(orderId);
+  const newOrderDetails = await getOrderById(orderId, session);
 
   for (const order of orders) {
     if (order.status === ORDER_STATUS.DELIVERED || order.status === ORDER_STATUS.CANCELLED)
@@ -150,7 +150,7 @@ export const orderAssignedForBatching = async (session, driverId, orderId) => {
     throw new AppError('Delivery batch is full', 409, ERROR_CODES.DELIVERY_BATCH_IS_FULL);
   }
 
-  await canAddNewOrder(activeBatch, orderId);
+  await canAddNewOrder(session, activeBatch, orderId);
 
   return addOrderToActiveBatch(session, activeBatch._id, driverId, orderId);
 };

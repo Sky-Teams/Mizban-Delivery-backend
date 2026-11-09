@@ -116,8 +116,8 @@ export const addOrder = async (orderData, session) => {
   return newOrder;
 };
 
-export const getOrderById = async (orderId) => {
-  const order = await OrderModel.findById(orderId);
+export const getOrderById = async (orderId, session = null) => {
+  const order = await OrderModel.findById(orderId).session(session);
   if (!order) throw notFound('Order');
 
   return order;
@@ -135,8 +135,8 @@ export const findOrderById = async (orderId) => {
   return await OrderModel.findById(orderId);
 };
 
-export const getOrdersByIds = async (orderIds) => {
-  return OrderModel.find({ _id: { $in: orderIds } });
+export const getOrdersByIds = async (orderIds, session = null) => {
+  return OrderModel.find({ _id: { $in: orderIds } }).session(session);
 };
 
 /**
