@@ -17,6 +17,7 @@ import { AppError } from '#shared/errors/error.js';
 import mongoose from 'mongoose';
 import { VERIFICATION_STATUS } from '#shared/utils/enums.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
+import { updateDriverRatingService } from '#modules/drivers/services/v1/driver.service.js';
 
 // Mock the driver model
 vi.mock('#modules/drivers/models/driver.model.js', () => ({
@@ -328,6 +329,52 @@ describe('Driver Services', () => {
       });
 
       await rejectDriverRequest('123');
+    });
+  });
+
+  describe('updateDriverRatingService', () => {
+    const driverId = '672a12345678901234567890';
+
+    const ratingData = {
+      ratingAvg: 4.5,
+      ratingCount: 10,
+    };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('should update driver rating successfully', async () => {
+      const updatedDriver = {
+        _id: driverId,
+        ...ratingData,
+      };
+
+      DriverModel.findByIdAndUpdate.mockResolvedValue(updatedDriver);
+
+      const result = await updateDriverRatingService(driverId, ratingData);
+
+      expect(DriverModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        driverId,
+        {
+          $set: {
+            ratingAvg: 4.5,
+            ratingCount: 10,
+          },
+        },
+        {
+          returnDocument: 'after',
+          runValidators: true,
+        }
+      );
+
+      expect(result).toEqual(updatedDriver);
+    });
+
+    it('should throw not found error when driver does not exist', async () => {
+      DriverModel.findByIdAndUpdate.mockResolvedValue(null);
+
+      await expect(updateDriverRatingService(driverId, ratingData)).rejects.toThrow();
     });
   });
 });
