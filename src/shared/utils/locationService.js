@@ -16,6 +16,7 @@ import {
   SERVICE,
   SOCKET_EVENTS,
   STOP_STATUS,
+  STOP_TYPE,
 } from './enums.js';
 import { RedisService } from './redisLocationService.js';
 import { handleLocationError } from './handleLocationError.js';
@@ -62,21 +63,26 @@ export class LocationService {
 
       const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driver._id}`;
 
-      /** Calculate driver distance */
-      const prevLocation = await RedisService.getRedisData(driverLocationKey);
-      let distanceMeters = 0;
-      if (prevLocation && Number(prevLocation?.lng) && Number(prevLocation?.lat)) {
-        distanceMeters = calculateDistanceMeters(
-          [Number(prevLocation.lng), Number(prevLocation.lat)],
-          [lng, lat]
-        );
-      }
-
-      // Save driver distance on active batch
       const activeBatch = await driverActiveBatch(driver._id);
-      if (distanceMeters > 0 && activeBatch) {
-        activeBatch.distanceMeters += distanceMeters;
-        await activeBatch.save();
+
+      /** Calculate driver distance only once the first pickup of the active batch is completed */
+      const hasCompletedPickup = activeBatch?.stops?.some(
+        (stop) => stop.stopType === STOP_TYPE.PICKUP && stop.stopStatus === STOP_STATUS.COMPLETED
+      );
+
+      if (activeBatch && hasCompletedPickup) {
+        const prevLocation = await RedisService.getRedisData(driverLocationKey);
+        if (prevLocation && Number(prevLocation?.lng) && Number(prevLocation?.lat)) {
+          const distanceMeters = calculateDistanceMeters(
+            [Number(prevLocation.lng), Number(prevLocation.lat)],
+            [lng, lat]
+          );
+
+          if (distanceMeters > 0) {
+            activeBatch.distanceMeters += distanceMeters;
+            await activeBatch.save();
+          }
+        }
       }
 
       const updatedAt = new Date().toISOString();
