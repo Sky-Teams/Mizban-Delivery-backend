@@ -161,7 +161,6 @@ export const calculateDeliveryBatchesDistance = async (filter) => {
     {
       $group: {
         _id: null,
-        driverId: { $first: '$driver' },
         totalDistanceMeters: {
           $sum: '$distanceMeters',
         },
@@ -170,7 +169,6 @@ export const calculateDeliveryBatchesDistance = async (filter) => {
     {
       $project: {
         _id: 0,
-        driverId: 1,
         totalDistanceKilometers: {
           $round: [{ $divide: ['$totalDistanceMeters', 1000] }, 2],
         },
@@ -180,8 +178,6 @@ export const calculateDeliveryBatchesDistance = async (filter) => {
 
   return (
     result[0] ?? {
-      driverId: filter.driver,
-      totalDistanceMeters: 0,
       totalDistanceKilometers: 0,
     }
   );
