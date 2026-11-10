@@ -8,6 +8,7 @@ import {
   getDriverStatistics,
   modifyDriver,
   rejectDriverRegistrationRequest,
+  updateDriverRating,
 } from '../../controllers/v1/driver.controller.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
 import { validate } from '#shared/middleware/validate.js';
@@ -82,11 +83,12 @@ router.put(
   asyncHandler(modifyDriver)
 );
 
-router.patch(
+router.put(
   '/:id/rating',
   authorize({ services: [SERVICE.MIZBAN] }),
   validate(mongoIdValidator),
-  asyncHandler()
+  validate(updateDriverValidator),
+  asyncHandler(updateDriverRating)
 );
 
 export default router;
