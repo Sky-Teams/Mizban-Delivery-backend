@@ -10,6 +10,7 @@ import {
   getDriverStatisticsService,
   modifyExistedDriver,
   rejectDriverRequest,
+  updateDriverRatingService,
 } from '../../services/v1/driver.service.js';
 
 //#region controllers
@@ -98,15 +99,18 @@ export const getDriverStatistics = async (req, res) => {
   });
 };
 
-// Add driver rating
-export const addDriverFeedback = async (req, res) => {
+// Update driver rating
+export const updateDriverRating = async (req, res) => {
   const requester = req.service;
   if (!requester) throw unauthorized();
 
-  const driverId = req.params.id
-  
+  const driverId = req.params.id;
+  const result = await updateDriverRatingService(driverId, req.body);
 
-  const driverFeedback = 
+  res.status(200).json({
+    success: true,
+    data: result,
+  });
 };
 
 //#endregion
