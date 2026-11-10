@@ -298,9 +298,26 @@ export const getDriverStatisticsService = async () => {
   return stats;
 };
 
-export const addDriverFeedbackService = async(driverId, )=>{
+export const updateDriverRatingService = async (driverId, driverData) => {
+  const { ratingAvg, ratingCount } = driverData;
+  const updateDriverRating = await DriverModel.findByIdAndUpdate(
+    driverId,
+    {
+      $set: {
+        ratingAvg,
+        ratingCount,
+      },
+    },
+    {
+      returnDocument: 'after',
+      runValidators: true,
+    }
+  );
 
-}
+  if (!updateDriverRating) throw notFound('driver');
+
+  return updateDriverRating;
+};
 
 //#endregion
 
