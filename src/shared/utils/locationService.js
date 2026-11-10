@@ -218,12 +218,13 @@ export class LocationService {
       await updateDriverLocation(driver._id, data);
 
       const activeBatch = await driverActiveBatch(driver._id);
-
-      const optimizationBatchKey = `${REDIS_KEYS.DRIVER_ROUTE_OPTIMIZATION_STARTED}${driver._id}:${activeBatch._id}`;
+      if (activeBatch) {
+        const optimizationBatchKey = `${REDIS_KEYS.DRIVER_ROUTE_OPTIMIZATION_STARTED}${driver._id}:${activeBatch._id}`;
+        await RedisService.removeRedisData(optimizationBatchKey);
+      }
 
       /** Remove Driver Location From Redis */
       await RedisService.removeRedisData(driverLocationKey);
-      await RedisService.removeRedisData(optimizationBatchKey);
 
       /** Stop Location Saving In Database */
       await stopLocationSync(driver._id);

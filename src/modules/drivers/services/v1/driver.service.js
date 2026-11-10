@@ -16,6 +16,8 @@ import { calculateDeliveryBatchesDistance } from '#modules/deliveryBatch/index.j
 import mongoose from 'mongoose';
 import { DateHelper } from '#shared/utils/date.helper.js';
 import { DateTime } from 'luxon';
+import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
+import { isBatchSizeAvailable } from '#shared/utils/batch.helper.js';
 //#region Services
 
 /** Fetch all Drivers with pagination functionality */
@@ -228,7 +230,8 @@ export const addNewDriver = withTransaction(addDriver);
  */
 export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, limit = 10) => {
   try {
-    const nearestDrivers = await DriverModel.find({
+    let nearestDrivers;
+    nearestDrivers = await DriverModel.find({
       status: { $ne: DRIVER_STATUS.OFFLINE },
       $expr: {
         $lt: ['$activeOrders', '$maxOrders'],
@@ -244,6 +247,15 @@ export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, lim
       .limit(limit)
       .lean();
 
+    nearestDrivers = await Promise.all(
+      nearestDrivers.map(async (driver) => {
+        const activeBatch = await driverActiveBatch(driver._id);
+
+        return !activeBatch || isBatchSizeAvailable(activeBatch) ? driver : null;
+      })
+    );
+
+    nearestDrivers = nearestDrivers.filter(Boolean);
     return nearestDrivers;
   } catch (error) {
     console.error('Error in finding nearest drivers. ', error.message);
