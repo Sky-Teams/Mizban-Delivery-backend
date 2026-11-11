@@ -192,5 +192,5 @@ export const isBatchComplete = async (driverId) => {
 
   eventBus.emit(EVENT_BUS_EVENTS.STOP_DRIVER_TRACKING, { userId: driver.user._id });
 
-  return Boolean(completedBatch);
+  return true;
 };
