@@ -107,16 +107,17 @@ const updateDriverSchema = z.object({
 const updateDriverRating = z.object({
   body: z.object({
     ratingAvg: z.preprocess(
-      (val) =>
-        val !== undefined &&
-        ensureNumber(val, 'ratingAvg', ERROR_CODES.RATING_AVERAGE_MUST_BE_POSITIVE),
-      z.number().positive({ message: ERROR_CODES.RATING_AVERAGE_MUST_BE_POSITIVE })
+      (val) => ensureNumber(val, 'ratingAvg', ERROR_CODES.RATING_AVERAGE_MUST_BE_POSITIVE),
+      z.number().min(0, {
+        message: ERROR_CODES.RATING_AVERAGE_MUST_BE_POSITIVE,
+      })
     ),
+
     ratingCount: z.preprocess(
-      (val) =>
-        val !== undefined &&
-        ensureNumber(val, 'ratingCount', ERROR_CODES.RATING_COUNT_MUST_BE_POSITIVE),
-      z.number().positive({ message: ERROR_CODES.RATING_COUNT_MUST_BE_POSITIVE })
+      (val) => ensureNumber(val, 'ratingCount', ERROR_CODES.RATING_COUNT_MUST_BE_POSITIVE),
+      z.number().min(0, {
+        message: ERROR_CODES.RATING_COUNT_MUST_BE_POSITIVE,
+      })
     ),
   }),
 });
