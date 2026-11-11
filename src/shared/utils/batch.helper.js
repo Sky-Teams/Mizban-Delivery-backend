@@ -1,3 +1,4 @@
+import { fetchDriverByDriverId } from '#modules/drivers/index.js';
 import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { calculateDistanceMeters } from './distance.helper.js';
 import { DtoService } from './dtoService.js';
@@ -31,10 +32,12 @@ export const isPreparationCompatible = (currentOrder, newOrder) => {
 };
 
 /** Check maximum orders in batch model */
-export const isBatchSizeAvailable = (batchOrders) => {
+export const isBatchSizeAvailable = async (batchOrders) => {
+  const driver = await fetchDriverByDriverId(batchOrders.driver);
+  if (!driver) throw notFound('driver');
   const orderJobs = batchOrders?.orderIds?.length;
 
-  return orderJobs < BATCH_CONFIG.MAX_BATCH_SIZE;
+  return orderJobs < driver.maxOrders;
 };
 
 export const getEstimatedReadyAt = (order) => {
