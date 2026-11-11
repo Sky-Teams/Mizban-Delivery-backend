@@ -117,7 +117,13 @@ export const addOrder = async (orderData, session) => {
 };
 
 export const getOrderById = async (orderId, session = null) => {
-  const order = await OrderModel.findById(orderId).session(session);
+  const query = await OrderModel.findById(orderId);
+
+  if (session) {
+    query = query.session(session);
+  }
+
+  const order = await query;
   if (!order) throw notFound('Order');
 
   return order;
@@ -136,7 +142,14 @@ export const findOrderById = async (orderId) => {
 };
 
 export const getOrdersByIds = async (orderIds, session = null) => {
-  return OrderModel.find({ _id: { $in: orderIds } }).session(session);
+  let query = OrderModel.find({ _id: { $in: orderIds } });
+
+  if (session) {
+    query = query.session(session);
+  }
+
+  const orders = await query;
+  return orders;
 };
 
 /**

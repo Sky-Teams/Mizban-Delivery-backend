@@ -93,6 +93,8 @@ describe('driverActiveBatch', () => {
 });
 
 describe('canAddNewOrder', () => {
+  const session = { id: 'session-1' };
+
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -105,10 +107,10 @@ describe('canAddNewOrder', () => {
   });
 
   it('should return true when all orders are compatible', async () => {
-    const result = await canAddNewOrder(makeBatch(), 'order-2');
+    const result = await canAddNewOrder(session, makeBatch(), 'order-2');
 
-    expect(getOrdersByIds).toHaveBeenCalledWith(['order-1']);
-    expect(getOrderById).toHaveBeenCalledWith('order-2');
+    expect(getOrdersByIds).toHaveBeenCalledWith(['order-1'], session);
+    expect(getOrderById).toHaveBeenCalledWith('order-2', session);
     expect(result).toBe(true);
   });
 
@@ -121,7 +123,7 @@ describe('canAddNewOrder', () => {
       }),
     ]);
 
-    const result = await canAddNewOrder(makeBatch(), 'order-2');
+    const result = await canAddNewOrder(session, makeBatch(), 'order-2');
 
     expect(isPickupCompatible).not.toHaveBeenCalled();
     expect(isDeliveryCompatible).not.toHaveBeenCalled();
@@ -132,7 +134,7 @@ describe('canAddNewOrder', () => {
   it('should throw when pickup is incompatible', async () => {
     isPickupCompatible.mockReturnValue(false);
 
-    await expect(canAddNewOrder(makeBatch(), 'order-2')).rejects.toMatchObject({
+    await expect(canAddNewOrder(session, makeBatch(), 'order-2')).rejects.toMatchObject({
       status: 409,
       code: ERROR_CODES.BATCH_PICKUP_NOT_COMPATIBLE,
     });
@@ -141,7 +143,7 @@ describe('canAddNewOrder', () => {
   it('should return false when pickup is incompatible and throwOnError is false', async () => {
     isPickupCompatible.mockReturnValue(false);
 
-    const result = await canAddNewOrder(makeBatch(), 'order-2', {
+    const result = await canAddNewOrder(session, makeBatch(), 'order-2', {
       throwOnError: false,
     });
 
@@ -151,7 +153,7 @@ describe('canAddNewOrder', () => {
   it('should throw when delivery is incompatible', async () => {
     isDeliveryCompatible.mockReturnValue(false);
 
-    await expect(canAddNewOrder(makeBatch(), 'order-2')).rejects.toMatchObject({
+    await expect(canAddNewOrder(session, makeBatch(), 'order-2')).rejects.toMatchObject({
       status: 409,
       code: ERROR_CODES.BATCH_DELIVERY_NOT_COMPATIBLE,
     });
@@ -160,7 +162,7 @@ describe('canAddNewOrder', () => {
   it('should return false when delivery is incompatible and throwOnError is false', async () => {
     isDeliveryCompatible.mockReturnValue(false);
 
-    const result = await canAddNewOrder(makeBatch(), 'order-2', {
+    const result = await canAddNewOrder(session, makeBatch(), 'order-2', {
       throwOnError: false,
     });
 
@@ -170,7 +172,7 @@ describe('canAddNewOrder', () => {
   it('should throw when preparation is incompatible', async () => {
     isPreparationCompatible.mockReturnValue(false);
 
-    await expect(canAddNewOrder(makeBatch(), 'order-2')).rejects.toMatchObject({
+    await expect(canAddNewOrder(session, makeBatch(), 'order-2')).rejects.toMatchObject({
       status: 409,
       code: ERROR_CODES.BATCH_PREPARATION_NOT_COMPATIBLE,
     });
