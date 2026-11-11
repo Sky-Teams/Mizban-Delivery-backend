@@ -14,13 +14,17 @@ export const registerLocationListeners = () => {
   });
 
   eventBus.on(EVENT_BUS_EVENTS.STOP_DRIVER_TRACKING, async (data) => {
-    // Stop driver tracking
-    await LocationService.stopDriverTracking(data.userId);
+    try {
+      // Stop driver tracking
+      await LocationService.stopDriverTracking(data.userId);
 
-    // Send an emit to driver
-    CustomSocket.emitToOnlineUser(data.userId, SOCKET_EVENTS.DRIVER.STOP_TRACKING, {
-      message:
-        'There are no remaining orders in your delivery batch, and location tracking has been stopped.',
-    });
+      // Send an emit to driver
+      CustomSocket.emitToOnlineUser(data.userId, SOCKET_EVENTS.DRIVER.STOP_TRACKING, {
+        message:
+          'There are no remaining orders in your delivery batch, and location tracking has been stopped.',
+      });
+    } catch (error) {
+      console.log('Failed to stop driver tracking: ', error);
+    }
   });
 };
