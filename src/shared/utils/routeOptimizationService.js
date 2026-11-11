@@ -30,6 +30,10 @@ export class RouteOptimizationService {
       const driver = await fetchDriverByDriverId(driverId);
       if (!driver) throw notFound('driver');
 
+      const activeBatch = await driverActiveBatch(driverId);
+
+      if (!activeBatch.stops.length) return;
+
       const updateBatch = await DeliveryBatchModel.findOneAndUpdate(
         {
           driver: driverId,
@@ -74,6 +78,10 @@ export class RouteOptimizationService {
     try {
       const driver = await fetchDriverByDriverId(driverId);
       if (!driver) throw notFound('driver');
+
+      const activeBatch = await driverActiveBatch(driverId);
+
+      if (!activeBatch.stops.length) return;
 
       const updateBatch = await DeliveryBatchModel.findOneAndUpdate(
         {
