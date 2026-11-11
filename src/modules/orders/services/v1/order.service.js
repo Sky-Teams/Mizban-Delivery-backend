@@ -117,7 +117,7 @@ export const addOrder = async (orderData, session) => {
 };
 
 export const getOrderById = async (orderId, session = null) => {
-  const query = await OrderModel.findById(orderId);
+  let query = OrderModel.findById(orderId);
 
   if (session) {
     query = query.session(session);
