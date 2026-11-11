@@ -50,7 +50,26 @@ vi.mock('#modules/deliveryBatch/model/delivery.batch.model.js', () => ({
 
 //=============== completePickUpStop ==========
 describe('completePickUpStop', () => {
+  const activeBatch = {
+    _id: 'batch-1',
+    driver: 'driver-1',
+    status: BATCH_STATUS.ACTIVE,
+    stops: [
+      {
+        orderId: 'order-1',
+        stopStatus: STOP_STATUS.PENDING,
+        stopType: STOP_TYPE.PICKUP,
+      },
+      {
+        orderId: 'order-1',
+        stopStatus: STOP_STATUS.PENDING,
+        stopType: STOP_TYPE.DELIVERY,
+      },
+    ],
+  };
   beforeEach(() => {
+    driverActiveBatch.mockResolvedValue(activeBatch);
+
     vi.clearAllMocks();
   });
 
