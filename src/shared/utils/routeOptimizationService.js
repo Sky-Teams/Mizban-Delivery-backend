@@ -8,6 +8,7 @@ import { AppError, notFound } from '#shared/errors/error.js';
 import { isLocationFresh, ordersWithStops } from './batch.helper.js';
 import { calculateDistanceMeters } from './distance.helper.js';
 import {
+  BATCH_CONFIG,
   BATCH_STATUS,
   ORDER_STATUS,
   REDIS_KEYS,
@@ -192,28 +193,57 @@ export class RouteOptimizationService {
 
       const newStops = await this.createStop(activeBatch);
       const allStops = [...(activeBatch.stops ?? []), ...newStops];
+      let protectedStop;
+
+      // Find the first pending stop to check whether it should be protected from route re-optimization.
+      if (activeBatch?.stops.length) {
+        const progressIndex = activeBatch.stops?.findIndex(
+          (stop) => stop.stopStatus === STOP_STATUS.PENDING
+        );
+
+        if (progressIndex !== -1) {
+          const progressStop = activeBatch.stops[progressIndex];
+
+          const remainingDistance = await calculateDistanceMeters(
+            [Number(location.lng), Number(location.lat)],
+            progressStop.location.coordinates
+          );
+
+          if (remainingDistance <= BATCH_CONFIG.REMAINING_DISTANCE) {
+            protectedStop = progressStop;
+          }
+        }
+      }
       if (!allStops.length) return;
 
       // Separate completed and pending stops
       const completedStops = allStops?.filter((stop) => stop.stopStatus === STOP_STATUS.COMPLETED);
-      const pendingStops = allStops?.filter((stop) => stop.stopStatus === STOP_STATUS.PENDING);
+      const pendingStops = allStops?.filter(
+        (stop) =>
+          stop.stopStatus === STOP_STATUS.PENDING && (!protectedStop || stop !== protectedStop)
+      );
 
       // Validate stops
       if (!this.validateStops(allStops)) {
         throw new AppError('Invalid batch stops', 400, ERROR_CODES.INVALID_BATCH_STOPS);
       }
 
-      const completedPickupOrderIds = allStops
-        .filter(
-          (stop) => stop.stopType === STOP_TYPE.PICKUP && stop.stopStatus === STOP_STATUS.COMPLETED
-        )
-        .map((stop) => stop.orderId.toString());
+      const completedPickupOrderIds = [
+        ...allStops
+          .filter(
+            (stop) =>
+              stop.stopType === STOP_TYPE.PICKUP && stop.stopStatus === STOP_STATUS.COMPLETED
+          )
+          .map((stop) => stop.orderId.toString()),
+        ...(protectedStop ? [protectedStop?.orderId?.toString()] : []),
+      ];
 
-      const route = this.buildRoute(
-        pendingStops,
-        [Number(location.lng), Number(location.lat)],
-        completedPickupOrderIds
-      );
+      // Add location base on protected route or driver location
+      const currentLocation = protectedStop
+        ? protectedStop.location.coordinates
+        : [Number(location.lng), Number(location.lat)];
+
+      const route = this.buildRoute(pendingStops, currentLocation, completedPickupOrderIds);
 
       if (!route || route.length !== pendingStops.length) {
         return;
@@ -224,7 +254,11 @@ export class RouteOptimizationService {
         throw new AppError('Invalid batch stops', 400, ERROR_CODES.INVALID_BATCH_STOPS);
       }
 
-      const optimizedRoute = [...completedStops, ...route];
+      const optimizedRoute = [
+        ...completedStops,
+        ...(protectedStop ? [protectedStop] : []),
+        ...route,
+      ];
 
       // Save the optimized route
       const updatedBatch = await DeliveryBatchModel.findByIdAndUpdate(
@@ -460,7 +494,7 @@ export class RouteOptimizationService {
       return false;
     }
 
-    const pickedUpOrderIds = new Set(completedPickupOrderIds.map((id) => id.toString()));
+    const pickedUpOrderIds = new Set(completedPickupOrderIds.map((id) => id?.toString()));
 
     const orderMap = new Map();
 
