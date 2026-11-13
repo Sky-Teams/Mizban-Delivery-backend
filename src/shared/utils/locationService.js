@@ -16,6 +16,7 @@ import {
   SERVICE,
   SOCKET_EVENTS,
   STOP_STATUS,
+  STOP_TYPE,
 } from './enums.js';
 import { RedisService } from './redisLocationService.js';
 import { handleLocationError } from './handleLocationError.js';
@@ -50,6 +51,7 @@ export class LocationService {
       )
         throw new AppError('Invalid data location', 400, ERROR_CODES.INVALID_LOCATION_DATA);
 
+      // Frontend coordinates
       const [lat, lng] = data.currentLocation.coordinates;
       /** Validation location data (type, latitude, longitude) */
       updateLocationSchema.parse({
@@ -61,6 +63,28 @@ export class LocationService {
 
       const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driver._id}`;
 
+      const activeBatch = await driverActiveBatch(driver._id);
+
+      /** Calculate driver distance only once the first pickup of the active batch is completed */
+      const hasCompletedPickup = activeBatch?.stops?.some(
+        (stop) => stop.stopType === STOP_TYPE.PICKUP && stop.stopStatus === STOP_STATUS.COMPLETED
+      );
+
+      if (activeBatch && hasCompletedPickup) {
+        const prevLocation = await RedisService.getRedisData(driverLocationKey);
+        if (prevLocation && Number(prevLocation?.lng) && Number(prevLocation?.lat)) {
+          const distanceMeters = calculateDistanceMeters(
+            [Number(prevLocation.lng), Number(prevLocation.lat)],
+            [lng, lat]
+          );
+
+          if (distanceMeters > 0) {
+            activeBatch.distanceMeters += distanceMeters;
+            await activeBatch.save();
+          }
+        }
+      }
+
       const updatedAt = new Date().toISOString();
       /** Save locations in Redis caching  */
       await RedisService.saveDataToRedis(driverLocationKey, {
@@ -71,7 +95,6 @@ export class LocationService {
 
       // Get drivers location from redis
       const location = await RedisService.getRedisData(driverLocationKey);
-      const activeBatch = await driverActiveBatch(driver._id);
 
       // Route optimization for active batch stops
       if (activeBatch) {
