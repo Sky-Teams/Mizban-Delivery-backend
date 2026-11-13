@@ -310,6 +310,27 @@ export const getDriverStatisticsService = async () => {
   return stats;
 };
 
+export const updateDriverRatingService = async (driverId, driverData) => {
+  const { ratingAvg, ratingCount } = driverData;
+  const updateDriverRating = await DriverModel.findByIdAndUpdate(
+    driverId,
+    {
+      $set: {
+        ratingAvg,
+        ratingCount,
+      },
+    },
+    {
+      returnDocument: 'after',
+      runValidators: true,
+    }
+  );
+
+  if (!updateDriverRating) throw notFound('driver');
+
+  return updateDriverRating;
+};
+
 //#endregion
 
 //#region User Services => For now we dont need these services, in future we can use them

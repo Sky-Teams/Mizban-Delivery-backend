@@ -103,6 +103,29 @@ const updateDriverSchema = z.object({
     .partial(), // make all fields optional for update
 });
 
+// update driver rating
+const updateDriverRating = z.object({
+  body: z.object({
+    ratingAvg: z.preprocess(
+      (val) => ensureNumber(val, 'ratingAvg', ERROR_CODES.RATING_AVERAGE_MUST_BE_POSITIVE),
+      z.number().min(0, {
+        message: ERROR_CODES.RATING_AVERAGE_MUST_BE_POSITIVE,
+      })
+    ),
+
+    ratingCount: z.preprocess(
+      (val) => ensureNumber(val, 'ratingCount', ERROR_CODES.RATING_COUNT_MUST_BE_POSITIVE),
+      z.number().min(0, {
+        message: ERROR_CODES.RATING_COUNT_MUST_BE_POSITIVE,
+      })
+    ),
+  }),
+});
+
 export const updateDriverValidator = (req) => {
   return updateDriverSchema.safeParse({ body: req.body });
+};
+
+export const updateDriverRatingValidator = (req) => {
+  return updateDriverRating.safeParse({ body: req.body });
 };

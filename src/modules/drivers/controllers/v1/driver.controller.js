@@ -10,6 +10,7 @@ import {
   getDriverStatisticsService,
   modifyExistedDriver,
   rejectDriverRequest,
+  updateDriverRatingService,
 } from '../../services/v1/driver.service.js';
 
 //#region controllers
@@ -95,6 +96,20 @@ export const getDriverStatistics = async (req, res) => {
   res.status(200).json({
     success: true,
     data: drivers,
+  });
+};
+
+// Update driver rating
+export const updateDriverRating = async (req, res) => {
+  const requester = req.service;
+  if (!requester) throw unauthorized();
+
+  const driverId = req.params.id;
+  const result = await updateDriverRatingService(driverId, req.body);
+
+  res.status(200).json({
+    success: true,
+    data: result,
   });
 };
 

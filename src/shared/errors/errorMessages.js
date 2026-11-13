@@ -776,4 +776,16 @@ export const ERROR_MESSAGES = {
     fa: 'زمان آماده‌سازی سفارش با مجموعه سفارش‌های فعال سازگار نیست',
     ps: 'د فرمایش د چمتو کولو وخت د فعالې فرمایشونو مجموعې سره سمون نه لري',
   },
+
+  [ERROR_CODES.RATING_AVERAGE_MUST_BE_POSITIVE]: {
+    en: 'Rating average must be a valid positive number',
+    fa: 'میانگین امتیاز باید یک عدد مثبت معتبر باشد',
+    ps: 'د نمرو منځنی باید یو معتبر مثبت عدد وي',
+  },
+
+  [ERROR_CODES.RATING_COUNT_MUST_BE_POSITIVE]: {
+    en: 'Rating count must be a valid positve number',
+    fa: 'تعداد امتیازها باید یک عدد مثبت معتبر باشد',
+    ps: 'د نمرو شمېر باید یو معتبر مثبت بشپړ عدد وي',
+  },
 };
