@@ -50,6 +50,24 @@ export class RouteOptimizationService {
           ERROR_CODES.PICKUP_NOT_ALLOWED
         );
 
+      // Reset the distance baseline to the driver's current location, only for the first pickup completed in the batch
+      const completedPickups = (updateBatch.stops ?? []).filter(
+        (stop) => stop.stopType === STOP_TYPE.PICKUP && stop.stopStatus === STOP_STATUS.COMPLETED
+      );
+
+      if (completedPickups.length === 1) {
+        const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driverId}`;
+        const currentLocation = await RedisService.getRedisData(driverLocationKey);
+
+        if (currentLocation && Number(currentLocation?.lat) && Number(currentLocation?.lng)) {
+          await RedisService.saveDataToRedis(driverLocationKey, {
+            lat: String(currentLocation.lat),
+            lng: String(currentLocation.lng),
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      }
+
       return updateBatch;
     } catch (error) {
       console.error('Error in complete pickup stop:', error);
