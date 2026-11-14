@@ -1,14 +1,20 @@
 import { CustomSocket } from '#config/socket.js';
 import { DeliveryBatchModel } from '#modules/deliveryBatch/model/delivery.batch.model.js';
 import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
-import { fetchDriverByDriverId, fetchDriverByUserId } from '#modules/drivers/index.js';
+import {
+  fetchDriverByDriverId,
+  fetchDriverByUserId,
+  getDriverLocationByDriverId,
+} from '#modules/drivers/index.js';
 import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError, notFound } from '#shared/errors/error.js';
-import { isLocationFresh, ordersWithStops } from './batch.helper.js';
+import { eventBus } from '#shared/event-bus/eventBus.js';
+import { getEstimatedReadyAt, isLocationFresh, ordersWithStops } from './batch.helper.js';
 import { calculateDistanceMeters } from './distance.helper.js';
 import {
   BATCH_STATUS,
+  EVENT_BUS_EVENTS,
   ORDER_STATUS,
   REDIS_KEYS,
   SOCKET_EVENTS,
@@ -21,6 +27,13 @@ export class RouteOptimizationService {
   // Mark pickup stop as completed
   static async completePickUpStop(driverId, orderId) {
     try {
+      const driver = await fetchDriverByDriverId(driverId);
+      if (!driver) throw notFound('driver');
+
+      const activeBatch = await driverActiveBatch(driverId);
+
+      if (!activeBatch.stops.length) return;
+
       const updateBatch = await DeliveryBatchModel.findOneAndUpdate(
         {
           driver: driverId,
@@ -68,6 +81,10 @@ export class RouteOptimizationService {
         }
       }
 
+      // Resend route optimized
+      const payload = await ordersWithStops(updateBatch);
+      CustomSocket.emitToOnlineUser(driver.user._id, SOCKET_EVENTS.DRIVER.ROUTE_OPTIMIZED, payload);
+
       return updateBatch;
     } catch (error) {
       console.error('Error in complete pickup stop:', error);
@@ -77,6 +94,13 @@ export class RouteOptimizationService {
   // Mark deliver stop as completed
   static async completeDeliveryStop(driverId, orderId) {
     try {
+      const driver = await fetchDriverByDriverId(driverId);
+      if (!driver) throw notFound('driver');
+
+      const activeBatch = await driverActiveBatch(driverId);
+
+      if (!activeBatch.stops.length) return;
+
       const updateBatch = await DeliveryBatchModel.findOneAndUpdate(
         {
           driver: driverId,
@@ -106,6 +130,10 @@ export class RouteOptimizationService {
           ERROR_CODES.DELIVERY_NOT_DELIVERABLE
         );
 
+      // Resend route optimized
+      const payload = await ordersWithStops(updateBatch);
+      CustomSocket.emitToOnlineUser(driver.user._id, SOCKET_EVENTS.DRIVER.ROUTE_OPTIMIZED, payload);
+
       return updateBatch;
     } catch (error) {
       console.error('Error in complete delivery stop:', error);
@@ -115,6 +143,9 @@ export class RouteOptimizationService {
   // Update orderIds in batch when an order cancelled or returned
   static async cancelledOrReturnedDeliveryBatchOrder(driverId, orderId) {
     try {
+      const driver = await fetchDriverByDriverId(driverId);
+      if (!driver) throw notFound('driver');
+
       const activeBatch = await driverActiveBatch(driverId);
       if (!activeBatch)
         throw new AppError('Active batch not found', 404, ERROR_CODES.DELIVERY_BATCH_NOT_AVAILABLE);
@@ -127,7 +158,7 @@ export class RouteOptimizationService {
       );
 
       if (!newOrderIds?.length) {
-        return await DeliveryBatchModel.findByIdAndUpdate(
+        await DeliveryBatchModel.findByIdAndUpdate(
           activeBatch._id,
           {
             $set: {
@@ -142,6 +173,10 @@ export class RouteOptimizationService {
             runValidators: true,
           }
         );
+
+        eventBus.emit(EVENT_BUS_EVENTS.STOP_DRIVER_TRACKING, { userId: driver.user._id });
+
+        return;
       }
 
       await DeliveryBatchModel.findByIdAndUpdate(
@@ -158,6 +193,7 @@ export class RouteOptimizationService {
         }
       );
 
+      // Re-optimization routes and send it to driver
       return await this.optimizeRoute(driverId);
     } catch (error) {
       console.log('Error in cancel and return order at delivery batch:', error);
@@ -175,17 +211,25 @@ export class RouteOptimizationService {
 
       // Get driver's current location
       const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driverId}`;
-      const location = await RedisService.getRedisData(driverLocationKey);
+      let location = await RedisService.getRedisData(driverLocationKey);
       // Check location is old or new
       const isLocationNew = await isLocationFresh(location);
+
+      // If driver location in Redis does not exist or old, Use driver location in database to route optimization
+      if (!isLocationNew || location.lng == null || location.lat == null) {
+        const lastDriverLocation = await getDriverLocationByDriverId(driverId);
+        location = {
+          lng: lastDriverLocation?.currentLocation?.coordinates[0],
+          lat: lastDriverLocation?.currentLocation?.coordinates[1],
+        };
+      }
 
       if (
         !location ||
         location.lng == null ||
         location.lat == null ||
         !Number.isFinite(Number(location.lng)) ||
-        !Number.isFinite(Number(location.lat)) ||
-        !isLocationNew
+        !Number.isFinite(Number(location.lat))
       ) {
         return;
       }
@@ -235,6 +279,17 @@ export class RouteOptimizationService {
 
       const payload = await ordersWithStops(updatedBatch);
 
+      // Save last optimization location in redis
+      const updatedAt = new Date().toISOString();
+      await RedisService.saveDataToRedis(
+        `${REDIS_KEYS.DRIVER_LAST_OPTIMIZATION_LOCATION}${driverId}`,
+        {
+          lat: String(location.lat),
+          lng: String(location.lng),
+          updatedAt,
+        }
+      );
+
       // Send orders with stops to driver
       CustomSocket.emitToOnlineUser(driver.user._id, SOCKET_EVENTS.DRIVER.ROUTE_OPTIMIZED, payload);
 
@@ -261,10 +316,16 @@ export class RouteOptimizationService {
   }
 
   /**
-   * Builds an optimized route using the nearest-neighbor approach.
-   * At each step, selects the nearest eligible stop based on the current location,
-   * while ensuring that each order is picked up before being delivered.
-   * The current location is updated after each selection, and the process continues until all eligible stops are processed.
+   * Builds an optimized route using a Greedy approach followed by 2-opt optimization.
+   * First, constructs an initial route by selecting eligible stops based on their
+   * estimated ready times while respecting pickup and delivery dependencies.
+   * Then, applies the 2-opt algorithm to reduce the total route distance by
+   * rearranging stops without violating pickup-before-delivery constraints.
+   *
+   * @param {Array} stops - List of available stops.
+   * @param {Array<number>} currentLocation - Driver's current coordinates [lng, lat].
+   * @param {Array<string>} completedPickupOrderIds - IDs of orders already picked up.
+   * @returns {Array} Optimized route, or null if the input is invalid.
    */
   static buildRoute(stops, currentLocation, completedPickupOrderIds = []) {
     if (
@@ -277,45 +338,110 @@ export class RouteOptimizationService {
       return null;
     }
 
+    // Build initial route using Greedy algorithm
+    const greedyRoute = this.buildGreedyRoute(stops, completedPickupOrderIds);
+
+    // Optimize route using 2-opt algorithm
+    const optimizedRoute = this.optimizeRouteWith2Opt(greedyRoute, currentLocation);
+
+    return optimizedRoute;
+  }
+
+  static buildGreedyRoute(stops, completedPickupOrderIds = []) {
+    const route = [];
     const remainingStops = [...stops];
     const pickedUpOrderIds = new Set(completedPickupOrderIds);
-    const route = [];
 
-    while (remainingStops.length > 0) {
+    while (remainingStops.length) {
       const eligibleStops = this.getEligibleStops(remainingStops, pickedUpOrderIds);
 
       if (!eligibleStops.length) break;
 
-      const stopsWithDistance = this.calculateStopDistance(eligibleStops, currentLocation);
+      // Select based only on estimatedReadyAt
+      const nextStop = this.getBestNextStop(eligibleStops);
+      if (!nextStop) break;
 
-      const nearStop = this.getNearestStop(stopsWithDistance);
+      route.push(nextStop);
 
-      if (!nearStop) break;
-
-      const sameLocationStops = this.getSameLocationStops(eligibleStops, nearStop);
-
-      for (const stop of sameLocationStops) {
-        route.push(stop);
-
-        if (stop.stopType === STOP_TYPE.PICKUP) {
-          pickedUpOrderIds.add(stop.orderId.toString());
-        }
-
-        const index = remainingStops.findIndex(
-          (remainingStop) =>
-            remainingStop.orderId.toString() === stop.orderId.toString() &&
-            remainingStop.stopType === stop.stopType
-        );
-
-        if (index === -1) return null;
-
-        remainingStops.splice(index, 1);
+      if (nextStop.stopType === STOP_TYPE.PICKUP) {
+        pickedUpOrderIds.add(nextStop.orderId.toString());
       }
 
-      currentLocation = nearStop.location.coordinates;
+      const selectedIndex = remainingStops.findIndex(
+        (stop) =>
+          stop.orderId.toString() === nextStop.orderId.toString() &&
+          stop.stopType === nextStop.stopType
+      );
+
+      if (selectedIndex !== -1) {
+        remainingStops.splice(selectedIndex, 1);
+      }
     }
 
     return route;
+  }
+
+  static optimizeRouteWith2Opt(route, currentLocation) {
+    if (route.length < 3) return route;
+
+    let optimizedRoute = [...route];
+    let improved = true;
+
+    while (improved) {
+      improved = false;
+
+      const currentDistance = this.calculateRouteDistance(optimizedRoute, currentLocation);
+
+      for (let i = 0; i < optimizedRoute.length - 1; i++) {
+        for (let j = i + 1; j < optimizedRoute.length; j++) {
+          const newRoute = [
+            ...optimizedRoute.slice(0, i),
+            ...optimizedRoute.slice(i, j + 1).reverse(),
+            ...optimizedRoute.slice(j + 1),
+          ];
+
+          if (!this.validateRouteOrder(newRoute)) continue;
+
+          const newDistance = this.calculateRouteDistance(newRoute, currentLocation);
+
+          if (newDistance < currentDistance) {
+            optimizedRoute = newRoute;
+            improved = true;
+            break;
+          }
+        }
+
+        if (improved) break;
+      }
+    }
+
+    return optimizedRoute;
+  }
+
+  static calculateRouteDistance(route, currentLocation) {
+    let totalDistance = 0;
+    let previousLocation = currentLocation;
+
+    for (const stop of route) {
+      totalDistance += calculateDistanceMeters(previousLocation, [
+        stop.location.coordinates[0],
+        stop.location.coordinates[1],
+      ]);
+
+      previousLocation = stop.location.coordinates;
+    }
+    return totalDistance;
+  }
+
+  static getBestNextStop(stops) {
+    if (!stops.length) return null;
+
+    return [...stops].sort((a, b) => {
+      const timeA = new Date(a.estimatedReadyAt).getTime();
+      const timeB = new Date(b.estimatedReadyAt).getTime();
+
+      return timeA - timeB;
+    })[0];
   }
 
   static getEligibleStops(remainingStops, pickedUpOrderIds) {
@@ -334,23 +460,14 @@ export class RouteOptimizationService {
     return stops.map((stop) => {
       const plainStop = typeof stop.toObject === 'function' ? stop.toObject() : stop;
 
+      const stopLocation = plainStop.location.coordinates;
+
+      const distance = calculateDistanceMeters(currentLocation, stopLocation);
       return {
         ...plainStop,
-        distance: calculateDistanceMeters(plainStop.location.coordinates, currentLocation),
+        distance,
       };
     });
-  }
-
-  static getNearestStop(stops) {
-    if (!stops.length) return;
-
-    let nearestStop = stops[0];
-    for (const stop of stops) {
-      if (stop.distance < nearestStop.distance) {
-        nearestStop = stop;
-      }
-    }
-    return nearestStop;
   }
 
   static getSameLocationStops(stops, selectedStop) {
@@ -375,26 +492,36 @@ export class RouteOptimizationService {
 
     const existingStops = batch.stops ?? [];
 
-    const existingStopKeys = new Set(
-      existingStops.map((stop) => `${stop.orderId.toString()}-${stop.stopType}`)
+    const existingStopMap = new Map(
+      existingStops.map((stop) => [`${stop.orderId.toString()}-${stop.stopType}`, stop])
     );
 
     const newStops = [];
 
     for (const order of orders) {
       const orderId = order._id.toString();
+      const estimatedReadyAt = getEstimatedReadyAt(order);
 
-      if (!existingStopKeys.has(`${orderId}-${STOP_TYPE.PICKUP}`)) {
+      const pickupKey = `${orderId}-${STOP_TYPE.PICKUP}`;
+      const deliveryKey = `${orderId}-${STOP_TYPE.DELIVERY}`;
+
+      const existingPickup = existingStopMap.get(pickupKey);
+
+      if (existingPickup) {
+        existingPickup.estimatedReadyAt = estimatedReadyAt;
+      } else {
         newStops.push({
           orderId: order._id,
           stopType: STOP_TYPE.PICKUP,
           location: order.pickupLocation,
-          stopStatus:
-            order.status === ORDER_STATUS.PICKEDUP ? STOP_STATUS.COMPLETED : STOP_STATUS.PENDING,
+          stopStatus: [ORDER_STATUS.PICKEDUP, ORDER_STATUS.DELIVERED].includes(order.status)
+            ? STOP_STATUS.COMPLETED
+            : STOP_STATUS.PENDING,
+          estimatedReadyAt,
         });
       }
 
-      if (!existingStopKeys.has(`${orderId}-${STOP_TYPE.DELIVERY}`)) {
+      if (!existingStopMap.has(deliveryKey)) {
         newStops.push({
           orderId: order._id,
           stopType: STOP_TYPE.DELIVERY,
@@ -464,8 +591,11 @@ export class RouteOptimizationService {
 
     const orderMap = new Map();
 
+    let previousReadyAt = -Infinity;
+
     for (let index = 0; index < route.length; index++) {
       const stop = route[index];
+
       if (!stop?.orderId || ![STOP_TYPE.PICKUP, STOP_TYPE.DELIVERY].includes(stop.stopType)) {
         return false;
       }
@@ -483,6 +613,15 @@ export class RouteOptimizationService {
 
       if (stop.stopType === STOP_TYPE.PICKUP) {
         if (order.pickupIndex !== null) return false;
+
+        const readyAt = new Date(stop.estimatedReadyAt).getTime();
+
+        if (!Number.isFinite(readyAt)) return false;
+
+        // Preserve Pickup order based on estimatedReadyAt.
+        if (readyAt < previousReadyAt) return false;
+
+        previousReadyAt = readyAt;
         order.pickupIndex = index;
       } else {
         if (order.deliveryIndex !== null) return false;

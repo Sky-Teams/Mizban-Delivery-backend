@@ -1,3 +1,4 @@
+import { fetchDriverByDriverId } from '#modules/drivers/index.js';
 import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { calculateDistanceMeters } from './distance.helper.js';
 import { DtoService } from './dtoService.js';
@@ -31,10 +32,12 @@ export const isPreparationCompatible = (currentOrder, newOrder) => {
 };
 
 /** Check maximum orders in batch model */
-export const isBatchSizeAvailable = (batchOrders) => {
+export const isBatchSizeAvailable = async (batchOrders) => {
+  const driver = await fetchDriverByDriverId(batchOrders.driver);
+  if (!driver) throw notFound('driver');
   const orderJobs = batchOrders?.orderIds?.length;
 
-  return orderJobs < BATCH_CONFIG.MAX_BATCH_SIZE;
+  return orderJobs < driver.maxOrders;
 };
 
 export const getEstimatedReadyAt = (order) => {
@@ -77,22 +80,29 @@ export const ordersWithStops = async (activeBatch) => {
         (stop) => stop.orderId.toString() === orderId.toString()
       );
 
-      const stops = await Promise.all(
-        orderStops.map(async (stop) => ({
-          contactDetails:
-            stop.stopType === STOP_TYPE.PICKUP ? { ...order?.sender } : { ...order?.receiver },
-          status: stop.stopStatus,
-          stopType: stop.stopType,
-          location: await DtoService.toLatLng(stop.location.coordinates),
-        }))
-      );
+      const estimatedReadyAt = getEstimatedReadyAt(order);
+
+      const stops = orderStops.map((stop) => ({
+        sequence:
+          activeBatch.stops.findIndex(
+            (s) => s.orderId.toString() === stop.orderId.toString() && s.stopType === stop.stopType
+          ) + 1,
+        stopStatus: stop.stopStatus,
+        stopType: stop.stopType,
+        location: DtoService.toLatLng(stop.location.coordinates),
+        contactDetails:
+          stop.stopType === STOP_TYPE.PICKUP
+            ? { ...order?.sender, estimatedReadyAt }
+            : { ...order?.receiver },
+      }));
 
       return {
+        orderId: order._id,
+        stops,
         source: order?.source,
         packageDetails: { ...order?.packageDetails },
         deliveryPrice: order?.deliveryPrice?.total,
         items: [...order?.items],
-        stops,
       };
     })
   );

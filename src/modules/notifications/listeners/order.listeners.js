@@ -1,4 +1,3 @@
-import { isBatchComplete } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 import { findNearestAndScore } from '#modules/drivers/index.js';
 import { getOfferByOrderId, OfferModel } from '#modules/offers/index.js';
 import { addDriversDataInOrder } from '#modules/orders/index.js';
@@ -16,6 +15,7 @@ import { NotificationPayloads } from '#shared/utils/notificationPayloadBuilder.j
 import { NotificationService } from '#shared/utils/notificationService.js';
 import { OfferService } from '#shared/utils/offerService.js';
 import { RouteOptimizationService } from '#shared/utils/routeOptimizationService.js';
+import { completeBatchIfDone } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 
 export const registerOrderListeners = () => {
   eventBus.on(EVENT_BUS_EVENTS.ORDER_CREATED, async (data) => {
@@ -74,7 +74,7 @@ export const registerOrderListeners = () => {
     await RouteOptimizationService.completeDeliveryStop(data.driverId, data.orderId);
 
     // Check batch orders completed
-    await isBatchComplete(data.driverId);
+    await completeBatchIfDone(data.driverId);
 
     // Notify Mizban: order delivered
     await EventPublisherService.publishOrderEvent({

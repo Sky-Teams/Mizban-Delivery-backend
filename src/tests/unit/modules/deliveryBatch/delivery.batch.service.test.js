@@ -12,11 +12,17 @@ import {
 import { BATCH_STATUS, ORDER_STATUS } from '#shared/utils/enums.js';
 import {
   canAddNewOrder,
+  completeBatchIfDone,
   driverActiveBatch,
-  isBatchComplete,
   orderAssignedForBatching,
 } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 import { getOrdersByIds, getOrderById } from '#modules/orders/services/v1/order.service.js';
+import { fetchDriverByDriverId } from '#modules/drivers/index.js';
+
+vi.mock('#modules/drivers/index.js', () => ({
+  fetchDriverByDriverId: vi.fn(),
+  fetchDriverByUserId: vi.fn(),
+}));
 
 vi.mock('#modules/deliveryBatch/model/delivery.batch.model.js', () => ({
   DeliveryBatchModel: {
@@ -87,6 +93,8 @@ describe('driverActiveBatch', () => {
 });
 
 describe('canAddNewOrder', () => {
+  const session = { id: 'session-1' };
+
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -99,10 +107,10 @@ describe('canAddNewOrder', () => {
   });
 
   it('should return true when all orders are compatible', async () => {
-    const result = await canAddNewOrder(makeBatch(), 'order-2');
+    const result = await canAddNewOrder(makeBatch(), 'order-2', { session });
 
-    expect(getOrdersByIds).toHaveBeenCalledWith(['order-1']);
-    expect(getOrderById).toHaveBeenCalledWith('order-2');
+    expect(getOrdersByIds).toHaveBeenCalledWith(['order-1'], session);
+    expect(getOrderById).toHaveBeenCalledWith('order-2', session);
     expect(result).toBe(true);
   });
 
@@ -115,7 +123,7 @@ describe('canAddNewOrder', () => {
       }),
     ]);
 
-    const result = await canAddNewOrder(makeBatch(), 'order-2');
+    const result = await canAddNewOrder(makeBatch(), 'order-2', { session });
 
     expect(isPickupCompatible).not.toHaveBeenCalled();
     expect(isDeliveryCompatible).not.toHaveBeenCalled();
@@ -126,7 +134,7 @@ describe('canAddNewOrder', () => {
   it('should throw when pickup is incompatible', async () => {
     isPickupCompatible.mockReturnValue(false);
 
-    await expect(canAddNewOrder(makeBatch(), 'order-2')).rejects.toMatchObject({
+    await expect(canAddNewOrder(makeBatch(), 'order-2', { session })).rejects.toMatchObject({
       status: 409,
       code: ERROR_CODES.BATCH_PICKUP_NOT_COMPATIBLE,
     });
@@ -136,6 +144,7 @@ describe('canAddNewOrder', () => {
     isPickupCompatible.mockReturnValue(false);
 
     const result = await canAddNewOrder(makeBatch(), 'order-2', {
+      session,
       throwOnError: false,
     });
 
@@ -145,7 +154,7 @@ describe('canAddNewOrder', () => {
   it('should throw when delivery is incompatible', async () => {
     isDeliveryCompatible.mockReturnValue(false);
 
-    await expect(canAddNewOrder(makeBatch(), 'order-2')).rejects.toMatchObject({
+    await expect(canAddNewOrder(makeBatch(), 'order-2', { session })).rejects.toMatchObject({
       status: 409,
       code: ERROR_CODES.BATCH_DELIVERY_NOT_COMPATIBLE,
     });
@@ -155,6 +164,7 @@ describe('canAddNewOrder', () => {
     isDeliveryCompatible.mockReturnValue(false);
 
     const result = await canAddNewOrder(makeBatch(), 'order-2', {
+      session,
       throwOnError: false,
     });
 
@@ -164,7 +174,7 @@ describe('canAddNewOrder', () => {
   it('should throw when preparation is incompatible', async () => {
     isPreparationCompatible.mockReturnValue(false);
 
-    await expect(canAddNewOrder(makeBatch(), 'order-2')).rejects.toMatchObject({
+    await expect(canAddNewOrder(makeBatch(), 'order-2', { session })).rejects.toMatchObject({
       status: 409,
       code: ERROR_CODES.BATCH_PREPARATION_NOT_COMPATIBLE,
     });
@@ -305,7 +315,7 @@ describe('orderAssignedForBatching', () => {
   });
 });
 
-describe('isBatchComplete', () => {
+describe('completeBatchIfDone', () => {
   const driverId = 'driver-1';
 
   const activeBatch = {
@@ -324,8 +334,15 @@ describe('isBatchComplete', () => {
   });
 
   it('should return false when there is no active batch', async () => {
+    fetchDriverByDriverId.mockResolvedValue({
+      _id: 'driver-1',
+      user: {
+        _id: 'user-1',
+      },
+    });
+
     DeliveryBatchModel.findOne.mockResolvedValue(null);
-    const result = await isBatchComplete(driverId);
+    const result = await completeBatchIfDone(driverId);
 
     expect(result).toBe(false);
     expect(DeliveryBatchModel.findOneAndUpdate).not.toHaveBeenCalled();
@@ -335,7 +352,7 @@ describe('isBatchComplete', () => {
     DeliveryBatchModel.findOne.mockResolvedValue(activeBatch);
     getOrdersByIds.mockResolvedValue([]);
 
-    const result = await isBatchComplete(driverId);
+    const result = await completeBatchIfDone(driverId);
 
     expect(result).toBe(false);
     expect(DeliveryBatchModel.findOneAndUpdate).not.toHaveBeenCalled();
@@ -348,7 +365,7 @@ describe('isBatchComplete', () => {
       { _id: 'order-2', status: ORDER_STATUS.PENDING },
     ]);
 
-    const result = await isBatchComplete(driverId);
+    const result = await completeBatchIfDone(driverId);
 
     expect(result).toBe(false);
     expect(DeliveryBatchModel.findOneAndUpdate).not.toHaveBeenCalled();
@@ -359,7 +376,7 @@ describe('isBatchComplete', () => {
     getOrdersByIds.mockResolvedValue(deliveredOrders);
     DeliveryBatchModel.findOneAndUpdate.mockResolvedValue(null);
 
-    const result = await isBatchComplete(driverId);
+    const result = await completeBatchIfDone(driverId);
 
     expect(result).toBe(false);
   });
@@ -374,7 +391,7 @@ describe('isBatchComplete', () => {
     getOrdersByIds.mockResolvedValue(deliveredOrders);
     DeliveryBatchModel.findOneAndUpdate.mockResolvedValue(completedBatch);
 
-    const result = await isBatchComplete(driverId);
+    const result = await completeBatchIfDone(driverId);
 
     expect(getOrdersByIds).toHaveBeenCalledWith(activeBatch.orderIds);
 

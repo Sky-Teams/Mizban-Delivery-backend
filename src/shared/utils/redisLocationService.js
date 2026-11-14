@@ -1,4 +1,5 @@
 import redisClient from '#config/redis.js';
+import { REDIS_KEYS } from './enums.js';
 
 export class RedisService {
   /**
@@ -41,11 +42,22 @@ export class RedisService {
    * @param {string} value
    * @returns {Promise<boolean>}
    */
-  static async setIfNotExists(key, value = '1') {
+  static async setIfNotExists(key, value = '1', ttl) {
+    const REDIS_DATA_EXPIRATION_TIME =
+      ttl ?? Number(process.env.REDIS_DATA_EXPIRATION_HOURS || 2) * 60 * 60;
+
     const result = await redisClient.set(key, value, {
       NX: true,
+      EX: REDIS_DATA_EXPIRATION_TIME,
     });
 
     return result === 'OK';
+  }
+
+  // Determines whether the driver's location update should be processed based on the rate limit.
+  static async canProcessLocationUpdate(userId) {
+    const key = `${REDIS_KEYS.DRIVER_LOCATION_UPDATE_LIMIT}${userId}`;
+
+    return RedisService.setIfNotExists(key, '1', 3);
   }
 }
