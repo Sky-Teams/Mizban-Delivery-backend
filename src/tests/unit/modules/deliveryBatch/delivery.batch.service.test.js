@@ -12,8 +12,8 @@ import {
 import { BATCH_STATUS, ORDER_STATUS } from '#shared/utils/enums.js';
 import {
   canAddNewOrder,
+  completeBatchIfDone,
   driverActiveBatch,
-  isBatchComplete,
   orderAssignedForBatching,
 } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 import { getOrdersByIds, getOrderById } from '#modules/orders/services/v1/order.service.js';
@@ -315,7 +315,7 @@ describe('orderAssignedForBatching', () => {
   });
 });
 
-describe('isBatchComplete', () => {
+describe('completeBatchIfDone', () => {
   const driverId = 'driver-1';
 
   const activeBatch = {
@@ -342,7 +342,7 @@ describe('isBatchComplete', () => {
     });
 
     DeliveryBatchModel.findOne.mockResolvedValue(null);
-    const result = await isBatchComplete(driverId);
+    const result = await completeBatchIfDone(driverId);
 
     expect(result).toBe(false);
     expect(DeliveryBatchModel.findOneAndUpdate).not.toHaveBeenCalled();
@@ -352,7 +352,7 @@ describe('isBatchComplete', () => {
     DeliveryBatchModel.findOne.mockResolvedValue(activeBatch);
     getOrdersByIds.mockResolvedValue([]);
 
-    const result = await isBatchComplete(driverId);
+    const result = await completeBatchIfDone(driverId);
 
     expect(result).toBe(false);
     expect(DeliveryBatchModel.findOneAndUpdate).not.toHaveBeenCalled();
@@ -365,7 +365,7 @@ describe('isBatchComplete', () => {
       { _id: 'order-2', status: ORDER_STATUS.PENDING },
     ]);
 
-    const result = await isBatchComplete(driverId);
+    const result = await completeBatchIfDone(driverId);
 
     expect(result).toBe(false);
     expect(DeliveryBatchModel.findOneAndUpdate).not.toHaveBeenCalled();
@@ -376,7 +376,7 @@ describe('isBatchComplete', () => {
     getOrdersByIds.mockResolvedValue(deliveredOrders);
     DeliveryBatchModel.findOneAndUpdate.mockResolvedValue(null);
 
-    const result = await isBatchComplete(driverId);
+    const result = await completeBatchIfDone(driverId);
 
     expect(result).toBe(false);
   });
@@ -391,7 +391,7 @@ describe('isBatchComplete', () => {
     getOrdersByIds.mockResolvedValue(deliveredOrders);
     DeliveryBatchModel.findOneAndUpdate.mockResolvedValue(completedBatch);
 
-    const result = await isBatchComplete(driverId);
+    const result = await completeBatchIfDone(driverId);
 
     expect(getOrdersByIds).toHaveBeenCalledWith(activeBatch.orderIds);
 
