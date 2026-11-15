@@ -1,14 +1,30 @@
+import { getDriverLocationByDriverId } from '#modules/drivers/index.js';
 import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
 import { calculateDistanceMeters } from './distance.helper.js';
 import { DtoService } from './dtoService.js';
-import { BATCH_CONFIG, STOP_TYPE } from './enums.js';
+import { BATCH_CONFIG, ORDER_STATUS, REDIS_KEYS, STOP_TYPE } from './enums.js';
+import { RedisService } from './redisLocationService.js';
 
 /** Calculate pick up distance between orders */
-export const isPickupCompatible = (currentOrder, newOrder) => {
-  const currentOrderLocation = currentOrder.pickupLocation.coordinates;
-  const newOrderLocation = newOrder.pickupLocation.coordinates;
+export const isPickupCompatible = async (currentOrder, newOrder, driverId) => {
+  let currentLocation;
 
-  const distance = calculateDistanceMeters(currentOrderLocation, newOrderLocation);
+  if (currentOrder.status === ORDER_STATUS.PICKEDUP) {
+    const driverLocationKey = `${REDIS_KEYS.DRIVER_LOCATION}${driverId}`;
+
+    let driverLocation = await RedisService.getRedisData(driverLocationKey);
+    if (!driverLocation || driverLocation?.lat == null || driverLocation?.lng == null) {
+      const driverLocationDB = await getDriverLocationByDriverId(driverId);
+      currentLocation = driverLocationDB?.currentLocation?.coordinates;
+    } else {
+      currentLocation = [Number(driverLocation.lng), Number(driverLocation.lat)];
+    }
+  } else {
+    currentLocation = currentOrder.pickupLocation.coordinates;
+  }
+
+  const distance = calculateDistanceMeters(currentLocation, newOrder.pickupLocation.coordinates);
+
   return distance <= BATCH_CONFIG.MAX_PICKUP_DISTANCE_METERS;
 };
 
