@@ -321,7 +321,13 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
     driverId: driver._id,
   });
 
-  return order;
+  return {
+    ...order.toObject(),
+    driver: {
+      name: driver.user.name,
+      phone: driver.user.phone,
+    },
+  };
 };
 
 //#endregion
