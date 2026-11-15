@@ -150,7 +150,7 @@ export const orderAssignedForBatching = async (session, driverId, orderId) => {
     return createActiveBatch(session, driverId, orderId);
   }
 
-  if (!isBatchSizeAvailable(activeBatch)) {
+  if (!(await isBatchSizeAvailable(activeBatch))) {
     throw new AppError('Delivery batch is full', 409, ERROR_CODES.DELIVERY_BATCH_IS_FULL);
   }
 

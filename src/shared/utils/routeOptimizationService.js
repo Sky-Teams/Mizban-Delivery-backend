@@ -31,6 +31,8 @@ export class RouteOptimizationService {
       if (!driver) throw notFound('driver');
 
       const activeBatch = await driverActiveBatch(driverId);
+      if (!activeBatch)
+        throw new AppError('Active batch not found', 404, ERROR_CODES.DELIVERY_BATCH_NOT_AVAILABLE);
 
       if (!activeBatch.stops.length) return;
 
@@ -98,6 +100,8 @@ export class RouteOptimizationService {
       if (!driver) throw notFound('driver');
 
       const activeBatch = await driverActiveBatch(driverId);
+      if (!activeBatch)
+        throw new AppError('Active batch not found', 404, ERROR_CODES.DELIVERY_BATCH_NOT_AVAILABLE);
 
       if (!activeBatch.stops.length) return;
 
@@ -342,7 +346,11 @@ export class RouteOptimizationService {
     const greedyRoute = this.buildGreedyRoute(stops, completedPickupOrderIds);
 
     // Optimize route using 2-opt algorithm
-    const optimizedRoute = this.optimizeRouteWith2Opt(greedyRoute, currentLocation);
+    const optimizedRoute = this.optimizeRouteWith2Opt(
+      greedyRoute,
+      currentLocation,
+      completedPickupOrderIds
+    );
 
     return optimizedRoute;
   }
@@ -381,7 +389,7 @@ export class RouteOptimizationService {
     return route;
   }
 
-  static optimizeRouteWith2Opt(route, currentLocation) {
+  static optimizeRouteWith2Opt(route, currentLocation, completedPickupOrderIds = []) {
     if (route.length < 3) return route;
 
     let optimizedRoute = [...route];
@@ -400,7 +408,7 @@ export class RouteOptimizationService {
             ...optimizedRoute.slice(j + 1),
           ];
 
-          if (!this.validateRouteOrder(newRoute)) continue;
+          if (!this.validateRouteOrder(newRoute, completedPickupOrderIds)) continue;
 
           const newDistance = this.calculateRouteDistance(newRoute, currentLocation);
 

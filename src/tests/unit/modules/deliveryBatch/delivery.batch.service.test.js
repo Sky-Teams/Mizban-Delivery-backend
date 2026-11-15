@@ -187,7 +187,7 @@ describe('orderAssignedForBatching', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    isBatchSizeAvailable.mockReturnValue(true);
+    isBatchSizeAvailable.mockResolvedValue(true);
 
     getOrdersByIds.mockResolvedValue([makeOrder()]);
     getOrderById.mockResolvedValue(makeOrder({ _id: 'order-2' }));
@@ -267,7 +267,7 @@ describe('orderAssignedForBatching', () => {
 
   it('should throw when the active batch is full', async () => {
     DeliveryBatchModel.findOne.mockResolvedValue(makeBatch());
-    isBatchSizeAvailable.mockReturnValue(false);
+    isBatchSizeAvailable.mockResolvedValue(false);
 
     await expect(orderAssignedForBatching(session, 'driver-1', 'order-2')).rejects.toMatchObject({
       status: 409,

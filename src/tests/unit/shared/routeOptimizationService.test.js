@@ -250,6 +250,51 @@ describe('buildRoute', () => {
   });
 });
 
+//========== optimizeRouteWith2Opt ==========
+describe('optimizeRouteWith2Opt', () => {
+  // order-2's delivery is far from its pickup/order-1's delivery; a correct 2-opt pass
+  // should reorder the route to avoid backtracking to it.
+  const order1Delivery = {
+    orderId: 'order-1',
+    stopType: STOP_TYPE.DELIVERY,
+    stopStatus: STOP_STATUS.PENDING,
+    location: { coordinates: [0.005, 0.005] },
+  };
+  const order2Pickup = {
+    orderId: 'order-2',
+    stopType: STOP_TYPE.PICKUP,
+    stopStatus: STOP_STATUS.PENDING,
+    estimatedReadyAt: new Date('2024-01-01T00:00:00Z'),
+    location: { coordinates: [0.001, 0] },
+  };
+  const order2Delivery = {
+    orderId: 'order-2',
+    stopType: STOP_TYPE.DELIVERY,
+    stopStatus: STOP_STATUS.PENDING,
+    location: { coordinates: [0.001, 0.001] },
+  };
+
+  it('never improves the route when completedPickupOrderIds is omitted for an order with no pending pickup', () => {
+    const route = [order1Delivery, order2Pickup, order2Delivery];
+
+    const result = RouteOptimizationService.optimizeRouteWith2Opt(route, [0, 0]);
+
+    expect(result).toEqual(route);
+  });
+
+  it('reorders stops to reduce total distance once the completed pickup is accounted for', () => {
+    const route = [order1Delivery, order2Pickup, order2Delivery];
+
+    const result = RouteOptimizationService.optimizeRouteWith2Opt(route, [0, 0], ['order-1']);
+
+    expect(result).toEqual([order2Pickup, order2Delivery, order1Delivery]);
+
+    const originalDistance = RouteOptimizationService.calculateRouteDistance(route, [0, 0]);
+    const optimizedDistance = RouteOptimizationService.calculateRouteDistance(result, [0, 0]);
+    expect(optimizedDistance).toBeLessThan(originalDistance);
+  });
+});
+
 //================ optimizeRoute ===============
 describe('optimizeRoute', () => {
   const driverId = 'driver-1';

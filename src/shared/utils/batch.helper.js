@@ -1,5 +1,6 @@
 import { fetchDriverByDriverId } from '#modules/drivers/index.js';
 import { getOrdersByIds } from '#modules/orders/services/v1/order.service.js';
+import { notFound } from '#shared/errors/error.js';
 import { calculateDistanceMeters } from './distance.helper.js';
 import { DtoService } from './dtoService.js';
 import { BATCH_CONFIG, STOP_TYPE } from './enums.js';
