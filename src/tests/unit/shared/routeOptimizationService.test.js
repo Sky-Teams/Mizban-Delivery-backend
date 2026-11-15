@@ -3,10 +3,17 @@ import { DeliveryBatchModel } from '#modules/deliveryBatch/model/delivery.batch.
 import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 import { fetchDriverByDriverId, fetchDriverByUserId } from '#modules/drivers/index.js';
 import { isLocationFresh, ordersWithStops } from '#shared/utils/batch.helper.js';
-import { BATCH_STATUS, SOCKET_EVENTS, STOP_STATUS, STOP_TYPE } from '#shared/utils/enums.js';
+import { calculateDistanceMeters } from '#shared/utils/distance.helper.js';
+import {
+  BATCH_CONFIG,
+  BATCH_STATUS,
+  SOCKET_EVENTS,
+  STOP_STATUS,
+  STOP_TYPE,
+} from '#shared/utils/enums.js';
 import { RedisService } from '#shared/utils/redisLocationService.js';
 import { RouteOptimizationService } from '#shared/utils/routeOptimizationService.js';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('#modules/deliveryBatch/model/delivery.batch.model.js', () => ({
   DeliveryBatchModel: {
@@ -41,6 +48,29 @@ vi.mock('#shared/utils/redisLocationService.js', () => ({
     getRedisData: vi.fn(),
   },
 }));
+
+// Delegates to the real implementation by default so tests that build/compare actual
+// routes (e.g. 2-opt) still get real distances; tests for the "protect nearest stop"
+// feature override this per-test with mockReturnValue.
+vi.mock('#shared/utils/distance.helper.js', async () => {
+  const actual = await vi.importActual('#shared/utils/distance.helper.js');
+  return {
+    ...actual,
+    calculateDistanceMeters: vi.fn(actual.calculateDistanceMeters),
+  };
+});
+
+let actualCalculateDistanceMeters;
+
+beforeAll(async () => {
+  ({ calculateDistanceMeters: actualCalculateDistanceMeters } = await vi.importActual(
+    '#shared/utils/distance.helper.js'
+  ));
+});
+
+afterEach(() => {
+  calculateDistanceMeters.mockImplementation(actualCalculateDistanceMeters);
+});
 
 //=============== completePickUpStop ==========
 describe('completePickUpStop', () => {
@@ -360,9 +390,11 @@ describe('optimizeRoute', () => {
       },
     });
 
+    // Kept far from every stop so this generic test doesn't accidentally trigger
+    // "protect nearest stop" (that behavior has its own dedicated tests below).
     RedisService.getRedisData.mockResolvedValue({
-      lng: 1,
-      lat: 1,
+      lng: 50,
+      lat: 50,
     });
 
     isLocationFresh.mockResolvedValue(true);
@@ -510,6 +542,94 @@ describe('optimizeRoute', () => {
     );
     expect(DeliveryBatchModel.findByIdAndUpdate).toHaveBeenCalled();
     expect(result).toEqual(updatedBatch);
+  });
+
+  it('should protect the first pending stop when driver is near it', async () => {
+    const secondStops = {
+      ...pickupStop,
+      orderId: 'order-2',
+    };
+    const secondDelivery = {
+      ...deliveryStop,
+      orderId: 'order-2',
+    };
+
+    const updateBatch = {
+      ...activeBatch,
+      stops: [pickupStop, secondStops, deliveryStop, secondDelivery],
+    };
+    fetchDriverByDriverId.mockResolvedValue({
+      _id: 'driver-1',
+      user: {
+        _id: 'user-1',
+      },
+    });
+
+    driverActiveBatch.mockResolvedValue({
+      ...activeBatch,
+      stops: [pickupStop, deliveryStop, secondStops, secondDelivery],
+    });
+
+    calculateDistanceMeters.mockReturnValue(
+      BATCH_CONFIG.NEXT_STOP_PROTECTION_DISTANCE_METERS - 100
+    );
+
+    buildRouteSpy.mockReturnValue([deliveryStop, secondStops, secondDelivery]);
+    DeliveryBatchModel.findByIdAndUpdate.mockResolvedValue(updateBatch);
+
+    const result = await RouteOptimizationService.optimizeRoute(driverId);
+
+    expect(buildRouteSpy).toHaveBeenCalledWith(
+      [deliveryStop, secondStops, secondDelivery],
+      [1, 1],
+      ['order-1']
+    );
+
+    expect(result).toEqual(updateBatch);
+  });
+
+  it('should optimize all pending stops when driver is far from the first pending stop', async () => {
+    const secondStops = {
+      ...pickupStop,
+      orderId: 'order-2',
+    };
+    const secondDelivery = {
+      ...deliveryStop,
+      orderId: 'order-2',
+    };
+
+    const updateBatch = {
+      ...activeBatch,
+      stops: [pickupStop, secondStops, deliveryStop, secondDelivery],
+    };
+    fetchDriverByDriverId.mockResolvedValue({
+      _id: 'driver-1',
+      user: {
+        _id: 'user-1',
+      },
+    });
+
+    driverActiveBatch.mockResolvedValue({
+      ...activeBatch,
+      stops: [pickupStop, deliveryStop, secondStops, secondDelivery],
+    });
+
+    calculateDistanceMeters.mockReturnValue(
+      BATCH_CONFIG.NEXT_STOP_PROTECTION_DISTANCE_METERS + 100
+    );
+
+    buildRouteSpy.mockReturnValue([pickupStop, deliveryStop, secondStops, secondDelivery]);
+    DeliveryBatchModel.findByIdAndUpdate.mockResolvedValue(updateBatch);
+
+    const result = await RouteOptimizationService.optimizeRoute(driverId);
+
+    expect(buildRouteSpy).toHaveBeenCalledWith(
+      [pickupStop, deliveryStop, secondStops, secondDelivery],
+      [0, 0],
+      []
+    );
+
+    expect(result).toEqual(updateBatch);
   });
 });
 
