@@ -191,7 +191,7 @@ export class RouteOptimizationService {
             progressStop.location.coordinates
           );
 
-          if (remainingDistance <= BATCH_CONFIG.REMAINING_DISTANCE) {
+          if (remainingDistance <= BATCH_CONFIG.NEXT_STOP_PROTECTION_DISTANCE_METERS) {
             protectedStop = progressStop;
           }
         }
