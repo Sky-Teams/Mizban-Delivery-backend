@@ -465,7 +465,9 @@ describe('optimizeRoute', () => {
       stops: [pickupStop, deliveryStop, secondStops, secondDelivery],
     });
 
-    calculateDistanceMeters.mockReturnValue(BATCH_CONFIG.REMAINING_DISTANCE - 100);
+    calculateDistanceMeters.mockReturnValue(
+      BATCH_CONFIG.NEXT_STOP_PROTECTION_DISTANCE_METERS - 100
+    );
 
     buildRouteSpy.mockReturnValue([deliveryStop, secondStops, secondDelivery]);
     DeliveryBatchModel.findByIdAndUpdate.mockResolvedValue(updateBatch);
@@ -507,7 +509,9 @@ describe('optimizeRoute', () => {
       stops: [pickupStop, deliveryStop, secondStops, secondDelivery],
     });
 
-    calculateDistanceMeters.mockReturnValue(BATCH_CONFIG.REMAINING_DISTANCE + 100);
+    calculateDistanceMeters.mockReturnValue(
+      BATCH_CONFIG.NEXT_STOP_PROTECTION_DISTANCE_METERS + 100
+    );
 
     buildRouteSpy.mockReturnValue([pickupStop, deliveryStop, secondStops, secondDelivery]);
     DeliveryBatchModel.findByIdAndUpdate.mockResolvedValue(updateBatch);

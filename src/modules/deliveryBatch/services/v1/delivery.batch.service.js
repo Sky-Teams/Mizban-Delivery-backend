@@ -110,7 +110,7 @@ export const canAddNewOrder = async (batch, orderId, { throwOnError = true } = {
     )
       continue;
 
-    if (!isPickupCompatible(order, newOrderDetails, batch.driver)) {
+    if (!(await isPickupCompatible(order, newOrderDetails, batch.driver))) {
       if (!throwOnError) return false;
       throw new AppError(
         'Order pickup is not compatible with the active batch',
