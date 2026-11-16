@@ -777,15 +777,15 @@ export const ERROR_MESSAGES = {
     ps: 'د فرمایش د چمتو کولو وخت د فعالې فرمایشونو مجموعې سره سمون نه لري',
   },
 
-  [ERROR_CODES.RATING_AVERAGE_MUST_BE_POSITIVE]: {
-    en: 'Rating average must be a valid positive number',
-    fa: 'میانگین امتیاز باید یک عدد مثبت معتبر باشد',
-    ps: 'د نمرو منځنی باید یو معتبر مثبت عدد وي',
+  [ERROR_CODES.INVALID_RATING]: {
+    en: 'Rating must be between 1 and 5',
+    fa: 'امتیاز باید بین ۱ تا ۵ باشد',
+    ps: 'د نمرې اندازه باید له ۱ څخه تر ۵ پورې وي',
   },
 
-  [ERROR_CODES.RATING_COUNT_MUST_BE_POSITIVE]: {
-    en: 'Rating count must be a valid positve number',
-    fa: 'تعداد امتیازها باید یک عدد مثبت معتبر باشد',
-    ps: 'د نمرو شمېر باید یو معتبر مثبت بشپړ عدد وي',
+  [ERROR_CODES.ORDER_RATING_NOT_ALLOWED]: {
+    en: 'Only delivered orders can be rated',
+    fa: 'فقط سفارش‌های تحویل‌شده قابل امتیازدهی هستند',
+    ps: 'یوازې سپارل شوي فرمایشونه د نمرې ورکولو وړ دي',
   },
 };
