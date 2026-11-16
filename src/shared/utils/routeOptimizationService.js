@@ -377,7 +377,7 @@ export class RouteOptimizationService {
     }
 
     // Build initial route using Greedy algorithm
-    const greedyRoute = this.buildGreedyRoute(stops, completedPickupOrderIds);
+    const greedyRoute = this.buildGreedyRoute(stops, completedPickupOrderIds, currentLocation);
 
     // Optimize route using 2-opt algorithm
     const optimizedRoute = this.optimizeRouteWith2Opt(
@@ -389,7 +389,7 @@ export class RouteOptimizationService {
     return optimizedRoute;
   }
 
-  static buildGreedyRoute(stops, completedPickupOrderIds = []) {
+  static buildGreedyRoute(stops, completedPickupOrderIds = [], currentLocation) {
     const route = [];
     const remainingStops = [...stops];
     const pickedUpOrderIds = new Set(completedPickupOrderIds);
@@ -399,8 +399,9 @@ export class RouteOptimizationService {
 
       if (!eligibleStops.length) break;
 
+      const stopsWithDistance = this.calculateStopsDistance(eligibleStops, currentLocation);
       // Select based only on estimatedReadyAt
-      const nextStop = this.getBestNextStop(eligibleStops);
+      const nextStop = this.getBestNextStop(stopsWithDistance);
       if (!nextStop) break;
 
       route.push(nextStop);
@@ -409,6 +410,7 @@ export class RouteOptimizationService {
         pickedUpOrderIds.add(nextStop.orderId.toString());
       }
 
+      currentLocation = nextStop.location.coordinates;
       const selectedIndex = remainingStops.findIndex(
         (stop) =>
           stop.orderId.toString() === nextStop.orderId.toString() &&
@@ -478,12 +480,24 @@ export class RouteOptimizationService {
   static getBestNextStop(stops) {
     if (!stops.length) return null;
 
-    return [...stops].sort((a, b) => {
-      const timeA = new Date(a.estimatedReadyAt).getTime();
-      const timeB = new Date(b.estimatedReadyAt).getTime();
+    const pickupStops = stops?.filter((stop) => stop.stopType === STOP_TYPE.PICKUP);
+    const deliveryStops = stops?.filter((stop) => stop.stopType === STOP_TYPE.DELIVERY);
 
-      return timeA - timeB;
-    })[0];
+    const earliestPickUp = pickupStops?.reduce((best, current) => {
+      const bestTime = new Date(best.estimatedReadyAt).getTime();
+      const currentTime = new Date(current.estimatedReadyAt).getTime();
+
+      return currentTime < bestTime ? current : best;
+    }, pickupStops[0]);
+
+    const closestDelivery = deliveryStops?.reduce((best, current) => {
+      return current.distance < best.distance ? current : best;
+    }, deliveryStops[0]);
+
+    if (!earliestPickUp) return closestDelivery;
+    if (!closestDelivery) return earliestPickUp;
+
+    return earliestPickUp.distance < closestDelivery.distance ? earliestPickUp : closestDelivery;
   }
 
   static getEligibleStops(remainingStops, pickedUpOrderIds) {
@@ -498,7 +512,7 @@ export class RouteOptimizationService {
     });
   }
 
-  static calculateStopDistance(stops, currentLocation) {
+  static calculateStopsDistance(stops, currentLocation) {
     return stops.map((stop) => {
       const plainStop = typeof stop.toObject === 'function' ? stop.toObject() : stop;
 
@@ -657,7 +671,7 @@ export class RouteOptimizationService {
         if (order.pickupIndex !== null) return false;
 
         const readyAt = new Date(stop.estimatedReadyAt).getTime();
-
+        console.log('ready at', readyAt);
         if (!Number.isFinite(readyAt)) return false;
 
         // Preserve Pickup order based on estimatedReadyAt.

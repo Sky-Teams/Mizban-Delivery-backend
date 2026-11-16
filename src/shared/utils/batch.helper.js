@@ -96,8 +96,6 @@ export const ordersWithStops = async (activeBatch) => {
         (stop) => stop.orderId.toString() === orderId.toString()
       );
 
-      const estimatedReadyAt = getEstimatedReadyAt(order);
-
       const stops = orderStops.map((stop) => ({
         sequence:
           activeBatch.stops.findIndex(
@@ -108,7 +106,7 @@ export const ordersWithStops = async (activeBatch) => {
         location: DtoService.toLatLng(stop.location.coordinates),
         contactDetails:
           stop.stopType === STOP_TYPE.PICKUP
-            ? { ...order?.sender, estimatedReadyAt }
+            ? { ...order?.sender, estimatedReadyAt: stop.estimatedReadyAt }
             : { ...order?.receiver },
       }));
 
