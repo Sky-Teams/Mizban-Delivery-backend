@@ -12,6 +12,8 @@ import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { GeoService } from '#shared/utils/geoService.js';
 import { DriverScore } from '#shared/utils/scorePrediction.js';
 import { DRIVER_STATUS, REASON_TYPES, VERIFICATION_STATUS } from '#shared/utils/enums.js';
+import { OrderModel } from '#modules/orders/index.js';
+import mongoose from 'mongoose';
 //#region Services
 
 /** Fetch all Drivers with pagination functionality */
@@ -298,25 +300,43 @@ export const getDriverStatisticsService = async () => {
   return stats;
 };
 
-export const updateDriverRatingService = async (driverId, driverData) => {
-  const { ratingAvg, ratingCount } = driverData;
-  const updateDriverRating = await DriverModel.findByIdAndUpdate(
+export const updateDriverAvgRating = async (driverId, session) => {
+  const result = await OrderModel.aggregate([
+    {
+      $match: {
+        driverId: new mongoose.Types.ObjectId(driverId),
+        rating: { $exists: true, $ne: null },
+      },
+    },
+    {
+      $group: {
+        _id: '$driverId',
+        ratingAvg: { $avg: '$rating' },
+        ratingCount: { $sum: 1 },
+      },
+    },
+  ]).session(session);
+
+  const { ratingAvg, ratingCount } = result[0] || { ratingAvg: 0, ratingCount: 0 };
+
+  const updateDriver = await DriverModel.findByIdAndUpdate(
     driverId,
     {
       $set: {
-        ratingAvg,
+        ratingAvg: Math.round(ratingAvg * 10) / 10,
         ratingCount,
       },
     },
     {
       returnDocument: 'after',
       runValidators: true,
+      session,
     }
   );
 
-  if (!updateDriverRating) throw notFound('driver');
+  if (!updateDriver) throw notFound('driver');
 
-  return updateDriverRating;
+  return updateDriver;
 };
 
 //#endregion

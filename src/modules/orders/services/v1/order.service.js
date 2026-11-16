@@ -27,6 +27,7 @@ import { deduplicateById, getObjectValues } from '#shared/utils/object.helper.js
 import { buildPaginatedResponse } from '#shared/utils/pagination.js';
 import { calculateDeliveryPrice } from './pricing.service.js';
 import { orderAssignedForBatching } from '#modules/deliveryBatch/index.js';
+import { updateDriverAvgRating } from '#modules/drivers/services/v1/driver.service.js';
 
 //#region Admin Services
 
@@ -320,6 +321,28 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
     userId: driver.user._id,
     driverId: driver._id,
   });
+
+  return order;
+};
+
+export const updateOrderRating = async (session, sourceOrderId, rating) => {
+  const order = await OrderModel.findOne({
+    sourceOrderId,
+  }).session(session);
+
+  if (!order) throw notFound('order');
+
+  if (order.status !== ORDER_STATUS.DELIVERED)
+    throw new AppError(
+      'Only delivered orders can be rated',
+      400,
+      ERROR_CODES.ORDER_RATING_NOT_ALLOWED
+    );
+
+  order.rating = rating;
+  await order.save({ session });
+
+  await updateDriverAvgRating(order.driverId, session);
 
   return order;
 };
@@ -796,3 +819,5 @@ export const deliverOrderWithTransaction = withTransaction(deliverAnOrder);
 export const cancelOrderWithTransaction = withTransaction(cancelAnOrder);
 
 export const returnOrderWithTransaction = withTransaction(returnAnOrder);
+
+export const updateOrderRatingWithTransaction = withTransaction(updateOrderRating);
