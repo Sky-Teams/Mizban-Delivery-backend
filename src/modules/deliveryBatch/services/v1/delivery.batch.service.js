@@ -103,10 +103,14 @@ export const canAddNewOrder = async (batch, orderId, { throwOnError = true } = {
   const newOrderDetails = await getOrderById(orderId);
 
   for (const order of orders) {
-    if (order.status === ORDER_STATUS.DELIVERED || order.status === ORDER_STATUS.CANCELLED)
+    if (
+      order.status === ORDER_STATUS.DELIVERED ||
+      order.status === ORDER_STATUS.CANCELLED ||
+      order.status === ORDER_STATUS.RETURNED
+    )
       continue;
 
-    if (!isPickupCompatible(order, newOrderDetails)) {
+    if (!(await isPickupCompatible(order, newOrderDetails, batch.driver))) {
       if (!throwOnError) return false;
       throw new AppError(
         'Order pickup is not compatible with the active batch',
@@ -151,6 +155,36 @@ export const orderAssignedForBatching = async (session, driverId, orderId) => {
   await canAddNewOrder(activeBatch, orderId);
 
   return addOrderToActiveBatch(session, activeBatch._id, driverId, orderId);
+};
+
+export const calculateDeliveryBatchesDistance = async (filter) => {
+  const result = await DeliveryBatchModel.aggregate([
+    {
+      $match: filter,
+    },
+    {
+      $group: {
+        _id: null,
+        totalDistanceMeters: {
+          $sum: '$distanceMeters',
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        totalDistanceKilometers: {
+          $round: [{ $divide: ['$totalDistanceMeters', 1000] }, 2],
+        },
+      },
+    },
+  ]);
+
+  return (
+    result[0] ?? {
+      totalDistanceKilometers: 0,
+    }
+  );
 };
 
 /** Check batch status for completed orders */

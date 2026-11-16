@@ -13,7 +13,13 @@ import { GeoService } from '#shared/utils/geoService.js';
 import { DriverScore } from '#shared/utils/scorePrediction.js';
 import { DRIVER_STATUS, REASON_TYPES, VERIFICATION_STATUS } from '#shared/utils/enums.js';
 import { OrderModel } from '#modules/orders/index.js';
+import { calculateDeliveryBatchesDistance } from '#modules/deliveryBatch/index.js';
 import mongoose from 'mongoose';
+import { DateHelper } from '#shared/utils/date.helper.js';
+import { DateTime } from 'luxon';
+import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
+import { isBatchSizeAvailable } from '#shared/utils/batch.helper.js';
+
 //#region Services
 
 /** Fetch all Drivers with pagination functionality */
@@ -226,7 +232,8 @@ export const addNewDriver = withTransaction(addDriver);
  */
 export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, limit = 10) => {
   try {
-    const nearestDrivers = await DriverModel.find({
+    let nearestDrivers;
+    nearestDrivers = await DriverModel.find({
       status: { $ne: DRIVER_STATUS.OFFLINE },
       $expr: {
         $lt: ['$activeOrders', '$maxOrders'],
@@ -242,6 +249,15 @@ export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, lim
       .limit(limit)
       .lean();
 
+    nearestDrivers = await Promise.all(
+      nearestDrivers.map(async (driver) => {
+        const activeBatch = await driverActiveBatch(driver._id);
+
+        return !activeBatch || isBatchSizeAvailable(activeBatch) ? driver : null;
+      })
+    );
+
+    nearestDrivers = nearestDrivers.filter(Boolean);
     return nearestDrivers;
   } catch (error) {
     console.error('Error in finding nearest drivers. ', error.message);
@@ -337,6 +353,49 @@ export const updateDriverAvgRating = async (driverId, session) => {
   if (!updateDriver) throw notFound('driver');
 
   return updateDriver;
+};
+
+export const getDriverDistanceService = async (driverId, query) => {
+  const { date, startDate, endDate } = query;
+
+  const driverExist = await doesDriverExistByDriverId(driverId);
+  if (!driverExist) throw notFound('driver');
+
+  if (date && (startDate || endDate))
+    throw new AppError('Use either date or date range', 400, ERROR_CODES.INVALID_DATE_FORMAT);
+
+  if (endDate && !startDate)
+    throw new AppError(
+      'startDate is required when endDate is provided',
+      400,
+      ERROR_CODES.INVALID_PARAMETER_START_DATE
+    );
+
+  const today = DateTime.now().setZone(DateHelper.TIMEZONES.kabul).toISODate();
+
+  const fromDate = date || startDate || today;
+  const toDate = date || endDate || today;
+
+  const from = DateHelper.getStartOfDateInTimezone(fromDate);
+  const to = DateHelper.getEndOfDateInTimezone(toDate);
+
+  const endDateStartOfDay = DateHelper.getStartOfDateInTimezone(toDate);
+
+  if (from > endDateStartOfDay)
+    throw new AppError(
+      'startDate cannot be greater than endDate',
+      400,
+      ERROR_CODES.INVALID_PARAMETER_START_DATE
+    );
+
+  const filter = {
+    driver: new mongoose.Types.ObjectId(driverId),
+    startedAt: { $lt: to },
+    $or: [{ completedAt: { $gte: from } }, { completedAt: null }],
+  };
+
+  const driverDistance = await calculateDeliveryBatchesDistance(filter);
+  return driverDistance;
 };
 
 //#endregion

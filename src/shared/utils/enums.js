@@ -139,6 +139,8 @@ export const BATCH_CONFIG = {
   MAX_PREPARATION_MINUTE: Number(process.env.MAX_PREPARATION_MINUTE) || 15, // minute
   MAX_BATCH_SIZE: Number(process.env.MAX_DELIVERY_BATCH_SIZE) || 5,
   MAX_ROUTE_DEVIATION_METERS: Number(process.env.MAX_ROUTE_DEVIATION_METERS) || 10000, // meter
+  NEXT_STOP_PROTECTION_DISTANCE_METERS:
+    Number(process.env.NEXT_STOP_PROTECTION_DISTANCE_METERS) || 2000, // meter
 };
 
 export const STOP_TYPE = {

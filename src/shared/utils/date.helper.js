@@ -1,5 +1,6 @@
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
 import { AppError } from '#shared/errors/error.js';
+import { DateTime } from 'luxon';
 
 export class DateHelper {
   /**
@@ -72,4 +73,38 @@ export class DateHelper {
     // Check if the entered date is valid or not (ex: 2026/10/32 => invalid day(32))
     return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
   }
+
+  /** Get start of the given date in the specified timezone and converts it to UTC.
+   * @param {string} date
+   * @param {string} timezone
+   * @returns {Date}
+   */
+  static getStartOfDateInTimezone(date, timezone = this.TIMEZONES.kabul) {
+    const newDate = DateTime.fromISO(date, { zone: timezone });
+
+    if (!newDate.isValid) {
+      throw new AppError('Invalid date format', 400, ERROR_CODES.INVALID_DATE_FORMAT);
+    }
+
+    return newDate.startOf('day').toUTC().toJSDate();
+  }
+
+  /** Get end of the given date in specified timezone and converts it to UTC
+   * @param {string} date
+   * @param {string} timezone
+   * @returns
+   */
+  static getEndOfDateInTimezone(date, timezone = this.TIMEZONES.kabul) {
+    const newDate = DateTime.fromISO(date, { zone: timezone });
+
+    if (!newDate.isValid) {
+      throw new AppError('Invalid date format', 400, ERROR_CODES.INVALID_DATE_FORMAT);
+    }
+
+    return newDate.startOf('day').plus({ days: 1 }).toUTC().toJSDate();
+  }
+
+  static TIMEZONES = {
+    kabul: 'Asia/Kabul',
+  };
 }

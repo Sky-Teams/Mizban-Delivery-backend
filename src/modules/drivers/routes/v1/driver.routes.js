@@ -5,6 +5,7 @@ import {
   createDriver,
   getAllDrivers,
   getDriver,
+  getDriverDistance,
   getDriverStatistics,
   modifyDriver,
   rejectDriverRegistrationRequest,
@@ -19,6 +20,7 @@ import { ROLES, SERVICE } from '#shared/utils/enums.js';
 import { createDriverProfileValidator } from '#modules/drivers/dto/user-create-driver.schema.js';
 import uploadFile from '#shared/middleware/uploadFile.js';
 import { rejectDriverValidator } from '#modules/drivers/dto/reject-driver.schema.js';
+import { driverDistanceValidator } from '#modules/drivers/dto/driver-query.schema.js';
 
 const router = express.Router();
 
@@ -80,6 +82,14 @@ router.put(
   validate(mongoIdValidator),
   validate(updateDriverValidator),
   asyncHandler(modifyDriver)
+);
+
+router.get(
+  '/:id/distance',
+  authorizeRole(ROLES.ADMIN),
+  validate(mongoIdValidator),
+  validate(driverDistanceValidator),
+  asyncHandler(getDriverDistance)
 );
 
 export default router;
