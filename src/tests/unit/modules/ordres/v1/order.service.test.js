@@ -24,6 +24,7 @@ import {
   assignDriver,
   getOrderById,
   updateOrderInfo,
+  updateOrderRatingWithTransaction,
 } from '#modules/orders/services/v1/order.service.js';
 import {
   DRIVER_STATUS,
@@ -44,6 +45,7 @@ import {
   calculateDeliveryPrice,
   compareDeliveryPrice,
 } from '#modules/orders/services/v1/pricing.service.js';
+import { updateDriverAvgRating } from '#modules/drivers/services/v1/driver.service.js';
 
 vi.mock('#modules/orders/models/order.model.js', () => ({
   OrderModel: {
@@ -54,7 +56,12 @@ vi.mock('#modules/orders/models/order.model.js', () => ({
     find: vi.fn(),
     countDocuments: vi.fn(),
     aggregate: vi.fn(),
+    save: vi.fn(),
   },
+}));
+
+vi.mock('#modules/drivers/services/v1/driver.service.js', () => ({
+  updateDriverAvgRating: vi.fn(),
 }));
 
 vi.mock('#modules/offers/models/offer.model.js', () => ({
@@ -1825,5 +1832,94 @@ describe('getOrdersStatistics', () => {
         expired: 0,
       })
     );
+  });
+});
+
+describe('updateOrderRatingWithTransaction', () => {
+  const sourceOrderId = 'source-order-123';
+  const rating = 5;
+  const driverId = new mongoose.Types.ObjectId('6ab7aa53acfd81da1b41f826');
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should throw notFound when the order does not exist', async () => {
+    OrderModel.findOne.mockReturnValue({
+      session: vi.fn().mockResolvedValue(null),
+    });
+
+    await expect(updateOrderRatingWithTransaction(sourceOrderId, rating)).rejects.toThrow();
+
+    expect(OrderModel.findOne).toHaveBeenCalledWith({ sourceOrderId });
+  });
+
+  it('should throw an error when the order is not delivered', async () => {
+    const order = {
+      sourceOrderId,
+      status: ORDER_STATUS.PENDING,
+      driverId,
+      rating: undefined,
+      save: vi.fn(),
+    };
+
+    OrderModel.findOne.mockReturnValue({
+      session: vi.fn().mockResolvedValue(order),
+    });
+
+    await expect(updateOrderRatingWithTransaction(sourceOrderId, rating)).rejects.toMatchObject({
+      code: ERROR_CODES.ORDER_RATING_NOT_ALLOWED,
+    });
+
+    expect(order.save).not.toHaveBeenCalled();
+  });
+
+  it('should update the order rating and driver rating statistics', async () => {
+    const order = {
+      sourceOrderId,
+      status: ORDER_STATUS.DELIVERED,
+      driverId,
+      rating: undefined,
+      save: vi.fn().mockResolvedValue(undefined),
+    };
+
+    OrderModel.findOne.mockReturnValue({
+      session: vi.fn().mockResolvedValue(order),
+    });
+
+    updateDriverAvgRating.mockResolvedValue({
+      _id: driverId,
+      ratingAvg: 4.5,
+      ratingCount: 2,
+    });
+    const result = await updateOrderRatingWithTransaction(sourceOrderId, rating);
+
+    expect(order.rating).toBe(rating);
+    expect(updateDriverAvgRating).toHaveBeenCalledWith(driverId, expect.anything());
+    expect(order.save).toHaveBeenCalledWith({
+      session: expect.anything(),
+    });
+
+    expect(result).toBe(order);
+  });
+
+  it('should throw notFound when the driver does not exist', async () => {
+    const order = {
+      sourceOrderId,
+      status: ORDER_STATUS.DELIVERED,
+      driverId,
+      rating: undefined,
+      save: vi.fn().mockResolvedValue(undefined),
+    };
+
+    OrderModel.findOne.mockReturnValue({
+      session: vi.fn().mockResolvedValue(order),
+    });
+
+    updateDriverAvgRating.mockRejectedValue(notFound('driver'));
+    await expect(updateOrderRatingWithTransaction(sourceOrderId, rating)).rejects.toThrow();
+
+    expect(order.rating).toBe(rating);
+    expect(order.save).toHaveBeenCalled();
   });
 });
