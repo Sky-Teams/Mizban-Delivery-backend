@@ -8,13 +8,12 @@ import {
   getDriverStatistics,
   modifyDriver,
   rejectDriverRegistrationRequest,
-  updateDriverRating,
 } from '../../controllers/v1/driver.controller.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
 import { validate } from '#shared/middleware/validate.js';
 import { mongoIdValidator } from '#shared/middleware/mongoIdValidator.js';
 import { createDriverValidator } from '../../dto/create-driver.schema.js';
-import { updateDriverRatingValidator, updateDriverValidator } from '../../dto/update-driver.schema.js';
+import { updateDriverValidator } from '../../dto/update-driver.schema.js';
 import { authorize, authorizeRole } from '#shared/middleware/authorizeRole.js';
 import { ROLES, SERVICE } from '#shared/utils/enums.js';
 import { createDriverProfileValidator } from '#modules/drivers/dto/user-create-driver.schema.js';
@@ -81,14 +80,6 @@ router.put(
   validate(mongoIdValidator),
   validate(updateDriverValidator),
   asyncHandler(modifyDriver)
-);
-
-router.put(
-  '/:id/rating',
-  authorize({ services: [SERVICE.MIZBAN] }),
-  validate(mongoIdValidator),
-  validate(updateDriverRatingValidator),
-  asyncHandler(updateDriverRating)
 );
 
 export default router;
