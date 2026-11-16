@@ -18,6 +18,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('#modules/deliveryBatch/model/delivery.batch.model.js', () => ({
   DeliveryBatchModel: {
     findOneAndUpdate: vi.fn(),
+    findByIdAndUpdate: vi.fn(),
   },
 }));
 
@@ -44,13 +45,6 @@ vi.mock('#modules/deliveryBatch/services/v1/delivery.batch.service.js', () => ({
 vi.mock('#shared/utils/redisLocationService.js', () => ({
   RedisService: {
     getRedisData: vi.fn(),
-  },
-}));
-
-vi.mock('#modules/deliveryBatch/model/delivery.batch.model.js', () => ({
-  DeliveryBatchModel: {
-    findOneAndUpdate: vi.fn(),
-    findByIdAndUpdate: vi.fn(),
   },
 }));
 
