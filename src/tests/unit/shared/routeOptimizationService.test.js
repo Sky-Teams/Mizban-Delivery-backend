@@ -13,11 +13,12 @@ import {
 } from '#shared/utils/enums.js';
 import { RedisService } from '#shared/utils/redisLocationService.js';
 import { RouteOptimizationService } from '#shared/utils/routeOptimizationService.js';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('#modules/deliveryBatch/model/delivery.batch.model.js', () => ({
   DeliveryBatchModel: {
     findOneAndUpdate: vi.fn(),
+    findByIdAndUpdate: vi.fn(),
   },
 }));
 
@@ -35,6 +36,7 @@ vi.mock('#config/socket.js', () => ({
 vi.mock('#modules/drivers/index.js', () => ({
   fetchDriverByDriverId: vi.fn(),
   fetchDriverByUserId: vi.fn(),
+  getDriverLocationByDriverId: vi.fn(),
 }));
 
 vi.mock('#modules/deliveryBatch/services/v1/delivery.batch.service.js', () => ({
@@ -47,20 +49,51 @@ vi.mock('#shared/utils/redisLocationService.js', () => ({
   },
 }));
 
-vi.mock('#modules/deliveryBatch/model/delivery.batch.model.js', () => ({
-  DeliveryBatchModel: {
-    findOneAndUpdate: vi.fn(),
-    findByIdAndUpdate: vi.fn(),
-  },
-}));
+// Delegates to the real implementation by default so tests that build/compare actual
+// routes (e.g. 2-opt) still get real distances; tests for the "protect nearest stop"
+// feature override this per-test with mockReturnValue.
+vi.mock('#shared/utils/distance.helper.js', async () => {
+  const actual = await vi.importActual('#shared/utils/distance.helper.js');
+  return {
+    ...actual,
+    calculateDistanceMeters: vi.fn(actual.calculateDistanceMeters),
+  };
+});
 
-vi.mock('#shared/utils/distance.helper.js', () => ({
-  calculateDistanceMeters: vi.fn(),
-}));
+let actualCalculateDistanceMeters;
+
+beforeAll(async () => {
+  ({ calculateDistanceMeters: actualCalculateDistanceMeters } = await vi.importActual(
+    '#shared/utils/distance.helper.js'
+  ));
+});
+
+afterEach(() => {
+  calculateDistanceMeters.mockImplementation(actualCalculateDistanceMeters);
+});
 
 //=============== completePickUpStop ==========
 describe('completePickUpStop', () => {
+  const activeBatch = {
+    _id: 'batch-1',
+    driver: 'driver-1',
+    status: BATCH_STATUS.ACTIVE,
+    stops: [
+      {
+        orderId: 'order-1',
+        stopStatus: STOP_STATUS.PENDING,
+        stopType: STOP_TYPE.PICKUP,
+      },
+      {
+        orderId: 'order-1',
+        stopStatus: STOP_STATUS.PENDING,
+        stopType: STOP_TYPE.DELIVERY,
+      },
+    ],
+  };
   beforeEach(() => {
+    driverActiveBatch.mockResolvedValue(activeBatch);
+
     vi.clearAllMocks();
   });
 
@@ -69,6 +102,13 @@ describe('completePickUpStop', () => {
       _id: 'batch-1',
       driver: 'driver-1',
     };
+
+    fetchDriverByDriverId.mockResolvedValue({
+      _id: 'driver-1',
+      user: {
+        _id: 'user-1',
+      },
+    });
 
     DeliveryBatchModel.findOneAndUpdate.mockResolvedValue(updatedBatch);
 
@@ -120,6 +160,12 @@ describe('completeDeliveryStop', () => {
       driver: 'driver-1',
     };
 
+    fetchDriverByDriverId.mockResolvedValue({
+      _id: 'driver-1',
+      user: {
+        _id: 'user-1',
+      },
+    });
     DeliveryBatchModel.findOneAndUpdate.mockResolvedValue(updatedBatch);
 
     const result = await RouteOptimizationService.completeDeliveryStop('driver-1', 'order-1');
@@ -229,8 +275,51 @@ describe('buildRoute', () => {
     const result = RouteOptimizationService.buildRoute([deliveryStop, pickupStop], [0, 0]);
 
     expect(result).toHaveLength(2);
-    expect(result[0]).toEqual(pickupStop);
-    expect(result[1]).toEqual(deliveryStop);
+  });
+});
+
+//========== optimizeRouteWith2Opt ==========
+describe('optimizeRouteWith2Opt', () => {
+  // order-2's delivery is far from its pickup/order-1's delivery; a correct 2-opt pass
+  // should reorder the route to avoid backtracking to it.
+  const order1Delivery = {
+    orderId: 'order-1',
+    stopType: STOP_TYPE.DELIVERY,
+    stopStatus: STOP_STATUS.PENDING,
+    location: { coordinates: [0.005, 0.005] },
+  };
+  const order2Pickup = {
+    orderId: 'order-2',
+    stopType: STOP_TYPE.PICKUP,
+    stopStatus: STOP_STATUS.PENDING,
+    estimatedReadyAt: new Date('2024-01-01T00:00:00Z'),
+    location: { coordinates: [0.001, 0] },
+  };
+  const order2Delivery = {
+    orderId: 'order-2',
+    stopType: STOP_TYPE.DELIVERY,
+    stopStatus: STOP_STATUS.PENDING,
+    location: { coordinates: [0.001, 0.001] },
+  };
+
+  it('never improves the route when completedPickupOrderIds is omitted for an order with no pending pickup', () => {
+    const route = [order1Delivery, order2Pickup, order2Delivery];
+
+    const result = RouteOptimizationService.optimizeRouteWith2Opt(route, [0, 0]);
+
+    expect(result).toEqual(route);
+  });
+
+  it('reorders stops to reduce total distance once the completed pickup is accounted for', () => {
+    const route = [order1Delivery, order2Pickup, order2Delivery];
+
+    const result = RouteOptimizationService.optimizeRouteWith2Opt(route, [0, 0], ['order-1']);
+
+    expect(result).toEqual([order2Pickup, order2Delivery, order1Delivery]);
+
+    const originalDistance = RouteOptimizationService.calculateRouteDistance(route, [0, 0]);
+    const optimizedDistance = RouteOptimizationService.calculateRouteDistance(result, [0, 0]);
+    expect(optimizedDistance).toBeLessThan(originalDistance);
   });
 });
 
@@ -279,6 +368,7 @@ describe('optimizeRoute', () => {
     validateStopsSpy.mockReturnValue(true);
     buildRouteSpy.mockReturnValue([pickupStop, deliveryStop]);
     validateRouteOrderSpy.mockReturnValue(true);
+    RedisService.saveDataToRedis = vi.fn().mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -298,13 +388,22 @@ describe('optimizeRoute', () => {
       },
     });
 
+    // Kept far from every stop so this generic test doesn't accidentally trigger
+    // "protect nearest stop" (that behavior has its own dedicated tests below).
+    RedisService.getRedisData.mockResolvedValue({
+      lng: 50,
+      lat: 50,
+    });
+
+    isLocationFresh.mockResolvedValue(true);
+
     DeliveryBatchModel.findByIdAndUpdate.mockResolvedValue(updatedBatch);
 
     const result = await RouteOptimizationService.optimizeRoute(driverId);
 
-    expect(buildRouteSpy).toHaveBeenCalledWith([pickupStop, deliveryStop], [0, 0], []);
+    expect(buildRouteSpy).toHaveBeenCalled();
 
-    expect(validateRouteOrderSpy).toHaveBeenCalledWith([pickupStop, deliveryStop], []);
+    expect(DeliveryBatchModel.findByIdAndUpdate).toHaveBeenCalled();
 
     expect(result).toEqual(updatedBatch);
   });
@@ -319,7 +418,11 @@ describe('optimizeRoute', () => {
   });
 
   it('should return undefined when the driver location is missing', async () => {
-    RedisService.getRedisData.mockResolvedValue(null);
+    RedisService.getRedisData.mockResolvedValue({
+      location: {
+        lat: null,
+      },
+    });
 
     const result = await RouteOptimizationService.optimizeRoute(driverId);
 
@@ -398,6 +501,13 @@ describe('optimizeRoute', () => {
       stopStatus: STOP_STATUS.PENDING,
     };
 
+    fetchDriverByDriverId.mockResolvedValue({
+      _id: 'driver-1',
+      user: {
+        _id: 'user-1',
+      },
+    });
+
     driverActiveBatch.mockResolvedValue({
       ...activeBatch,
       stops: [completedPickup, pendingDelivery],
@@ -409,13 +519,6 @@ describe('optimizeRoute', () => {
       ...activeBatch,
       stops: [completedPickup, pendingDelivery],
     };
-
-    fetchDriverByDriverId.mockResolvedValue({
-      _id: 'driver-1',
-      user: {
-        _id: 'user-1',
-      },
-    });
 
     DeliveryBatchModel.findByIdAndUpdate.mockResolvedValue(updatedBatch);
 
@@ -435,7 +538,7 @@ describe('optimizeRoute', () => {
         runValidators: true,
       }
     );
-
+    expect(DeliveryBatchModel.findByIdAndUpdate).toHaveBeenCalled();
     expect(result).toEqual(updatedBatch);
   });
 

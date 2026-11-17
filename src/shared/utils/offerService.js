@@ -64,14 +64,16 @@ export class OfferService {
       }
 
       let canAddOrderToBatch;
+      let batchSizeAvailable;
       if (activeBatch) {
         canAddOrderToBatch = await canAddNewOrder(activeBatch, orderId, { throwOnError: false });
+        batchSizeAvailable = await isBatchSizeAvailable(activeBatch);
       }
 
       if (
         !driver ||
         driver.status === DRIVER_STATUS.OFFLINE ||
-        (activeBatch && !isBatchSizeAvailable(activeBatch)) ||
+        (activeBatch && !batchSizeAvailable) ||
         (activeBatch && !canAddOrderToBatch)
       ) {
         await increaseDriverIndex(orderId);
