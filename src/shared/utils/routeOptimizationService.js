@@ -671,7 +671,7 @@ export class RouteOptimizationService {
         if (order.pickupIndex !== null) return false;
 
         const readyAt = new Date(stop.estimatedReadyAt).getTime();
-        console.log('ready at', readyAt);
+
         if (!Number.isFinite(readyAt)) return false;
 
         // Preserve Pickup order based on estimatedReadyAt.
