@@ -37,6 +37,9 @@ const deliveryBatchSchema = new mongoose.Schema(
           enum: getObjectValues(STOP_STATUS),
           default: STOP_STATUS.PENDING,
         },
+        estimatedReadyAt: {
+          type: Date,
+        },
       },
     ],
     status: {

@@ -62,6 +62,10 @@ export class CustomSocket {
       }
 
       socket.on('disconnect', () => {
+        // Stop driver location sync
+        if (socket.role === ROLES.DRIVER) {
+          LocationService.stopDriverTracking(socket.userId);
+        }
         console.log(`Socket disconnected: ${socket.id}`);
       });
     });

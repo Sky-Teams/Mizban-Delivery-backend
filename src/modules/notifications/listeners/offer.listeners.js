@@ -9,6 +9,7 @@ import {
 } from '#shared/utils/enums.js';
 import { NotificationPayloads } from '#shared/utils/notificationPayloadBuilder.js';
 import { NotificationService } from '#shared/utils/notificationService.js';
+import { RouteOptimizationService } from '#shared/utils/routeOptimizationService.js';
 
 const offerPublisher = new RedisEventPublisher(REDIS_CHANNEL.ORDER_OFFER_CHANNEL);
 
@@ -26,6 +27,8 @@ export const registerOfferListeners = () => {
         },
       });
     }
+
+    await RouteOptimizationService.optimizeRoute(data.driverId);
   });
 
   eventBus.on(EVENT_BUS_EVENTS.OFFER_REJECTED, async (data) => {
