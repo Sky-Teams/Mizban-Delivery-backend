@@ -253,7 +253,7 @@ export const findNearestDrivers = async (pickupLocation, maxDistance = 5000, lim
       nearestDrivers.map(async (driver) => {
         const activeBatch = await driverActiveBatch(driver._id);
 
-        return !activeBatch || isBatchSizeAvailable(activeBatch) ? driver : null;
+        return !activeBatch || (await isBatchSizeAvailable(activeBatch)) ? driver : null;
       })
     );
 
