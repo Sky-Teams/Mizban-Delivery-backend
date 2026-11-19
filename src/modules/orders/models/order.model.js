@@ -177,7 +177,7 @@ const OrderSchema = new mongoose.Schema(
     },
     reason: { type: reasonSchema, default: {} },
 
-    rating: {
+    driverRating: {
       type: Number,
       min: 1,
       max: 5,

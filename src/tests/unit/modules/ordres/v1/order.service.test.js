@@ -1859,7 +1859,7 @@ describe('updateOrderRatingWithTransaction', () => {
       sourceOrderId,
       status: ORDER_STATUS.PENDING,
       driverId,
-      rating: undefined,
+      driverRating: undefined,
       save: vi.fn(),
     };
 
@@ -1879,7 +1879,7 @@ describe('updateOrderRatingWithTransaction', () => {
       sourceOrderId,
       status: ORDER_STATUS.DELIVERED,
       driverId,
-      rating: undefined,
+      driverRating: undefined,
       save: vi.fn().mockResolvedValue(undefined),
     };
 
@@ -1894,7 +1894,7 @@ describe('updateOrderRatingWithTransaction', () => {
     });
     const result = await updateOrderRatingWithTransaction(sourceOrderId, rating);
 
-    expect(order.rating).toBe(rating);
+    expect(order.driverRating).toBe(rating);
     expect(updateDriverAvgRating).toHaveBeenCalledWith(driverId, expect.anything());
     expect(order.save).toHaveBeenCalledWith({
       session: expect.anything(),
@@ -1908,7 +1908,7 @@ describe('updateOrderRatingWithTransaction', () => {
       sourceOrderId,
       status: ORDER_STATUS.DELIVERED,
       driverId,
-      rating: undefined,
+      driverRating: undefined,
       save: vi.fn().mockResolvedValue(undefined),
     };
 
@@ -1919,7 +1919,7 @@ describe('updateOrderRatingWithTransaction', () => {
     updateDriverAvgRating.mockRejectedValue(notFound('driver'));
     await expect(updateOrderRatingWithTransaction(sourceOrderId, rating)).rejects.toThrow();
 
-    expect(order.rating).toBe(rating);
+    expect(order.driverRating).toBe(rating);
     expect(order.save).toHaveBeenCalled();
   });
 });

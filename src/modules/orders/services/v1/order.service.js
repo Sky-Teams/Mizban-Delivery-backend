@@ -130,11 +130,16 @@ export const getOrderById = async (orderId, session = null) => {
   return order;
 };
 
-export const getOrderBySourceId = async (sourceOrderId) => {
-  const order = await OrderModel.findOne({
+export const getOrderBySourceId = async (sourceOrderId, session = null) => {
+  let query = OrderModel.findOne({
     sourceOrderId,
   });
 
+  if (session) {
+    query = query.session(session);
+  }
+
+  const order = await query;
   return order;
 };
 
@@ -339,9 +344,7 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
 };
 
 export const updateOrderRating = async (session, sourceOrderId, rating) => {
-  const order = await OrderModel.findOne({
-    sourceOrderId,
-  }).session(session);
+  const order = await getOrderBySourceId(sourceOrderId, session);
 
   if (!order) throw notFound('order');
 
@@ -352,7 +355,7 @@ export const updateOrderRating = async (session, sourceOrderId, rating) => {
       ERROR_CODES.ORDER_RATING_NOT_ALLOWED
     );
 
-  order.rating = rating;
+  order.driverRating = rating;
   await order.save({ session });
 
   await updateDriverAvgRating(order.driverId, session);
