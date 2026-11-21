@@ -362,6 +362,8 @@ export const updateOrderRating = async (session, sourceOrderId, orderData) => {
       ERROR_CODES.ORDER_RATING_NOT_ALLOWED
     );
 
+  if (!order.driverFeedback) order.driverFeedback = {};
+
   if (rating !== undefined) {
     order.driverFeedback.rating = rating;
   }

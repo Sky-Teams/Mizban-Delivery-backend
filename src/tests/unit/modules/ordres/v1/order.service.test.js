@@ -1878,7 +1878,7 @@ describe('updateOrderRatingWithTransaction', () => {
       session: vi.fn().mockResolvedValue(null),
     });
 
-    await expect(updateOrderRatingWithTransaction(sourceOrderId, rating)).rejects.toThrow();
+    await expect(updateOrderRatingWithTransaction(sourceOrderId, { rating })).rejects.toThrow();
 
     expect(OrderModel.findOne).toHaveBeenCalledWith({ sourceOrderId });
   });
@@ -1888,7 +1888,7 @@ describe('updateOrderRatingWithTransaction', () => {
       sourceOrderId,
       status: ORDER_STATUS.PENDING,
       driverId,
-      driverRating: undefined,
+      driverFeedback: undefined,
       save: vi.fn(),
     };
 
@@ -1896,9 +1896,11 @@ describe('updateOrderRatingWithTransaction', () => {
       session: vi.fn().mockResolvedValue(order),
     });
 
-    await expect(updateOrderRatingWithTransaction(sourceOrderId, rating)).rejects.toMatchObject({
-      code: ERROR_CODES.ORDER_RATING_NOT_ALLOWED,
-    });
+    await expect(updateOrderRatingWithTransaction(sourceOrderId, { rating })).rejects.toMatchObject(
+      {
+        code: ERROR_CODES.ORDER_RATING_NOT_ALLOWED,
+      }
+    );
 
     expect(order.save).not.toHaveBeenCalled();
   });
@@ -1908,8 +1910,7 @@ describe('updateOrderRatingWithTransaction', () => {
       sourceOrderId,
       status: ORDER_STATUS.DELIVERED,
       driverId,
-      driverRating: undefined,
-      driverComment: undefined,
+      driverFeedback: undefined,
       save: vi.fn().mockResolvedValue(undefined),
     };
 
@@ -1924,7 +1925,7 @@ describe('updateOrderRatingWithTransaction', () => {
     });
     const result = await updateOrderRatingWithTransaction(sourceOrderId, { rating });
 
-    expect(order.driverRating).toBe(rating);
+    expect(order.driverFeedback.rating).toBe(rating);
     expect(updateDriverAvgRating).toHaveBeenCalledWith(driverId, expect.anything());
     expect(order.save).toHaveBeenCalledWith({
       session: expect.anything(),
@@ -1938,7 +1939,7 @@ describe('updateOrderRatingWithTransaction', () => {
       sourceOrderId,
       status: ORDER_STATUS.DELIVERED,
       driverId,
-      driverRating: undefined,
+      driverFeedback: undefined,
       save: vi.fn().mockResolvedValue(undefined),
     };
 
@@ -1949,7 +1950,7 @@ describe('updateOrderRatingWithTransaction', () => {
     updateDriverAvgRating.mockRejectedValue(notFound('driver'));
     await expect(updateOrderRatingWithTransaction(sourceOrderId, { rating })).rejects.toThrow();
 
-    expect(order.driverRating).toBe(rating);
+    expect(order.driverFeedback.rating).toBe(rating);
     expect(order.save).toHaveBeenCalled();
   });
 });
