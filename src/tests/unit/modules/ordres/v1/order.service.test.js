@@ -283,6 +283,14 @@ describe('assignDriverToOrderWithTransaction', () => {
       timeline: {},
       save: vi.fn(),
       driverId: null,
+      toObject: vi.fn(function () {
+        return {
+          _id: 'delivery1',
+          status: this.status,
+          timeline: this.timeline,
+          driverId: this.driverId,
+        };
+      }),
     };
 
     const driver = {
@@ -304,7 +312,13 @@ describe('assignDriverToOrderWithTransaction', () => {
     expect(fakeSession.commitTransaction).toHaveBeenCalled();
     expect(fakeSession.endSession).toHaveBeenCalled();
 
-    expect(result).toBe(order);
+    expect(result).toMatchObject({
+      _id: order._id,
+      status: ORDER_STATUS.ASSIGNED,
+      driver: {
+        name: 'ahmad',
+      },
+    });
     expect(order.status).toBe(ORDER_STATUS.ASSIGNED);
     expect(order.driverId).toBe('driver1');
     expect(driver.status).toBe(DRIVER_STATUS.ASSIGNED);
@@ -371,12 +385,20 @@ describe('assignDriver', () => {
     timeline: {},
     driverId: null,
     save: vi.fn(),
+    toObject: vi.fn(function () {
+      return {
+        _id: 'delivery1',
+        status: this.status,
+        timeline: this.timeline,
+        driverId: this.driverId,
+      };
+    }),
   });
 
   const createDriver = (status = DRIVER_STATUS.IDLE) => ({
     _id: 'driver1',
     status,
-    user: { _id: 'user1' },
+    user: { _id: 'user1', name: 'Ahmad', phone: '123456' },
     save: vi.fn(),
   });
 
@@ -420,7 +442,14 @@ describe('assignDriver', () => {
 
     const result = await assignDriver(fakeSession, 'delivery1', 'driver1');
 
-    expect(result).toBe(order);
+    expect(result).toMatchObject({
+      _id: order._id,
+      status: ORDER_STATUS.ASSIGNED,
+      driver: {
+        name: 'Ahmad',
+        phone: '123456',
+      },
+    });
     expect(order.status).toBe(ORDER_STATUS.ASSIGNED);
     expect(order.driverId).toBe('driver1');
     expect(order.timeline.assignedAt).toBeInstanceOf(Date);
