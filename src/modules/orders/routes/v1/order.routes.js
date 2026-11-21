@@ -11,13 +11,14 @@ import {
   ordersStatistics,
   calculateDeliveryPrice,
   retryOrderDriverSearch,
+  updateOrderRating,
 } from '../../controllers/v1/order.controller.js';
 import { asyncHandler } from '#shared/middleware/asyncHandler.js';
 import express from 'express';
 import { validate } from '#shared/middleware/validate.js';
 import { createOrderValidator } from '../../dto/create-order.schema.js';
 import { mongoIdValidator } from '#shared/middleware/mongoIdValidator.js';
-import { updateOrderValidator } from '../../dto/update-order.schema.js';
+import { updateOrderRatingValidator, updateOrderValidator } from '../../dto/update-order.schema.js';
 import {
   assignDriverValidator,
   cancelOrderValidator,
@@ -101,6 +102,14 @@ router.post(
   authorizeRole(ROLES.ADMIN),
   validate(mongoIdValidator),
   asyncHandler(retryOrderDriverSearch)
+);
+
+router.patch(
+  '/:id/rating',
+  authorize({ services: [SERVICE.MIZBAN] }),
+  validate(mongoIdValidator),
+  validate(updateOrderRatingValidator),
+  asyncHandler(updateOrderRating)
 );
 
 export default router;

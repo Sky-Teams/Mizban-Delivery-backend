@@ -1,3 +1,4 @@
+import { en } from 'zod/locales';
 import { ERROR_CODES } from '../errors/customCodes.js';
 
 export const ERROR_MESSAGES = {
@@ -775,5 +776,23 @@ export const ERROR_MESSAGES = {
     en: 'Order preparation is not compatible with the active batch',
     fa: 'زمان آماده‌سازی سفارش با مجموعه سفارش‌های فعال سازگار نیست',
     ps: 'د فرمایش د چمتو کولو وخت د فعالې فرمایشونو مجموعې سره سمون نه لري',
+  },
+
+  [ERROR_CODES.INVALID_RATING]: {
+    en: 'Rating must be between 1 and 5',
+    fa: 'امتیاز باید بین ۱ تا ۵ باشد',
+    ps: 'د نمرې اندازه باید له ۱ څخه تر ۵ پورې وي',
+  },
+
+  [ERROR_CODES.ORDER_RATING_NOT_ALLOWED]: {
+    en: 'Only delivered orders can be rated',
+    fa: 'فقط سفارش‌های تحویل‌شده قابل امتیازدهی هستند',
+    ps: 'یوازې سپارل شوي فرمایشونه د نمرې ورکولو وړ دي',
+  },
+
+  [ERROR_CODES.COMMENT_TOO_LONG]: {
+    en: 'Comment must be at most 500 characters',
+    fa: 'نظر باید حداکثر ۵۰۰ کاراکتر باشد',
+    ps: 'تبصره باید تر ۵۰۰ تورو زیاته نه وي',
   },
 };
