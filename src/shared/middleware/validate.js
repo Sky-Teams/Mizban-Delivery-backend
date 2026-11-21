@@ -1,5 +1,6 @@
 import { ERROR_CODES } from '../errors/customCodes.js';
 import { AppError } from '../errors/error.js';
+import { ERROR_MESSAGES } from '../errors/errorMessages.js';
 
 export const validate = (validatorFn) => (req, res, next) => {
   const result = validatorFn(req);
@@ -8,7 +9,8 @@ export const validate = (validatorFn) => (req, res, next) => {
     const issue = result.error.issues[0];
 
     const field = issue.path.slice(1).join('.') || 'unknown';
-    const errorCode = issue.message || ERROR_CODES.VALIDATION_ERROR;
+    const issueCode = issue.message || ERROR_CODES.VALIDATION_ERROR;
+    const errorCode = ERROR_MESSAGES[issueCode] ? issueCode : ERROR_CODES.VALIDATION_ERROR;
 
     return next(new AppError('Validation failed', 400, errorCode, field));
   }
