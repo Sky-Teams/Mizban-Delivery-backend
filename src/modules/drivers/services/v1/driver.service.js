@@ -321,13 +321,13 @@ export const updateDriverAvgRating = async (driverId, session) => {
     {
       $match: {
         driverId: new mongoose.Types.ObjectId(driverId),
-        driverRating: { $exists: true, $ne: null },
+        'driverFeedback.rating': { $exists: true, $ne: null },
       },
     },
     {
       $group: {
         _id: '$driverId',
-        ratingAvg: { $avg: '$driverRating' },
+        ratingAvg: { $avg: '$driverFeedback.rating' },
         ratingCount: { $sum: 1 },
       },
     },

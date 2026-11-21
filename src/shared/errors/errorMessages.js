@@ -1,3 +1,4 @@
+import { en } from 'zod/locales';
 import { ERROR_CODES } from '../errors/customCodes.js';
 
 export const ERROR_MESSAGES = {
@@ -787,5 +788,11 @@ export const ERROR_MESSAGES = {
     en: 'Only delivered orders can be rated',
     fa: 'فقط سفارش‌های تحویل‌شده قابل امتیازدهی هستند',
     ps: 'یوازې سپارل شوي فرمایشونه د نمرې ورکولو وړ دي',
+  },
+
+  [ERROR_CODES.COMMENT_TOO_LONG]: {
+    en: 'Comment must be at most 500 characters',
+    fa: 'نظر باید حداکثر ۵۰۰ کاراکتر باشد',
+    ps: 'تبصره باید تر ۵۰۰ تورو زیاته نه وي',
   },
 };

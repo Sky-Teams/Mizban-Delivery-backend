@@ -349,7 +349,8 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
   };
 };
 
-export const updateOrderRating = async (session, sourceOrderId, rating) => {
+export const updateOrderRating = async (session, sourceOrderId, orderData) => {
+  const { rating, comment } = orderData;
   const order = await getOrderBySourceId(sourceOrderId, session);
 
   if (!order) throw notFound('order');
@@ -361,7 +362,13 @@ export const updateOrderRating = async (session, sourceOrderId, rating) => {
       ERROR_CODES.ORDER_RATING_NOT_ALLOWED
     );
 
-  order.driverRating = rating;
+  if (rating !== undefined) {
+    order.driverFeedback.rating = rating;
+  }
+  if (comment !== undefined) {
+    order.driverFeedback.comment = comment;
+  }
+
   await order.save({ session });
 
   await updateDriverAvgRating(order.driverId, session);

@@ -191,6 +191,6 @@ export const updateOrderRating = async (req, res) => {
   if (!requester) throw unauthorized();
   const sourceOrderId = req.params.id;
 
-  const result = await updateOrderRatingWithTransaction(sourceOrderId, req.body.rating);
+  const result = await updateOrderRatingWithTransaction(sourceOrderId, req.body);
   res.status(200).json({ success: true, data: result });
 };

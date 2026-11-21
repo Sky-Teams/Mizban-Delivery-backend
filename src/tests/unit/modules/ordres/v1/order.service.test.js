@@ -1903,12 +1903,13 @@ describe('updateOrderRatingWithTransaction', () => {
     expect(order.save).not.toHaveBeenCalled();
   });
 
-  it('should update the order rating and driver rating statistics', async () => {
+  it('should update the order driverRating and comment, and update the driver ratingCount and ratingAvg statistics', async () => {
     const order = {
       sourceOrderId,
       status: ORDER_STATUS.DELIVERED,
       driverId,
       driverRating: undefined,
+      driverComment: undefined,
       save: vi.fn().mockResolvedValue(undefined),
     };
 
@@ -1921,7 +1922,7 @@ describe('updateOrderRatingWithTransaction', () => {
       ratingAvg: 4.5,
       ratingCount: 2,
     });
-    const result = await updateOrderRatingWithTransaction(sourceOrderId, rating);
+    const result = await updateOrderRatingWithTransaction(sourceOrderId, { rating });
 
     expect(order.driverRating).toBe(rating);
     expect(updateDriverAvgRating).toHaveBeenCalledWith(driverId, expect.anything());
@@ -1946,7 +1947,7 @@ describe('updateOrderRatingWithTransaction', () => {
     });
 
     updateDriverAvgRating.mockRejectedValue(notFound('driver'));
-    await expect(updateOrderRatingWithTransaction(sourceOrderId, rating)).rejects.toThrow();
+    await expect(updateOrderRatingWithTransaction(sourceOrderId, { rating })).rejects.toThrow();
 
     expect(order.driverRating).toBe(rating);
     expect(order.save).toHaveBeenCalled();

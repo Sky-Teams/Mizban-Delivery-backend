@@ -173,6 +173,7 @@ const updateOrderRating = z.object({
       .number()
       .min(1, { message: ERROR_CODES.INVALID_RATING })
       .max(5, { message: ERROR_CODES.INVALID_RATING }),
+    comment: z.string().trim().max(500, { message: ERROR_CODES.COMMENT_TOO_LONG }).optional(),
   }),
 });
 
