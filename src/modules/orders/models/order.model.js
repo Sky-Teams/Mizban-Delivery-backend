@@ -177,10 +177,15 @@ const OrderSchema = new mongoose.Schema(
     },
     reason: { type: reasonSchema, default: {} },
 
-    driverRating: {
-      type: Number,
-      min: 1,
-      max: 5,
+    driverFeedback: {
+      rating: {
+        type: Number,
+        min: 1,
+        max: 5,
+      },
+      comment: {
+        type: String,
+      },
     },
   },
   {
