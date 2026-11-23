@@ -12,12 +12,14 @@ import { withTransaction } from '#shared/middleware/transactionHandler.js';
 import { GeoService } from '#shared/utils/geoService.js';
 import { DriverScore } from '#shared/utils/scorePrediction.js';
 import { DRIVER_STATUS, REASON_TYPES, VERIFICATION_STATUS } from '#shared/utils/enums.js';
+import { OrderModel } from '#modules/orders/index.js';
 import { calculateDeliveryBatchesDistance } from '#modules/deliveryBatch/index.js';
 import mongoose from 'mongoose';
 import { DateHelper } from '#shared/utils/date.helper.js';
 import { DateTime } from 'luxon';
 import { driverActiveBatch } from '#modules/deliveryBatch/services/v1/delivery.batch.service.js';
 import { isBatchSizeAvailable } from '#shared/utils/batch.helper.js';
+
 //#region Services
 
 /** Fetch all Drivers with pagination functionality */
@@ -312,6 +314,45 @@ export const getDriverStatisticsService = async () => {
   ]);
 
   return stats;
+};
+
+export const updateDriverAvgRating = async (driverId, session) => {
+  const result = await OrderModel.aggregate([
+    {
+      $match: {
+        driverId: new mongoose.Types.ObjectId(driverId),
+        'driverFeedback.rating': { $exists: true, $ne: null },
+      },
+    },
+    {
+      $group: {
+        _id: '$driverId',
+        ratingAvg: { $avg: '$driverFeedback.rating' },
+        ratingCount: { $sum: 1 },
+      },
+    },
+  ]).session(session);
+
+  const { ratingAvg, ratingCount } = result[0] || { ratingAvg: 0, ratingCount: 0 };
+
+  const updateDriver = await DriverModel.findByIdAndUpdate(
+    driverId,
+    {
+      $set: {
+        ratingAvg: Math.round(ratingAvg * 10) / 10,
+        ratingCount,
+      },
+    },
+    {
+      returnDocument: 'after',
+      runValidators: true,
+      session,
+    }
+  );
+
+  if (!updateDriver) throw notFound('driver');
+
+  return updateDriver;
 };
 
 export const getDriverDistanceService = async (driverId, query) => {

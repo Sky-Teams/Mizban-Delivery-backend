@@ -167,6 +167,20 @@ const updateOrderSchema = z.object({
   }),
 });
 
+const updateOrderRating = z.object({
+  body: z.object({
+    rating: z
+      .number()
+      .min(1, { message: ERROR_CODES.INVALID_RATING })
+      .max(5, { message: ERROR_CODES.INVALID_RATING }),
+    comment: z.string().trim().max(500, { message: ERROR_CODES.COMMENT_TOO_LONG }).optional(),
+  }),
+});
+
 export const updateOrderValidator = (req) => {
   return updateOrderSchema.safeParse({ body: req.body });
+};
+
+export const updateOrderRatingValidator = (req) => {
+  return updateOrderRating.safeParse({ body: req.body });
 };

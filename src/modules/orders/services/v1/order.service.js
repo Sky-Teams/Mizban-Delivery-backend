@@ -27,6 +27,7 @@ import { deduplicateById, getObjectValues } from '#shared/utils/object.helper.js
 import { buildPaginatedResponse } from '#shared/utils/pagination.js';
 import { calculateDeliveryPrice } from './pricing.service.js';
 import { orderAssignedForBatching } from '#modules/deliveryBatch/index.js';
+import { updateDriverAvgRating } from '#modules/drivers/services/v1/driver.service.js';
 
 //#region Admin Services
 
@@ -129,11 +130,16 @@ export const getOrderById = async (orderId, session = null) => {
   return order;
 };
 
-export const getOrderBySourceId = async (sourceOrderId) => {
-  const order = await OrderModel.findOne({
+export const getOrderBySourceId = async (sourceOrderId, session = null) => {
+  let query = OrderModel.findOne({
     sourceOrderId,
   });
 
+  if (session) {
+    query = query.session(session);
+  }
+
+  const order = await query;
   return order;
 };
 
@@ -341,6 +347,35 @@ export const assignDriver = async (session, orderId, driverId, orderData) => {
       phone: driver.user?.phone,
     },
   };
+};
+
+export const updateOrderRating = async (session, sourceOrderId, orderData) => {
+  const { rating, comment } = orderData;
+  const order = await getOrderBySourceId(sourceOrderId, session);
+
+  if (!order) throw notFound('order');
+
+  if (order.status !== ORDER_STATUS.DELIVERED)
+    throw new AppError(
+      'Only delivered orders can be rated',
+      400,
+      ERROR_CODES.ORDER_RATING_NOT_ALLOWED
+    );
+
+  if (!order.driverFeedback) order.driverFeedback = {};
+
+  if (rating !== undefined) {
+    order.driverFeedback.rating = rating;
+  }
+  if (comment !== undefined) {
+    order.driverFeedback.comment = comment;
+  }
+
+  await order.save({ session });
+
+  await updateDriverAvgRating(order.driverId, session);
+
+  return order;
 };
 
 //#endregion
@@ -815,3 +850,5 @@ export const deliverOrderWithTransaction = withTransaction(deliverAnOrder);
 export const cancelOrderWithTransaction = withTransaction(cancelAnOrder);
 
 export const returnOrderWithTransaction = withTransaction(returnAnOrder);
+
+export const updateOrderRatingWithTransaction = withTransaction(updateOrderRating);
