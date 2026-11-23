@@ -86,7 +86,7 @@ const acceptAnOffer = async (session, offerId, userId) => {
   // Update the status of order.
   const order = await getOrderById(offer.order);
 
-  if (order.status !== ORDER_STATUS.CREATED) {
+  if (order.status !== ORDER_STATUS.CREATED && order.status !== ORDER_STATUS.CANCELLED) {
     throw new AppError(
       `Cannot assign driver. Order status is ${order.status}.`,
       409,

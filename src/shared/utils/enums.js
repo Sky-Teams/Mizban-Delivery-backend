@@ -129,6 +129,7 @@ export const REDIS_EVENT_TYPE = {
   OFFER_ACCEPTED: 'offer.accepted',
   ORDER_PICKEDUP: 'order.pickedUp',
   ORDER_DELIVERED: 'order.delivered',
+  ORDER_CANCELLED: 'order.cancelled',
 };
 
 export const BATCH_STATUS = {
