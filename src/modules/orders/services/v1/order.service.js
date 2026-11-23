@@ -32,7 +32,7 @@ import { updateDriverAvgRating } from '#modules/drivers/services/v1/driver.servi
 //#region Admin Services
 
 export const retryDriverSearch = async (order) => {
-  if (order.status !== ORDER_STATUS.CREATED)
+  if (order.status !== ORDER_STATUS.CREATED && order.status !== ORDER_STATUS.CANCELLED)
     throw new AppError(
       'Cannot retry driver search: order is no longer in the created state.',
       409,
@@ -297,7 +297,7 @@ export const updateOrderInfo = async (orderId, orderData) => {
 export const assignDriver = async (session, orderId, driverId, orderData) => {
   const order = await getOrCreateOrder(orderId, orderData, driverId, session);
 
-  if (order.status !== ORDER_STATUS.CREATED) {
+  if (order.status !== ORDER_STATUS.CREATED && order.status !== ORDER_STATUS.CANCELLED) {
     throw new AppError(
       `Cannot assign driver. Order status is ${order.status}.`,
       409,
@@ -508,7 +508,9 @@ export const cancelAnOrder = async (session, orderId, reason, user) => {
   order.status = ORDER_STATUS.CANCELLED;
   order.timeline.cancelledAt = new Date();
   order.paymentStatus = PAYMENT_STATUS.FAILED; //TODO We should add more logic in here in future.
-
+  order.batchId = null;
+  order.recommendedDrivers = [];
+  order.currentDriverIndex = 0;
   //TODO: Do we need to add cancelledBy field in DB?
 
   if (reason) {
@@ -518,7 +520,15 @@ export const cancelAnOrder = async (session, orderId, reason, user) => {
   }
 
   await order.save({ session });
-  eventBus.emit(EVENT_BUS_EVENTS.ORDER_CANCELLED, { orderId, reason, driverId: order.driverId });
+  eventBus.emit(EVENT_BUS_EVENTS.ORDER_CANCELLED, {
+    orderId,
+    reason,
+    driverId: order.driverId,
+    cancelledAt: order.timeline.cancelledAt,
+    source: order.source,
+    sourceOrderId: order.sourceOrderId,
+    pickupLocation: order.pickupLocation,
+  });
 
   // Return filtered fields to driver
   if (user.role === ROLES.DRIVER) return DtoService.order(order);

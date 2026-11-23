@@ -34,8 +34,7 @@ export class OfferService {
 
       // Check if order is still available
       // ex: Driver accept the offer in last seconds and timeout job is executed.
-      if (order.status !== ORDER_STATUS.CREATED) return; // It means order is not in created mode, so we cancel the process
-
+      if (order.status !== ORDER_STATUS.CREATED && order.status !== ORDER_STATUS.CANCELLED) return; // It means order is not in created mode, so we cancel the process
       const driversInfo = order.recommendedDrivers;
       const currentIndex = order.currentDriverIndex;
 

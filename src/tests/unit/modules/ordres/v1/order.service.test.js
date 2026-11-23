@@ -1247,6 +1247,10 @@ describe('cancelOrderWithTransaction', () => {
       orderId: 'delivery1',
       reason: 'test reason',
       driverId: order.driverId,
+      cancelledAt: order.timeline.cancelledAt,
+      source: order.source,
+      sourceOrderId: order.sourceOrderId,
+      pickupLocation: order.pickupLocation,
     });
   });
 

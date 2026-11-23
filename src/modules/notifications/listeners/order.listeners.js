@@ -99,8 +99,21 @@ export const registerOrderListeners = () => {
       data.orderId
     );
 
+    // Notify Mizban: order cancelled
+    await EventPublisherService.publishOrderEvent({
+      type: REDIS_EVENT_TYPE.ORDER_CANCELLED,
+      data,
+      status: ORDER_STATUS.CANCELLED,
+      timestamp: data.cancelledAt,
+    });
+
     const payload = NotificationPayloads.orderCancelled(data.orderId, data.reason);
     await NotificationService.send('admins', SOCKET_EVENTS.ADMIN.NOTIFICATION, payload);
+
+    // Send offer to drivers
+    const drivers = await findNearestAndScore(data.pickupLocation.coordinates);
+    await addDriversDataInOrder(data.orderId.toString(), drivers);
+    await OfferService.sendOfferToDriver(data.orderId.toString());
   });
 
   eventBus.on(EVENT_BUS_EVENTS.ORDER_RETURNED, async (data) => {
