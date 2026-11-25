@@ -85,7 +85,7 @@ router.put(
 );
 router.get(
   '/',
-  authorizeRole(ROLES.ADMIN, ROLES.DRIVER),
+  authorize({ roles: [ROLES.ADMIN, ROLES.DRIVER], services: [SERVICE.MIZBAN] }),
   validate(orderQueryValidator),
   asyncHandler(getOrders)
 );

@@ -127,7 +127,8 @@ export const ordersStatistics = async (req, res) => {
 };
 
 export const getOrders = async (req, res) => {
-  if (!req.user) throw unauthorized();
+  const requester = req.user || req.service;
+  if (!requester) throw unauthorized();
 
   const { page, limit } = req.query;
   let searchQuery = {
@@ -145,15 +146,15 @@ export const getOrders = async (req, res) => {
 
   searchQuery = cleanObject(searchQuery);
 
-  const isDriver = req.user.role === ROLES.DRIVER;
+  const isDriver = requester.role === ROLES.DRIVER;
 
   if (isDriver) {
-    const driver = await fetchDriverByUserId(req.user._id);
+    const driver = await fetchDriverByUserId(requester._id);
     if (!driver) throw notFound('driver');
     searchQuery.driverId = driver._id;
   }
 
-  const result = await getAllOrders(page, limit, searchQuery, req.user.role);
+  const result = await getAllOrders(page, limit, searchQuery, requester.role);
 
   const orders = isDriver ? result.data.map((order) => DtoService.order(order)) : result.data;
 

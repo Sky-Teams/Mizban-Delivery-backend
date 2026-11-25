@@ -22,8 +22,7 @@ import {
   getOrdersStatistics,
 } from '#modules/orders/index.js';
 import { AppError, notFound } from '#shared/errors/error.js';
-import { ORDER_STATUS } from '#shared/utils/enums.js';
-import { ROLES } from '#shared/utils/enums.js';
+import { ORDER_STATUS, ROLES, SERVICE } from '#shared/utils/enums.js';
 import { fetchDriverByUserId } from '#modules/drivers/index.js';
 
 // Mock the service
@@ -694,6 +693,32 @@ describe('Controller Order - getOrders', () => {
 
     expect(res.status).toHaveBeenCalledWith(200);
 
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: mockOrders.data,
+      totalOrders: mockOrders.total,
+      totalPage: mockOrders.totalPage,
+    });
+  });
+
+  it('should return orders list for the Mizban service', async () => {
+    const mockOrders = {
+      data: [{ _id: '1' }],
+      total: 1,
+      totalPage: 1,
+    };
+
+    req = {
+      service: { name: SERVICE.MIZBAN },
+      query: { page: 1, limit: 5 },
+    };
+
+    getAllOrders.mockResolvedValue(mockOrders);
+
+    await getOrders(req, res);
+
+    expect(getAllOrders).toHaveBeenCalledWith(1, 5, {}, undefined);
+    expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       data: mockOrders.data,
