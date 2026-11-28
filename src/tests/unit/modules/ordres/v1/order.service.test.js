@@ -19,7 +19,7 @@ import {
 } from '#modules/orders/index.js';
 import mongoose from 'mongoose';
 import { ERROR_CODES } from '#shared/errors/customCodes.js';
-import { orderUpdateQuery } from '#shared/utils/queryBuilder.js';
+import { buildOrderFilter, orderUpdateQuery } from '#shared/utils/queryBuilder.js';
 import {
   assignDriver,
   getOrderById,
@@ -1752,6 +1752,26 @@ describe('getAllOrders', () => {
       data: mockOrders,
       total: 2,
       totalPage: 1,
+    });
+  });
+
+  it('should restrict Mizban service requests to Mizban-source orders', async () => {
+    OrderModel.find.mockReturnValue({
+      sort: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue([]),
+    });
+    OfferModel.find.mockReturnValue({
+      populate: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue([]),
+    });
+
+    await orderService.getAllOrders(1, 10, {}, undefined, SERVICE.MIZBAN);
+
+    expect(buildOrderFilter).toHaveBeenCalledWith({
+      driverId: undefined,
+      startDate: undefined,
+      endDate: undefined,
+      filters: { source: SERVICE.MIZBAN },
     });
   });
 });

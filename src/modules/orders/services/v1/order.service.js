@@ -12,6 +12,7 @@ import {
   ROLES,
   OFFER_STATUS,
   REASON_TYPES,
+  SERVICE,
 } from '#shared/utils/enums.js';
 import { calculateItemsTotal } from '#shared/utils/math.helper.js';
 import {
@@ -167,10 +168,12 @@ export const getOrdersByIds = async (orderIds, session = null) => {
  * @param {String} role
  * @returns List of orders
  */
-export const getAllOrders = async (page = 1, limit = 10, searchQuery = {}, role) => {
+export const getAllOrders = async (page = 1, limit = 10, searchQuery = {}, role, service) => {
   const skip = (page - 1) * limit;
 
   const { driverId, status, startDate, endDate, ...filters } = searchQuery;
+
+  if (service === SERVICE.MIZBAN) filters.source = SERVICE.MIZBAN;
 
   const orderFilter = buildOrderFilter({
     driverId,

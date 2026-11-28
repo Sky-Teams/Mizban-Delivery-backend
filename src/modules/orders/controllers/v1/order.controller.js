@@ -154,7 +154,7 @@ export const getOrders = async (req, res) => {
     searchQuery.driverId = driver._id;
   }
 
-  const result = await getAllOrders(page, limit, searchQuery, requester.role);
+  const result = await getAllOrders(page, limit, searchQuery, requester.role, requester?.name);
 
   const orders = isDriver ? result.data.map((order) => DtoService.order(order)) : result.data;
 

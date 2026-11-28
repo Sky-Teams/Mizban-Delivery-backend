@@ -688,7 +688,8 @@ describe('Controller Order - getOrders', () => {
       1,
       5,
       {}, // cleaned query
-      ROLES.ADMIN
+      ROLES.ADMIN,
+      undefined
     );
 
     expect(res.status).toHaveBeenCalledWith(200);
@@ -717,7 +718,7 @@ describe('Controller Order - getOrders', () => {
 
     await getOrders(req, res);
 
-    expect(getAllOrders).toHaveBeenCalledWith(1, 5, {}, undefined);
+    expect(getAllOrders).toHaveBeenCalledWith(1, 5, {}, undefined, SERVICE.MIZBAN);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -747,7 +748,13 @@ describe('Controller Order - getOrders', () => {
 
     await getOrders(req, res);
 
-    expect(getAllOrders).toHaveBeenCalledWith(1, 5, { status: ORDER_STATUS.CREATED }, ROLES.ADMIN);
+    expect(getAllOrders).toHaveBeenCalledWith(
+      1,
+      5,
+      { status: ORDER_STATUS.CREATED },
+      ROLES.ADMIN,
+      undefined
+    );
 
     expect(res.status).toHaveBeenCalledWith(200);
 
@@ -779,7 +786,7 @@ describe('Controller Order - getOrders', () => {
 
     await getOrders(req, res);
 
-    expect(getAllOrders).toHaveBeenCalledWith(1, 2, { priority: 'high' }, ROLES.ADMIN);
+    expect(getAllOrders).toHaveBeenCalledWith(1, 2, { priority: 'high' }, ROLES.ADMIN, undefined);
 
     expect(res.status).toHaveBeenCalledWith(200);
 
@@ -822,7 +829,8 @@ describe('Controller Order - getOrders', () => {
         startDate: '2026-03-01',
         endDate: '2026-03-10',
       },
-      ROLES.ADMIN
+      ROLES.ADMIN,
+      undefined
     );
 
     expect(res.status).toHaveBeenCalledWith(200);
